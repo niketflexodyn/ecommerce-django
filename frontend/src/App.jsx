@@ -1,9 +1,9 @@
-import ProductList from '../pages/ProductList'
+import ProductList from './pages/ProductList'
 import { Route, Routes } from 'react-router-dom'
-import ProductDetails from '../pages/ProductDetails'
-import Login from '../pages/Login'
-import Navbar from '../components/Navbar'
-import SearchResults from '../components/SearchResults'
+import ProductDetails from './pages/ProductDetails'
+import Login from './pages/Login'
+import Navbar from './components/Navbar'
+import SearchResults from './components/SearchResults'
 
 
 export default function App() {

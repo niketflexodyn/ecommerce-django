@@ -47,6 +47,8 @@ const loginOptions = [
 ]
 
 export default function Navbar() {
+  const {cartItems} = useCart();
+  const cartCount = cartItems.reduce((totat,item) => total + item.quantity)   
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
