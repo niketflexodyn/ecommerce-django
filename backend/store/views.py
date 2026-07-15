@@ -3,8 +3,8 @@
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models import Product, Category
-from .serializers import ProductSerializer, CategorySerializer  
+from .models import Product, Category, Cart, CartItem
+from .serializers import ProductSerializer, CategorySerializer, CartSerializer, CartItemSerializer  
 
 @api_view(["GET"])
 def get_products(request):
@@ -31,3 +31,16 @@ def get_categories(request):
     categories = Category.objects.all()
     serializer = CategorySerializer(categories, many=True)
     return Response(serializer.data);
+
+@api_view(["GET"])
+def get_cart(request):
+    cart = Cart.objects.get(user=request.user)
+    serializer = CartSerializer(cart)
+    return Response(serializer.data)
+
+@api_view(["POST"])
+def add_to_cart(request):
+    product_id = request.data.get('product_id')
+    quantity = request.data.get('quantity', 1)
+    product = Product.objects.get(id=product_id)
+    cart, created = Cart.objects.get_or_create(user=request.user)
