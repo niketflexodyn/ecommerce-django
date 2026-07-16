@@ -29,6 +29,17 @@ class User(AbstractUser):
         blank=True,
     )
 
+    def save(self, *args, **kwargs):
+        # Keep role in sync with is_staff / is_superuser
+        # so createsuperuser and Django admin always get the right role
+        if self.is_superuser:
+            self.role = "super_admin"
+        elif self.is_staff:
+            # Only promote; never downgrade an explicit admin role
+            if self.role not in ("admin", "super_admin"):
+                self.role = "admin"
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.username
 
@@ -40,6 +51,13 @@ class User(AbstractUser):
 class Category(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_categories",
+    )
 
     def __str__(self):
         return self.name
@@ -79,6 +97,14 @@ class Product(models.Model):
         auto_now=True,
     )
 
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_products",
+    )
+
     def __str__(self):
         return self.name
 
@@ -89,10 +115,21 @@ class Product(models.Model):
 
 class Order(models.Model):
 
+    STATUS_CHOICES = (
+        ("successful", "Successful"),
+        ("unsuccessful", "Unsuccessful"),
+    )
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="orders",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="successful",
     )
 
     created_at = models.DateTimeField(

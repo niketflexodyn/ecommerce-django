@@ -1,13 +1,25 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+const fontDisplay = { fontFamily: "'Playfair Display', serif" }
+const fontBody = { fontFamily: "'Jost', sans-serif" }
 
 export default function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const registered = location.state?.registered
+
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -16,75 +28,98 @@ export default function Login() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    console.log(formData);
+    setLoading(true);
 
-    // POST /api/login/
-    // Backend returns role:
-    // customer -> navigate("/")
-    // admin -> navigate("/admin")
-    // super_admin -> navigate("/super-admin")
+    try {
+      const user = await login(formData.username, formData.password);
+      // Navigate based on role
+      if (user?.role === "admin" || user?.role === "super_admin") {
+        navigate("/dashboard");
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      setError(err.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="page-container py-12">
-      <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl bg-white shadow-xl">
+      <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl bg-white shadow-xl" style={fontBody}>
 
         <div className="grid lg:grid-cols-2">
 
           {/* Left */}
-          <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-10 text-white">
-
-            <p className="text-sm uppercase tracking-[4px]">
+          <div
+            className="p-10 text-white"
+            style={{ background: 'linear-gradient(135deg, #2A1A2C 0%, #3D2136 55%, #4A2536 100%)' }}
+          >
+            <p className="text-sm uppercase tracking-[4px] text-[#E8C766]">
               MyStore
             </p>
 
-            <h1 className="mt-5 text-4xl font-bold">
+            <h1 className="mt-5 text-4xl font-bold" style={fontDisplay}>
               Welcome Back
             </h1>
 
-            <p className="mt-4 text-white/80">
+            <p className="mt-4 text-white/70">
               Sign in to continue shopping, manage your orders,
               or access your dashboard.
             </p>
 
-            <div className="mt-10 space-y-4">
+            <div className="mt-10 space-y-4 text-white/80">
               <p>✓ Secure Login</p>
               <p>✓ Fast Checkout</p>
               <p>✓ Order Tracking</p>
               <p>✓ Personalized Experience</p>
             </div>
-
           </div>
 
           {/* Right */}
           <div className="p-10">
 
-            <h2 className="text-3xl font-bold text-slate-800">
+            <h2 className="text-3xl font-bold text-slate-800" style={fontDisplay}>
               Login
             </h2>
+
+            {error && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            {registered && !error && (
+              <div className="mt-4 rounded-xl border border-[#C9A227]/30 bg-[#E8C766]/10 px-4 py-3 text-sm text-[#8a6d1f]">
+                Account created successfully! Please sign in.
+              </div>
+            )}
 
             <form
               onSubmit={handleSubmit}
               className="mt-8 space-y-6"
             >
               <div>
-                <label>Email</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Username</label>
 
                 <input
-                  type="email"
-                  name="email"
+                  type="text"
+                  name="username"
                   className="input-field"
-                  placeholder="john@example.com"
-                  value={formData.email}
+                  placeholder="johndoe"
+                  value={formData.username}
                   onChange={handleChange}
+                  required
                 />
               </div>
 
               <div>
-                <label>Password</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
 
                 <div className="relative">
 
@@ -95,6 +130,7 @@ export default function Login() {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
+                    required
                   />
 
                   <button
@@ -102,7 +138,7 @@ export default function Login() {
                     onClick={() =>
                       setShowPassword(!showPassword)
                     }
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-sm"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-500"
                   >
                     {showPassword ? "Hide" : "Show"}
                   </button>
@@ -110,19 +146,13 @@ export default function Login() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-indigo-600"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
-
               <button
-                className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-500"
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ backgroundColor: '#E8C766' }}
               >
-                Login
+                {loading ? "Signing in..." : "Login"}
               </button>
 
             </form>
@@ -131,7 +161,7 @@ export default function Login() {
               Don't have an account?{" "}
               <Link
                 to="/register"
-                className="font-semibold text-indigo-600"
+                className="font-semibold text-[#8a6d1f] transition hover:text-[#C9A227]"
               >
                 Register
               </Link>

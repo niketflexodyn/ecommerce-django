@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { formatPrice, getProductImageUrl } from '../utils/product'
 
+const fontDisplay = { fontFamily: "'Playfair Display', serif" }
+
 export default function ProductDetails() {
   const { id } = useParams()
   const { addToCart, cartItems } = useCart()
@@ -69,7 +71,7 @@ export default function ProductDetails() {
   return (
     <div className="page-container py-8 sm:py-12">
       <nav className="mb-6 text-sm text-slate-500">
-        <Link to="/" className="hover:text-indigo-600">Home</Link>
+        <Link to="/" className="transition hover:text-[#E8C766]">Home</Link>
         <span className="mx-2">/</span>
         <span className="text-slate-900">{product.name}</span>
       </nav>
@@ -88,13 +90,15 @@ export default function ProductDetails() {
 
           <div className="flex flex-col justify-center p-6 sm:p-10">
             {product.category?.name && (
-              <span className="mb-3 w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-600">
+              <span className="mb-3 w-fit rounded-full bg-[#E8C766]/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#8a6d1f]">
                 {product.category.name}
               </span>
             )}
-            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{product.name}</h1>
+            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl" style={fontDisplay}>
+              {product.name}
+            </h1>
             <p className="mt-4 leading-relaxed text-slate-600">{product.description}</p>
-            <p className="mt-6 text-3xl font-bold text-indigo-600">{formatPrice(product.price)}</p>
+            <p className="mt-6 text-3xl font-bold text-[#2A1A2C]">{formatPrice(product.price)}</p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <button type="button" onClick={handleAddToCart} className="btn-primary min-w-[160px]">
@@ -104,9 +108,9 @@ export default function ProductDetails() {
             </div>
 
             <ul className="mt-8 space-y-2 border-t border-slate-100 pt-6 text-sm text-slate-500">
-              <li>✓ Free delivery on orders over ₹999</li>
+              <li>✓ Free delivery on orders over $50</li>
               <li>✓ Secure checkout</li>
-              <li>✓ 7-day easy returns</li>
+              <li>✓ 30-day easy returns</li>
             </ul>
           </div>
         </div>

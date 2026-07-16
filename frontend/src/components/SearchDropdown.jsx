@@ -8,9 +8,9 @@ export default function SearchDropdown({ query, onSelect }) {
   if (!query.trim()) return null
 
   return (
-    <div className="absolute left-0 right-0 top-full mt-2 z-50 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+    <div className="absolute left-0 right-0 top-full mt-2 z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
       {loading && (
-        <p className="px-4 py-3 text-sm text-gray-500">Searching...</p>
+        <p className="px-4 py-3 text-sm text-slate-500">Searching...</p>
       )}
 
       {error && (
@@ -18,7 +18,7 @@ export default function SearchDropdown({ query, onSelect }) {
       )}
 
       {!loading && !error && results.length === 0 && (
-        <p className="px-4 py-3 text-sm text-gray-500">No products found.</p>
+        <p className="px-4 py-3 text-sm text-slate-500">No products found.</p>
       )}
 
       {!loading && results.length > 0 && (
@@ -28,7 +28,7 @@ export default function SearchDropdown({ query, onSelect }) {
               <Link
                 to={`/product/${product.id}`}
                 onClick={onSelect}
-                className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors"
               >
                 {getProductImageUrl(product.image) ? (
                   <img
@@ -37,10 +37,10 @@ export default function SearchDropdown({ query, onSelect }) {
                     className="size-10 rounded-md object-cover shrink-0"
                   />
                 ) : (
-                  <div className="size-10 rounded-md bg-gray-100 shrink-0" />
+                  <div className="size-10 rounded-md bg-slate-100 shrink-0" />
                 )}
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
+                  <p className="text-sm font-medium text-slate-900 truncate">{product.name}</p>
                   <p className="text-xs text-slate-500">{formatPrice(product.price)}</p>
                 </div>
               </Link>
@@ -53,7 +53,7 @@ export default function SearchDropdown({ query, onSelect }) {
         <Link
           to={`/search?q=${encodeURIComponent(query.trim())}`}
           onClick={onSelect}
-          className="block border-t border-gray-100 px-4 py-2.5 text-center text-sm font-medium text-indigo-600 hover:bg-gray-50"
+          className="block border-t border-slate-100 px-4 py-2.5 text-center text-sm font-medium text-[#8a6d1f] hover:bg-slate-50"
         >
           View all results
         </Link>

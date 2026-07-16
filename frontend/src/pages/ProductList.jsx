@@ -11,7 +11,7 @@ const SORT_OPTIONS = [
   { value: 'name-asc', label: 'Name: A to Z' },
 ]
 
-export default function ProductList() {
+export default function ProductList({ hideBanner = false }) {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -112,7 +112,8 @@ export default function ProductList() {
 
   return (
     <div>
-      {/* Banner */}
+      {/* Banner — hidden on homepage where Hero provides the banner */}
+      {!hideBanner && (
       <section
         className="relative overflow-hidden text-white"
         style={{
@@ -187,9 +188,10 @@ export default function ProductList() {
           </div>
         </div>
       </section>
+      )}
 
       {/* Category filter strip — offset below the sticky Navbar (adjust top-16 if your navbar height differs) */}
-      <section className="sticky top-16 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <section className="sticky top-16 z-10 border-b border-slate-200/80 border-b-[#E8C766]/20 bg-white/95 backdrop-blur">
         <div className="page-container">
           <div className="flex items-center justify-between gap-4 py-4">
             <div className="flex gap-2 overflow-x-auto">
@@ -198,7 +200,7 @@ export default function ProductList() {
                 className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${
                   selectedCategory === 'all'
                     ? 'bg-[#2A1A2C] text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-[#E8C766]/10 text-[#8a6d1f] hover:bg-[#E8C766]/20'
                 }`}
               >
                 All
@@ -215,7 +217,7 @@ export default function ProductList() {
                       className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${
                         selectedCategory === category.slug
                           ? 'bg-[#2A1A2C] text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          : 'bg-[#E8C766]/10 text-[#8a6d1f] hover:bg-[#E8C766]/20'
                       }`}
                     >
                       {category.name}
@@ -251,6 +253,7 @@ export default function ProductList() {
             <h2 className="text-2xl font-bold text-slate-900" style={fontDisplay}>
               {activeCategory ? activeCategory.name : 'All Products'}
             </h2>
+            <div className="mt-2 h-1 w-12 rounded-full bg-[#E8C766]" />
             <p className="mt-1 text-sm text-slate-500">
               {loading
                 ? 'Loading...'

@@ -1,9 +1,14 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 import { formatPrice, getProductImageUrl } from '../utils/product'
+
+const fontDisplay = { fontFamily: "'Playfair Display', serif" }
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity } = useCart()
+  const { user } = useAuth()
+  const navigate = useNavigate()
 
   const total = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
@@ -11,7 +16,7 @@ export default function CartPage() {
   return (
     <div className="page-container py-8 sm:py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Shopping Cart</h1>
+        <h1 className="text-3xl font-bold text-slate-900" style={fontDisplay}>Shopping Cart</h1>
         <p className="mt-1 text-sm text-slate-500">
           {totalItems} {totalItems === 1 ? 'item' : 'items'} in your cart
         </p>
@@ -22,7 +27,7 @@ export default function CartPage() {
           <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-slate-100 text-2xl text-slate-400">
             🛍
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-slate-900">Your cart is empty</h2>
+          <h2 className="mt-4 text-lg font-semibold text-slate-900" style={fontDisplay}>Your cart is empty</h2>
           <p className="mt-2 text-sm text-slate-500">Add products to get started.</p>
           <Link to="/" className="btn-primary mt-6">Continue Shopping</Link>
         </div>
@@ -42,11 +47,11 @@ export default function CartPage() {
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <Link to={`/product/${item.id}`} className="text-lg font-semibold text-slate-900 hover:text-indigo-600">
+                    <Link to={`/product/${item.id}`} className="text-lg font-semibold text-slate-900 transition hover:text-[#2A1A2C]">
                       {item.name}
                     </Link>
                     <p className="mt-1 text-sm text-slate-500">{formatPrice(item.price)} each</p>
-                    <p className="mt-2 font-semibold text-indigo-600">
+                    <p className="mt-2 font-semibold text-[#2A1A2C]">
                       {formatPrice(Number(item.price) * item.quantity)}
                     </p>
                   </div>
@@ -56,7 +61,7 @@ export default function CartPage() {
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="flex size-8 items-center justify-center rounded-lg hover:bg-white"
+                        className="flex size-8 items-center justify-center rounded-lg hover:bg-white text-slate-600"
                       >
                         −
                       </button>
@@ -64,7 +69,8 @@ export default function CartPage() {
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-white hover:bg-indigo-500"
+                        className="flex size-8 items-center justify-center rounded-lg text-lg font-medium text-white transition hover:opacity-90"
+                        style={{ backgroundColor: '#2A1A2C' }}
                       >
                         +
                       </button>
@@ -83,7 +89,7 @@ export default function CartPage() {
           </div>
 
           <aside className="card h-fit p-6 lg:sticky lg:top-24">
-            <h2 className="text-lg font-bold text-slate-900">Order Summary</h2>
+            <h2 className="text-lg font-bold text-slate-900" style={fontDisplay}>Order Summary</h2>
             <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between text-slate-600">
                 <dt>Subtotal ({totalItems} items)</dt>
@@ -91,19 +97,30 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between text-slate-600">
                 <dt>Shipping</dt>
-                <dd className="font-medium text-emerald-600">{total >= 999 ? 'Free' : formatPrice(99)}</dd>
+                <dd className="font-medium text-[#8a6d1f]">{total >= 50 ? 'Free' : formatPrice(9.99)}</dd>
               </div>
             </dl>
             <div className="mt-4 border-t border-slate-100 pt-4">
               <div className="flex justify-between text-lg font-bold text-slate-900">
                 <span>Total</span>
-                <span>{formatPrice(total >= 999 ? total : total + 99)}</span>
+                <span>{formatPrice(total >= 50 ? total : total + 9.99)}</span>
               </div>
             </div>
-            <button type="button" className="btn-primary mt-6 w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700">
+            <button
+              type="button"
+              onClick={() => {
+                if (!user) {
+                  navigate('/login')
+                } else {
+                  navigate('/checkout')
+                }
+              }}
+              className="mt-6 w-full rounded-xl py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90 active:opacity-80"
+              style={{ backgroundColor: '#E8C766' }}
+            >
               Proceed to Checkout
             </button>
-            <Link to="/" className="btn-secondary mt-3 w-full">Continue Shopping</Link>
+            <Link to="/" className="btn-secondary mt-3 w-full text-center">Continue Shopping</Link>
           </aside>
         </div>
       )}

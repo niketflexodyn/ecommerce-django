@@ -7,30 +7,69 @@ import Login from './pages/Login'
 import SearchResults from './components/SearchResults'
 import CartPage from './pages/CartPage'
 import Hero from './components/Hero'
+import FeaturesStrip from './components/FeaturesStrip'
 import Register from './pages/Register'
+import Checkout from './pages/Checkout'
+import OrderSuccess from './pages/OrderSuccess'
+import OrderHistory from './pages/OrderHistory'
+import BackToTop from './components/BackToTop'
+import AdminRoute from './components/AdminRoute'
+import AdminLayout from './components/admin/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminProducts from './pages/admin/AdminProducts'
+import AdminCategories from './pages/admin/AdminCategories'
+import AdminOrders from './pages/admin/AdminOrders'
 
 export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar />
-      <main className="flex-1">
-        <Routes>
-          <Route path='/' element={
+      <Routes>
+        {/* Admin dashboard routes — separate layout, no Navbar/Footer */}
+        <Route
+          path="/dashboard"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route path="orders" element={<AdminOrders />} />
+        </Route>
+
+        {/* Customer-facing routes — with Navbar/Footer */}
+        <Route
+          path="*"
+          element={
             <>
-            <Hero />
-            <ProductList />
+              <Navbar />
+              <main className="flex-1">
+                <Routes>
+                  <Route path='/' element={
+                    <>
+                      <Hero />
+                      <FeaturesStrip />
+                      <ProductList hideBanner />
+                    </>
+                  } />
+                  <Route path="/product/:id" element={<ProductDetails />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/search" element={<SearchResults />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path='/register' element={<Register />} />
+                  <Route path='/checkout' element={<Checkout />} />
+                  <Route path='/order-success' element={<OrderSuccess />} />
+                  <Route path='/orders' element={<OrderHistory />} />
+                </Routes>
+              </main>
+              <Footer />
+              <BackToTop />
             </>
-        } />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/login/:role" element={<Login />} />
-          <Route path="/search" element={<SearchResults />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path='/register' element={<Register />} />
-          
-          
-        </Routes>
-      </main>
-      <Footer />
+          }
+        />
+      </Routes>
     </div>
   )
 }
