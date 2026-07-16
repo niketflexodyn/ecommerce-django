@@ -1,123 +1,116 @@
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useCart } from "../context/CartContext";
+import { useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { useCart } from '../context/CartContext'
+import { formatPrice, getProductImageUrl } from '../utils/product'
 
 export default function ProductDetails() {
-  const { id } = useParams();
-  const { addToCart } = useCart();
+  const { id } = useParams()
+  const { addToCart, cartItems } = useCart()
+  const [product, setProduct] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [added, setAdded] = useState(false)
 
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const BASE_URL = import.meta.env.VITE_DJANGO_URL;
+  const BASE_URL = import.meta.env.VITE_DJANGO_URL
+  const inCart = cartItems.some((item) => item.id === Number(id))
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`${BASE_URL}/api/products/${id}/`);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch product.");
-        }
-
-        const data = await response.json();
-        setProduct(data);
+        const response = await fetch(`${BASE_URL}/api/products/${id}/`)
+        if (!response.ok) throw new Error('Failed to fetch product.')
+        const data = await response.json()
+        setProduct(data)
       } catch (err) {
-        setError(err.message);
+        setError(err.message)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
+    fetchProduct()
+  }, [id, BASE_URL])
 
-    fetchProduct();
-  }, [id, BASE_URL]);
+  const handleAddToCart = () => {
+    addToCart(product)
+    setAdded(true)
+    setTimeout(() => setAdded(false), 2000)
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gray-100">
-        <h2 className="text-2xl font-semibold animate-pulse">
-          Loading Product...
-        </h2>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex justify-center items-center bg-gray-100">
-        <div className="bg-red-100 text-red-700 px-6 py-4 rounded-lg shadow">
-          <h2 className="text-xl font-bold">Error</h2>
-          <p>{error}</p>
+      <div className="page-container py-16">
+        <div className="card mx-auto max-w-4xl animate-pulse p-8">
+          <div className="grid gap-8 md:grid-cols-2">
+            <div className="h-96 rounded-xl bg-slate-100" />
+            <div className="space-y-4">
+              <div className="h-8 w-2/3 rounded bg-slate-100" />
+              <div className="h-4 w-full rounded bg-slate-100" />
+              <div className="h-4 w-4/5 rounded bg-slate-100" />
+            </div>
+          </div>
         </div>
       </div>
-    );
+    )
   }
 
-  if (!product) {
+  if (error || !product) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gray-100">
-        <h2 className="text-2xl font-semibold">
-          Product not found
-        </h2>
+      <div className="page-container py-16">
+        <div className="card mx-auto max-w-md p-8 text-center">
+          <h2 className="text-lg font-semibold text-slate-900">{error || 'Product not found'}</h2>
+          <Link to="/" className="btn-primary mt-4">Back to Shop</Link>
+        </div>
       </div>
-    );
+    )
   }
+
+  const imageUrl = getProductImageUrl(product.image)
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
-      <div className="max-w-6xl mx-auto px-4">
+    <div className="page-container py-8 sm:py-12">
+      <nav className="mb-6 text-sm text-slate-500">
+        <Link to="/" className="hover:text-indigo-600">Home</Link>
+        <span className="mx-2">/</span>
+        <span className="text-slate-900">{product.name}</span>
+      </nav>
 
-        <Link
-          to="/"
-          className="inline-block mb-8 text-blue-600 hover:text-blue-800 font-medium"
-        >
-          ← Back to Products
-        </Link>
-
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="grid md:grid-cols-2 gap-8">
-
-            {/* Product Image */}
-            <div>
-              <img
-                src={
-                  product.image?.startsWith("http")
-                    ? product.image
-                    : `${BASE_URL}${product.image}`
-                }
-                alt={product.name}
-                className="w-full h-[500px] object-cover"
-              />
-            </div>
-
-            {/* Product Info */}
-            <div className="p-8 flex flex-col justify-center">
-              <h1 className="text-4xl font-bold text-gray-800">
-                {product.name}
-              </h1>
-
-              <p className="text-gray-600 mt-5 leading-7">
-                {product.description}
-              </p>
-
-              <div className="mt-8">
-                <span className="text-4xl font-bold text-green-600">
-                  ${product.price}
-                </span>
+      <div className="card overflow-hidden">
+        <div className="grid md:grid-cols-2">
+          <div className="bg-slate-50 p-4 sm:p-6">
+            {imageUrl ? (
+              <img src={imageUrl} alt={product.name} className="h-72 w-full rounded-xl object-cover sm:h-[28rem]" />
+            ) : (
+              <div className="flex h-72 items-center justify-center rounded-xl bg-slate-100 text-slate-400 sm:h-[28rem]">
+                No image available
               </div>
+            )}
+          </div>
 
-              <button
-                onClick={() => addToCart(product)}
-                className="mt-8 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-semibold transition duration-200 w-full md:w-fit"
-              >
-                🛒 Add to Cart
+          <div className="flex flex-col justify-center p-6 sm:p-10">
+            {product.category?.name && (
+              <span className="mb-3 w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-600">
+                {product.category.name}
+              </span>
+            )}
+            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{product.name}</h1>
+            <p className="mt-4 leading-relaxed text-slate-600">{product.description}</p>
+            <p className="mt-6 text-3xl font-bold text-indigo-600">{formatPrice(product.price)}</p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button type="button" onClick={handleAddToCart} className="btn-primary min-w-[160px]">
+                {added ? 'Added!' : inCart ? 'Add Another' : 'Add to Cart'}
               </button>
+              <Link to="/cart" className="btn-secondary">View Cart</Link>
             </div>
 
+            <ul className="mt-8 space-y-2 border-t border-slate-100 pt-6 text-sm text-slate-500">
+              <li>✓ Free delivery on orders over ₹999</li>
+              <li>✓ Secure checkout</li>
+              <li>✓ 7-day easy returns</li>
+            </ul>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react'
 
 const BASE_URL = import.meta.env.VITE_DJANGO_URL
 
-export function getProductImageUrl(image) {
-  if (!image) return null
-  return image.startsWith('http') ? image : `${BASE_URL}${image}`
-}
+export { getProductImageUrl } from '../utils/product'
 
 export function useProductSearch(query, debounceMs = 200) {
   const [results, setResults] = useState([])

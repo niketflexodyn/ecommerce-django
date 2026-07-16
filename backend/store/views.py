@@ -63,6 +63,15 @@ def add_to_cart(request):
     item.save()
     return Response({'message': 'Item added to cart', 'cart': CartSerializer(cart).data}, status=200)
 
+@api_view(["PUT"])
+def update_cart(request, pk):
+    if not request.user.is_authenticated:
+        return Response({'error': 'Login required to update cart'}, status=401)
+    item_id = request.data.get('item_id')
+    quantity = int(request.data.get('quantity', 1))
+    CartItem.objects.filter(id=item_id).update(quantity=quantity)
+    return Response({'message': 'Item updated in cart'}, status=200)
+
 @api_view(["DELETE"])
 def remove_from_cart(request, pk):
     item_id = request.data.get('item_id')

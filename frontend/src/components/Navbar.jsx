@@ -49,9 +49,7 @@ function CartIcon({ className }) {
 }
 
 const navLinks = [
-  { name: 'Home', to: '/' },
-  { name: 'About', to: '/about' },
-  { name: 'Products', to: '/' },
+  { name: 'Shop', to: '/' },
 ]
 
 const loginOptions = [
@@ -87,7 +85,7 @@ export default function Navbar() {
     }`
 
   return (
-    <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
       <nav className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-6 px-4 py-3.5 sm:px-6 lg:px-8">
         {/* Left: Logo */}
         <Link to="/" className="flex items-center gap-2 text-xl font-bold text-indigo-600 shrink-0">

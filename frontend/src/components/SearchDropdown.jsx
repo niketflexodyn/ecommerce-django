@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { getProductImageUrl, useProductSearch } from '../hooks/useProductSearch'
+import { formatPrice } from '../utils/product'
 
 export default function SearchDropdown({ query, onSelect }) {
   const { results, loading, error } = useProductSearch(query)
@@ -40,7 +41,7 @@ export default function SearchDropdown({ query, onSelect }) {
                 )}
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
-                  <p className="text-xs text-gray-500">${product.price}</p>
+                  <p className="text-xs text-slate-500">{formatPrice(product.price)}</p>
                 </div>
               </Link>
             </li>
