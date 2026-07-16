@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import SearchDropdown from './SearchDropdown'
+import { useCart } from '../context/CartContext'
 
 function MenuIcon({ className }) {
   return (
@@ -35,10 +36,22 @@ function SearchIcon({ className }) {
   )
 }
 
+function CartIcon({ className }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.936-4.708 2.436-7.18.075-.37-.221-.7-.598-.7H5.106M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+      />
+    </svg>
+  )
+}
+
 const navLinks = [
   { name: 'Home', to: '/' },
   { name: 'About', to: '/about' },
-  { name: 'Products', to: '/products' },
+  { name: 'Products', to: '/' },
 ]
 
 const loginOptions = [
@@ -47,8 +60,8 @@ const loginOptions = [
 ]
 
 export default function Navbar() {
-  const {cartItems} = useCart();
-  const cartCount = cartItems.reduce((totat,item) => total + item.quantity)   
+  const { cartItems } = useCart()
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0)
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -78,7 +91,7 @@ export default function Navbar() {
       <nav className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-6 px-4 py-3.5 sm:px-6 lg:px-8">
         {/* Left: Logo */}
         <Link to="/" className="flex items-center gap-2 text-xl font-bold text-indigo-600 shrink-0">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-white text-sm">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-white text-sm font-black">
             M
           </span>
           MyStore
@@ -93,7 +106,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Right: Search + Login */}
+        {/* Right: Search + Cart + Login */}
         <div className="hidden md:flex md:items-center md:gap-3 shrink-0">
           <form onSubmit={handleSearchSubmit} className="w-52 lg:w-64">
             <div className="group relative">
@@ -108,6 +121,19 @@ export default function Navbar() {
               <SearchDropdown query={searchQuery} onSelect={clearSearch} />
             </div>
           </form>
+
+          <Link
+            to="/cart"
+            aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
+            className="relative flex size-9 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 hover:text-indigo-600 active:bg-gray-200 transition-colors"
+          >
+            <CartIcon className="size-5" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
+          </Link>
 
           <Menu as="div" className="relative shrink-0">
             <MenuButton className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 active:bg-indigo-700 transition-colors whitespace-nowrap">
@@ -135,15 +161,29 @@ export default function Navbar() {
           </Menu>
         </div>
 
-        {/* Mobile hamburger */}
-        <button
-          type="button"
-          className="md:hidden col-start-3 justify-self-end rounded-md p-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <CloseIcon className="size-6" /> : <MenuIcon className="size-6" />}
-        </button>
+        {/* Mobile: cart + hamburger */}
+        <div className="md:hidden col-start-3 flex items-center justify-self-end gap-1">
+          <Link
+            to="/cart"
+            aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
+            className="relative flex size-9 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          >
+            <CartIcon className="size-5" />
+            {cartCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-white">
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
+          </Link>
+          <button
+            type="button"
+            className="rounded-md p-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <CloseIcon className="size-6" /> : <MenuIcon className="size-6" />}
+          </button>
+        </div>
       </nav>
 
       {/* Search bar - mobile, its own full-width row, always visible */}
