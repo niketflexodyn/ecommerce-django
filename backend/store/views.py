@@ -26,6 +26,7 @@ def get_product(request, pk):
     except Product.DoesNotExist:
         return Response({'error': 'Product Not Found'}, status=404)
 
+
 @api_view(["GET"])
 def get_categories(request):
     categories = Category.objects.all()
@@ -77,3 +78,5 @@ def remove_from_cart(request, pk):
     item_id = request.data.get('item_id')
     CartItem.objects.filter(id=item_id).delete()
     return Response({'message': 'Item removed from cart'}, status=200)
+    
+    
