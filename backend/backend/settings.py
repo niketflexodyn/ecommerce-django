@@ -30,6 +30,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = "store.User"
 
 # Application definition
 
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'store',
+    'rest_framework_simplejwt'
 ]
 
 MIDDLEWARE = [
@@ -130,7 +132,21 @@ USE_I18N = True
 
 USE_TZ = True
 
+REST_FRAMEWORK = {
 
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+
+    ),
+
+    "DEFAULT_PERMISSION_CLASSES": (
+
+        "rest_framework.permissions.AllowAny",
+
+    )
+
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
