@@ -121,7 +121,7 @@ export default function Hero() {
               </Link>
 
               <Link
-                to="/categories"
+                to="/"
                 className="rounded-full border border-white/30 px-8 py-4 font-semibold text-white transition hover:border-white hover:bg-white/10"
               >
                 Browse Categories

@@ -4,6 +4,9 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import SearchDropdown from './SearchDropdown'
 import { useCart } from '../context/CartContext'
 
+const fontDisplay = { fontFamily: "'Playfair Display', serif" }
+const fontBody = { fontFamily: "'Jost', sans-serif" }
+
 function MenuIcon({ className }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -79,20 +82,28 @@ export default function Navbar() {
 
   const navLinkClasses = ({ isActive }) =>
     `relative text-sm font-medium whitespace-nowrap py-1 transition-colors ${
-      isActive ? 'text-indigo-600' : 'text-gray-700 hover:text-indigo-600'
-    } after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-indigo-600 after:transition-all ${
+      isActive ? 'text-[#2A1A2C]' : 'text-slate-600 hover:text-[#2A1A2C]'
+    } after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-[#E8C766] after:transition-all ${
       isActive ? 'after:w-full' : 'after:w-0 hover:after:w-full'
     }`
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+    <header
+      className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md"
+      style={fontBody}
+    >
       <nav className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-6 px-4 py-3.5 sm:px-6 lg:px-8">
         {/* Left: Logo */}
-        <Link to="/" className="flex items-center gap-2 text-xl font-bold text-indigo-600 shrink-0">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-white text-sm font-black">
+        <Link to="/" className="flex items-center gap-2 shrink-0">
+          <span
+            className="flex size-8 items-center justify-center rounded-lg text-sm font-black text-[#2A1A2C]"
+            style={{ backgroundColor: '#E8C766' }}
+          >
             M
           </span>
-          MyStore
+          <span className="text-xl font-bold text-[#2A1A2C]" style={fontDisplay}>
+            MyStore
+          </span>
         </Link>
 
         {/* Center: Nav links, truly centered */}
@@ -108,13 +119,13 @@ export default function Navbar() {
         <div className="hidden md:flex md:items-center md:gap-3 shrink-0">
           <form onSubmit={handleSearchSubmit} className="w-52 lg:w-64">
             <div className="group relative">
-              <SearchIcon className="size-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-indigo-500" />
+              <SearchIcon className="size-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-[#C9A227]" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
-                className="w-full rounded-full border border-gray-200 bg-gray-100 pl-9 pr-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400 focus:bg-white transition-colors"
+                className="w-full rounded-full border border-slate-200 bg-slate-100 pl-9 pr-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C766]/50 focus:border-[#C9A227] focus:bg-white transition-colors"
               />
               <SearchDropdown query={searchQuery} onSelect={clearSearch} />
             </div>
@@ -123,34 +134,42 @@ export default function Navbar() {
           <Link
             to="/cart"
             aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
-            className="relative flex size-9 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 hover:text-indigo-600 active:bg-gray-200 transition-colors"
+            className="relative flex size-9 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-[#2A1A2C] active:bg-slate-200 transition-colors"
           >
             <CartIcon className="size-5" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
+              <span
+                className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none text-[#2A1A2C] ring-2 ring-white"
+                style={{ backgroundColor: '#E8C766' }}
+              >
                 {cartCount > 99 ? '99+' : cartCount}
               </span>
             )}
           </Link>
 
           <Menu as="div" className="relative shrink-0">
-            <MenuButton className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 active:bg-indigo-700 transition-colors whitespace-nowrap">
+            <MenuButton
+              className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors whitespace-nowrap"
+              style={{ backgroundColor: '#2A1A2C' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3D2136')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#2A1A2C')}
+            >
               Login
               <ChevronDownIcon className="size-4" />
             </MenuButton>
             <MenuItems
               transition
-              className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-gray-200 focus:outline-none transition duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
+              className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-slate-200 focus:outline-none transition duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
             >
               <div className="p-1">
                 {loginOptions.map((option) => (
                   <MenuItem key={option.name}>
                     <Link
                       to={option.to}
-                      className="block rounded-lg px-4 py-3 hover:bg-gray-50 data-focus:bg-gray-50"
+                      className="block rounded-lg px-4 py-3 hover:bg-[#FBF6F0] data-focus:bg-[#FBF6F0]"
                     >
-                      <span className="block text-sm font-semibold text-gray-900">{option.name}</span>
-                      <span className="block text-xs text-gray-500 mt-0.5">{option.description}</span>
+                      <span className="block text-sm font-semibold text-slate-900">{option.name}</span>
+                      <span className="block text-xs text-slate-500 mt-0.5">{option.description}</span>
                     </Link>
                   </MenuItem>
                 ))}
@@ -164,18 +183,21 @@ export default function Navbar() {
           <Link
             to="/cart"
             aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
-            className="relative flex size-9 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+            className="relative flex size-9 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition-colors"
           >
             <CartIcon className="size-5" />
             {cartCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-white">
+              <span
+                className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-semibold leading-none text-[#2A1A2C] ring-2 ring-white"
+                style={{ backgroundColor: '#E8C766' }}
+              >
                 {cartCount > 99 ? '99+' : cartCount}
               </span>
             )}
           </Link>
           <button
             type="button"
-            className="rounded-md p-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+            className="rounded-md p-2 text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
           >
@@ -185,15 +207,15 @@ export default function Navbar() {
       </nav>
 
       {/* Search bar - mobile, its own full-width row, always visible */}
-      <div className="md:hidden border-t border-gray-100 px-4 py-2.5">
+      <div className="md:hidden border-t border-slate-100 px-4 py-2.5">
         <form onSubmit={handleSearchSubmit} className="relative">
-          <SearchIcon className="size-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <SearchIcon className="size-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search products..."
-            className="w-full rounded-full border border-gray-200 bg-gray-100 pl-9 pr-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400 focus:bg-white transition-colors"
+            className="w-full rounded-full border border-slate-200 bg-slate-100 pl-9 pr-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8C766]/50 focus:border-[#C9A227] focus:bg-white transition-colors"
           />
           <SearchDropdown query={searchQuery} onSelect={clearSearch} />
         </form>
@@ -201,7 +223,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       <div
-        className={`md:hidden overflow-hidden border-t border-gray-200 transition-[max-height] duration-300 ease-in-out ${
+        className={`md:hidden overflow-hidden border-t border-slate-200 transition-[max-height] duration-300 ease-in-out ${
           mobileOpen ? 'max-h-96' : 'max-h-0 border-t-0'
         }`}
       >
@@ -214,21 +236,21 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
                 `block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50'
+                  isActive ? 'bg-[#FBF6F0] text-[#2A1A2C]' : 'text-slate-700 hover:bg-slate-50'
                 }`
               }
             >
               {link.name}
             </NavLink>
           ))}
-          <div className="pt-3 mt-3 border-t border-gray-200">
-            <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Login as</p>
+          <div className="pt-3 mt-3 border-t border-slate-200">
+            <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Login as</p>
             {loginOptions.map((option) => (
               <Link
                 key={option.name}
                 to={option.to}
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 {option.name}
               </Link>

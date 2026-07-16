@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import SearchResults from './components/SearchResults'
 import CartPage from './pages/CartPage'
 import Hero from './components/Hero'
+import Register from './pages/Register'
 
 export default function App() {
   return (
@@ -24,8 +25,9 @@ export default function App() {
           <Route path="/login/:role" element={<Login />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path='/register' element={<Register />} />
           
-          Route
+          
         </Routes>
       </main>
       <Footer />
