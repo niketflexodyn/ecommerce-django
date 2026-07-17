@@ -177,6 +177,17 @@ export default function ProductDetails() {
               )}
             </div>
 
+            {/* Seller */}
+            <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
+              <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21V7.5m0 0 6.75-3.75v13.5M13.5 7.5l-6.75-3.75v13.5M6.75 17.25l6.75 3.75 6.75-3.75" />
+              </svg>
+              Sold by
+              <span className="font-medium text-slate-700">
+                {product.seller_name || 'Luxora Marketplace'}
+              </span>
+            </p>
+
             <p className="mt-4 leading-relaxed text-slate-600">{product.description}</p>
 
             {/* Price */}

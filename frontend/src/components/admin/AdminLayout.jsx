@@ -69,10 +69,12 @@ export default function AdminLayout() {
             className="flex size-8 items-center justify-center rounded-lg text-sm font-black text-[#2A1A2C]"
             style={{ backgroundColor: '#E8C766' }}
           >
-            M
+             <svg className="size-5 text-[#2A1A2C]" viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21V7.5m0 0 6.75-3.75v13.5M13.5 7.5l-6.75-3.75v13.5M6.75 17.25l6.75 3.75 6.75-3.75" />
+            </svg>
           </span>
           <span className="text-lg font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>
-            MyStore
+            Luxora
           </span>
           <span className="ml-auto rounded bg-[#E8C766]/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8C766]">
             Admin

@@ -1,5 +1,6 @@
 from decimal import Decimal
-from django.db.models import Sum, Q
+from django.db import IntegrityError, transaction
+from django.db.models import Sum, Q, Max
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -280,12 +281,27 @@ def checkout(request):
     if updated:
         user.save()
 
-    # Create order
-    order = Order.objects.create(
-        user=user,
-        total_amount=total,
-        status='successful',
-    )
+    # Create order — assign the next per-customer order_number (1, 2, 3, ...)
+    # Retry on the off chance of a unique-together collision under concurrent checkouts.
+    for _ in range(5):
+        last_number = (
+            Order.objects.filter(user=user).aggregate(
+                max_number=Max('order_number')
+            )['max_number']
+        ) or 0
+        try:
+            with transaction.atomic():
+                order = Order.objects.create(
+                    user=user,
+                    order_number=last_number + 1,
+                    total_amount=total,
+                    status='successful',
+                )
+            break
+        except IntegrityError:
+            continue
+    else:
+        return Response({'error': 'Could not create order, please try again.'}, status=500)
 
     # Create order items
     for item in cart_items:

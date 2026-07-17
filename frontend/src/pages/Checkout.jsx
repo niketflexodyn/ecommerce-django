@@ -39,7 +39,7 @@ export default function Checkout() {
         phone: form.phone,
       });
       clearCart();
-      navigate('/order-success', { state: { orderId: order.id, total: order.total_amount } });
+      navigate('/order-success', { state: { orderId: order.id, orderNumber: order.order_number, total: order.total_amount } });
     } catch (err) {
       setError(err.data?.error || err.data?.detail || 'Checkout failed. Please try again.');
     } finally {

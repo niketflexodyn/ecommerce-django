@@ -51,6 +51,7 @@ class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     average_rating = serializers.SerializerMethodField()
     rating_count = serializers.SerializerMethodField()
+    seller_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -64,6 +65,13 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_rating_count(self, obj):
         return obj.ratings.count()
+
+    def get_seller_name(self, obj):
+        seller = obj.created_by
+        if not seller:
+            return None
+        full = f"{seller.first_name} {seller.last_name}".strip()
+        return full or seller.username
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
@@ -205,7 +213,7 @@ class OrderListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'username', 'email', 'created_at', 'total_amount', 'items_count', 'status']
+        fields = ['id', 'order_number', 'username', 'email', 'created_at', 'total_amount', 'items_count', 'status']
 
     def get_items_count(self, obj):
         return obj.items.count()
@@ -223,7 +231,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id', 'username', 'email', 'first_name', 'last_name',
+            'id', 'order_number', 'username', 'email', 'first_name', 'last_name',
             'phone', 'address', 'created_at', 'total_amount', 'items', 'status',
         ]
 

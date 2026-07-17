@@ -66,6 +66,15 @@ function UserIcon(props) {
   )
 }
 
+function OrdersIcon(props) {
+  return (
+    <svg {...props} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8M8 11h8M8 15h5" />
+    </svg>
+  )
+}
+
 /* ─── Constants ──────────────────────────────────────────────────── */
 
 const ROLE_LABELS = {
@@ -137,7 +146,7 @@ export default function Navbar() {
       {/* Subtle gold accent line */}
       <div className="h-[2px] bg-gradient-to-r from-transparent via-[#E8C766]/60 to-transparent" />
 
-      <nav className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-6 px-4 py-3 sm:px-6 lg:px-8">
+      <nav className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-3 sm:px-6 lg:gap-8 lg:px-8">
         {/* ── Logo ─────────────────────────────── */}
         <Link to="/" className="group/logo flex items-center gap-2 shrink-0">
           <span
@@ -157,7 +166,7 @@ export default function Navbar() {
         </Link>
 
         {/* ── Center: Nav Links ────────────────── */}
-        <div className="hidden md:flex md:items-center md:justify-center md:gap-8">
+        <div className="hidden md:flex md:flex-1 md:items-center md:justify-center md:gap-8">
           {NAV_LINKS.map((link) => (
             <NavLink key={link.name} to={link.to} className={navLinkClass} end={link.to === '/'}>
               {link.name}
@@ -200,6 +209,17 @@ export default function Navbar() {
           </Link>
 
           {/* Auth */}
+          {user && (
+            <Link
+              to="/orders"
+              aria-label="My Orders"
+              title="My Orders"
+              className="relative flex size-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-[#2A1A2C]"
+            >
+              <OrdersIcon className="size-[18px]" />
+            </Link>
+          )}
+
           {user ? (
             <Menu as="div" className="relative shrink-0">
               <MenuButton className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 bg-[#2A1A2C] hover:bg-[#3D2136]">

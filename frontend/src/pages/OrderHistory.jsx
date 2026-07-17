@@ -151,7 +151,7 @@ export default function OrderHistory() {
                   className="flex w-full items-center justify-between px-6 py-4 text-left hover:bg-slate-50/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold text-[#2A1A2C]">#{order.id}</span>
+                    <span className="text-sm font-semibold text-[#2A1A2C]">#{order.order_number}</span>
                     <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusStyle.bg} ${statusStyle.text}`}>
                       {statusStyle.label}
                     </span>

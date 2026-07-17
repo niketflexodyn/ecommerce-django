@@ -14,8 +14,21 @@ export default function AdminCategories() {
   const [deleteInfo, setDeleteInfo] = useState(null);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   const [form, setForm] = useState({ name: '', slug: '' });
+
+  // A sensible starter set so admins can add products without first creating
+  // categories one by one. Created via the normal API, so they're owned by the
+  // logged-in admin and show up in the product dropdown.
+  const DEFAULT_CATEGORIES = [
+    'Fashion',
+    'Electronics',
+    'Home & Kitchen',
+    'Beauty & Health',
+    'Sports & Outdoors',
+    'Books',
+  ];
 
   const fetchCategories = () => {
     adminCategoryApi
@@ -83,6 +96,29 @@ export default function AdminCategories() {
     setDeleteInfo(cat);
   };
 
+  const handleAddDefaults = async () => {
+    setSeeding(true);
+    setError('');
+    const existing = new Set(categories.map((c) => c.name.toLowerCase()));
+    const toCreate = DEFAULT_CATEGORIES.filter((n) => !existing.has(n.toLowerCase()));
+
+    if (toCreate.length === 0) {
+      setError('All default categories already exist.');
+      setSeeding(false);
+      return;
+    }
+
+    try {
+      await Promise.all(toCreate.map((name) => adminCategoryApi.create({ name })));
+      fetchCategories();
+    } catch (err) {
+      setError(err.data?.detail || 'Some default categories could not be created.');
+      fetchCategories();
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -97,15 +133,32 @@ export default function AdminCategories() {
         title="Categories"
         subtitle="Manage product categories"
         action={
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#2A1A2C] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#3D2136] transition-colors"
-          >
-            <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Add Category
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleAddDefaults}
+              disabled={seeding}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+              title="Add a starter set of common categories"
+            >
+              <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3.75 12h16.5m-16.5 5.25h16.5M3.75 6.75h16.5"
+                />
+              </svg>
+              {seeding ? 'Adding...' : 'Add Default Categories'}
+            </button>
+            <button
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#2A1A2C] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#3D2136] transition-colors"
+            >
+              <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Add Category
+            </button>
+          </div>
         }
       />
 

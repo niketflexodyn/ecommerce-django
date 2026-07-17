@@ -6,6 +6,7 @@ const fontBody = { fontFamily: "'Jost', sans-serif" };
 export default function OrderSuccess() {
   const location = useLocation();
   const orderId = location.state?.orderId;
+  const orderNumber = location.state?.orderNumber;
   const total = location.state?.total;
 
   return (
@@ -26,9 +27,9 @@ export default function OrderSuccess() {
           Your order has been placed successfully.
         </p>
 
-        {orderId && (
+        {orderNumber && (
           <p className="mt-2 text-sm text-slate-500">
-            Order #{orderId}
+            Order #{orderNumber}
           </p>
         )}
 
