@@ -24,7 +24,7 @@ const DEALS = [
     gradient: 'from-[#3D2136]/90 via-[#3D2136]/60 to-transparent',
   },
   {
-    image: 'https://images.unsplash.com/photo-1556228578-0d85b1a18860?w=800',
+    image: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800',
     title: 'Home & Living',
     subtitle: 'Starting at $29',
     cta: 'Shop Home',
