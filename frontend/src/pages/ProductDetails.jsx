@@ -25,6 +25,10 @@ export default function ProductDetails() {
   const [productRatings, setProductRatings] = useState([])
   const [myRatingScore, setMyRatingScore] = useState(null)
 
+  // Image carousel state
+  const [current, setCurrent] = useState(0)
+  const [paused, setPaused] = useState(false)
+
   const BASE_URL = import.meta.env.VITE_DJANGO_URL
   const inCart = cartItems.some((item) => item.id === Number(id))
 
@@ -60,6 +64,27 @@ export default function ProductDetails() {
       }
     }).catch(() => {})
   }, [user, id])
+
+  // Build the image gallery: cover first, then any additional images.
+  // Guarded for the loading state (product is null then).
+  const gallery = product
+    ? [product.image, ...(product.images || [])].filter(Boolean).map(getProductImageUrl).filter(Boolean)
+    : []
+
+  // Reset to the first image when navigating to a different product.
+  useEffect(() => {
+    setCurrent(0)
+  }, [id])
+
+  // Auto-advance the carousel every 3s when there's more than one image
+  // and the customer isn't hovering over it.
+  useEffect(() => {
+    if (gallery.length <= 1 || paused) return
+    const timer = setInterval(() => {
+      setCurrent((c) => (c + 1) % gallery.length)
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [gallery.length, paused])
 
   const handleAddToCart = () => {
     if (!product || adding) return
@@ -123,7 +148,6 @@ export default function ProductDetails() {
     )
   }
 
-  const imageUrl = getProductImageUrl(product.image)
   const avgRating = product.average_rating
   const ratingCount = product.rating_count || productRatings.length
 
@@ -137,9 +161,87 @@ export default function ProductDetails() {
 
       <div className="card overflow-hidden">
         <div className="grid md:grid-cols-2">
-          <div className="bg-slate-50 p-4 sm:p-6">
-            {imageUrl ? (
-              <img src={imageUrl} alt={product.name} className="h-72 w-full rounded-xl object-cover sm:h-[28rem]" />
+          <div
+            className="bg-slate-50 p-4 sm:p-6"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+          >
+            {gallery.length > 0 ? (
+              <>
+                {/* Sliding carousel */}
+                <div className="relative overflow-hidden rounded-xl">
+                  <div
+                    className="flex transition-transform duration-500 ease-out"
+                    style={{ transform: `translateX(-${current * 100}%)` }}
+                  >
+                    {gallery.map((src, i) => (
+                      <img
+                        key={i}
+                        src={src}
+                        alt={product.name}
+                        className="h-72 w-full shrink-0 object-cover sm:h-[28rem]"
+                        draggable={false}
+                      />
+                    ))}
+                  </div>
+
+                  {gallery.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setCurrent((c) => (c - 1 + gallery.length) % gallery.length)}
+                        aria-label="Previous image"
+                        className="absolute left-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[#2A1A2C] shadow-sm transition hover:bg-white"
+                      >
+                        <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrent((c) => (c + 1) % gallery.length)}
+                        aria-label="Next image"
+                        className="absolute right-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[#2A1A2C] shadow-sm transition hover:bg-white"
+                      >
+                        <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {gallery.length > 1 && (
+                  <>
+                    <div className="mt-3 flex justify-center gap-1.5">
+                      {gallery.map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setCurrent(i)}
+                          aria-label={`Go to image ${i + 1}`}
+                          className={`h-2 rounded-full transition-all ${i === current ? 'w-6 bg-[#2A1A2C]' : 'w-2 bg-slate-300 hover:bg-slate-400'}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="mt-3 flex flex-wrap justify-center gap-2">
+                      {gallery.map((src, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setCurrent(i)}
+                          className={`overflow-hidden rounded-lg ring-2 transition ${i === current ? 'ring-[#C9A227]' : 'ring-transparent hover:ring-slate-300'}`}
+                        >
+                          <img src={src} alt="" className="h-14 w-14 object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-center text-xs text-slate-400">
+                      {current + 1} / {gallery.length}
+                    </p>
+                  </>
+                )}
+              </>
             ) : (
               <div className="flex h-72 items-center justify-center rounded-xl bg-slate-100 text-slate-400 sm:h-[28rem]">
                 <div className="text-center">
@@ -187,6 +289,17 @@ export default function ProductDetails() {
                 {product.seller_name || 'Luxora Marketplace'}
               </span>
             </p>
+
+            {/* Location */}
+            {product.location && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-sm text-slate-500">
+                <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                </svg>
+                <span className="font-medium text-slate-700">{product.location}</span>
+              </p>
+            )}
 
             <p className="mt-4 leading-relaxed text-slate-600">{product.description}</p>
 

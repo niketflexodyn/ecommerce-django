@@ -52,6 +52,7 @@ export default function App() {
           path="*"
           element={
             <>
+              <MarqueeStrip />
               <Navbar />
               <main className="flex-1">
                 <Routes>
@@ -59,10 +60,10 @@ export default function App() {
                     <>
                       <Hero />
                       <FeaturesStrip />
+                      <ProductList hideBanner />
                       <PromoCarousel />
                       <AboutStory />
-                      <MarqueeStrip />
-                      <ProductList hideBanner />
+                      
                     </>
                   } />
                   <Route path="/product/:id" element={<ProductDetails />} />

@@ -55,18 +55,31 @@ export const productApi = {
 // Admin Products (scoped to created_by)
 // -------------------------
 
+// Build multipart FormData from a data object. Arrays (e.g. a list of File
+// objects under the `images` key) are appended once per item so the backend
+// can read them with request.data.getlist('images'); scalars are appended as-is.
+function toFormData(data) {
+  const formData = new FormData();
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === '') return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (item !== null && item !== undefined && item !== '') formData.append(key, item);
+      });
+    } else {
+      formData.append(key, value);
+    }
+  });
+  return formData;
+}
+
 export const adminProductApi = {
   list(params = {}) {
     const query = new URLSearchParams(params).toString();
     return request(`/admin/products/${query ? '?' + query : ''}`);
   },
   create(data) {
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        formData.append(key, value);
-      }
-    });
+    const formData = toFormData(data);
     return request('/products/create/', {
       method: 'POST',
       body: formData,
@@ -74,12 +87,7 @@ export const adminProductApi = {
     });
   },
   update(id, data) {
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        formData.append(key, value);
-      }
-    });
+    const formData = toFormData(data);
     return request(`/products/${id}/update/`, {
       method: 'PUT',
       body: formData,

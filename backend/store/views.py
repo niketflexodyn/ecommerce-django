@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-from .models import Product, Category, Cart, CartItem, Order, OrderItem, Rating
+from .models import Product, Category, Cart, CartItem, Order, OrderItem, Rating, ProductImage
 from .permissions import IsAdminOrSuperAdmin
 from .serializers import (
     ProductSerializer,
@@ -75,6 +75,9 @@ def create_product(request):
     serializer = ProductWriteSerializer(data=request.data)
     if serializer.is_valid():
         product = serializer.save(created_by=request.user)
+        # Optional gallery images (the cover is saved above as product.image)
+        for f in request.data.getlist('images'):
+            ProductImage.objects.create(product=product, image=f)
         return Response(
             ProductSerializer(product, context={'request': request}).data,
             status=status.HTTP_201_CREATED,
@@ -93,6 +96,9 @@ def update_product(request, pk):
     serializer = ProductWriteSerializer(product, data=request.data, partial=True)
     if serializer.is_valid():
         product = serializer.save()
+        # Append any new gallery images (cover is replaced only if a new image was sent)
+        for f in request.data.getlist('images'):
+            ProductImage.objects.create(product=product, image=f)
         return Response(ProductSerializer(product, context={'request': request}).data)
     return Response(serializer.errors, status=400)
 

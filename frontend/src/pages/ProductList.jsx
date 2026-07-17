@@ -213,95 +213,115 @@ export default function ProductList({ hideBanner = false }) {
       </section>
       )}
 
-      {/* Category filter strip — offset below the sticky Navbar (adjust top-16 if your navbar height differs) */}
-      <section className="sticky top-16 z-10 border-b border-slate-200/80 border-b-[#E8C766]/20 bg-white/95 backdrop-blur">
-        <div className="page-container">
-          <div className="flex items-center justify-between gap-4 py-4">
-            <div className="flex gap-2 overflow-x-auto">
-              <button
-                onClick={() => setSelectedCategory('all')}
-                className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${
-                  selectedCategory === 'all'
-                    ? 'bg-[#2A1A2C] text-white'
-                    : 'bg-[#E8C766]/10 text-[#8a6d1f] hover:bg-[#E8C766]/20'
-                }`}
-              >
-                All
-              </button>
-
-              {categoriesLoading
-                ? [...Array(5)].map((_, i) => (
-                    <div key={i} className="h-9 w-24 shrink-0 animate-pulse rounded-full bg-slate-100" />
-                  ))
-                : categories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.slug)}
-                      className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${
-                        selectedCategory === category.slug
-                          ? 'bg-[#2A1A2C] text-white'
-                          : 'bg-[#E8C766]/10 text-[#8a6d1f] hover:bg-[#E8C766]/20'
-                      }`}
-                    >
-                      {category.name}
-                    </button>
-                  ))}
-            </div>
-
-            <div className="hidden shrink-0 items-center gap-2 sm:flex">
-              <label htmlFor="sort" className="text-sm text-slate-500">
-                Sort
-              </label>
-              <select
-                id="sort"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#2A1A2C]"
-              >
-                {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Products */}
       <section id="products" className="page-container py-10 sm:py-12">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900" style={fontDisplay}>
-              {activeCategory ? activeCategory.name : 'All Products'}
-            </h2>
-            <div className="mt-2 h-1 w-12 rounded-full bg-[#E8C766]" />
-            <p className="mt-1 text-sm text-slate-500">
-              {loading
-                ? 'Loading...'
-                : `${sortedProducts.length} item${sortedProducts.length !== 1 ? 's' : ''}${
-                    activeCategory ? ` in ${activeCategory.name}` : ' in our catalog'
+        {/* Mobile category strip (sidebar is desktop-only) */}
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+          <button
+            onClick={() => setSelectedCategory('all')}
+            className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${
+              selectedCategory === 'all'
+                ? 'bg-[#2A1A2C] text-white'
+                : 'bg-[#E8C766]/10 text-[#8a6d1f] hover:bg-[#E8C766]/20'
+            }`}
+          >
+            All
+          </button>
+          {categoriesLoading
+            ? [...Array(5)].map((_, i) => (
+                <div key={i} className="h-9 w-24 shrink-0 animate-pulse rounded-full bg-slate-100" />
+              ))
+            : categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.slug)}
+                  className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${
+                    selectedCategory === category.slug
+                      ? 'bg-[#2A1A2C] text-white'
+                      : 'bg-[#E8C766]/10 text-[#8a6d1f] hover:bg-[#E8C766]/20'
                   }`}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 sm:hidden">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#2A1A2C]"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
+                >
+                  {category.name}
+                </button>
               ))}
-            </select>
-          </div>
         </div>
 
-        {hasActiveFilters && (
+        <div className="lg:flex lg:gap-8">
+          {/* Category sidebar (desktop) */}
+          <aside className="hidden w-56 shrink-0 lg:block">
+            <div className="sticky top-32">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                Categories
+              </h3>
+              <div className="space-y-1">
+                <button
+                  onClick={() => setSelectedCategory('all')}
+                  className={`flex w-full items-center rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+                    selectedCategory === 'all'
+                      ? 'bg-[#2A1A2C] text-white'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-[#2A1A2C]'
+                  }`}
+                >
+                  All Products
+                </button>
+                {categoriesLoading
+                  ? [...Array(5)].map((_, i) => (
+                      <div key={i} className="h-10 w-full animate-pulse rounded-lg bg-slate-100" />
+                    ))
+                  : categories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => setSelectedCategory(category.slug)}
+                        className={`flex w-full items-center rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+                          selectedCategory === category.slug
+                            ? 'bg-[#2A1A2C] text-white'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-[#2A1A2C]'
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+              </div>
+            </div>
+          </aside>
+
+          {/* Main column */}
+          <div className="min-w-0 flex-1">
+            <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900" style={fontDisplay}>
+                  {activeCategory ? activeCategory.name : 'All Products'}
+                </h2>
+                <div className="mt-2 h-1 w-12 rounded-full bg-[#E8C766]" />
+                <p className="mt-1 text-sm text-slate-500">
+                  {loading
+                    ? 'Loading...'
+                    : `${sortedProducts.length} item${sortedProducts.length !== 1 ? 's' : ''}${
+                        activeCategory ? ` in ${activeCategory.name}` : ' in our catalog'
+                      }`}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label htmlFor="sort" className="text-sm text-slate-500">
+                  Sort
+                </label>
+                <select
+                  id="sort"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#2A1A2C]"
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {hasActiveFilters && (
           <div className="mb-6 flex flex-wrap items-center gap-2">
             {activeCategory && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700">
@@ -372,6 +392,8 @@ export default function ProductList({ hideBanner = false }) {
             )}
           </div>
         )}
+          </div>
+        </div>
       </section>
     </div>
   )

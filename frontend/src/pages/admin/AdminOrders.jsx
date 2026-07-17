@@ -159,6 +159,15 @@ export default function AdminOrders() {
                           <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Phone / Address</p>
                           <p className="mt-1 text-sm text-slate-700">{detail.phone || '—'}</p>
                           <p className="text-sm text-slate-600">{detail.address || '—'}</p>
+                          {detail.location && (
+                            <p className="mt-1 flex items-center gap-1 text-sm text-slate-600">
+                              <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                              </svg>
+                              {detail.location}
+                            </p>
+                          )}
                         </div>
                       </div>
 

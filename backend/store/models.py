@@ -29,6 +29,13 @@ class User(AbstractUser):
         blank=True,
     )
 
+    # Short location shown to admins alongside the customer's address
+    # (e.g. "Ahmedabad, India"). Filled by the customer in their profile.
+    location = models.CharField(
+        max_length=200,
+        blank=True,
+    )
+
     def save(self, *args, **kwargs):
         # Keep role in sync with is_staff / is_superuser
         # so createsuperuser and Django admin always get the right role
@@ -83,6 +90,13 @@ class Product(models.Model):
         decimal_places=2,
     )
 
+    # Human-readable location shown to customers on the product detail page
+    # (e.g. "Ahmedabad, India"). Filled by the admin when creating a product.
+    location = models.CharField(
+        max_length=200,
+        blank=True,
+    )
+
     image = models.ImageField(
         upload_to="products/",
         blank=True,
@@ -107,6 +121,30 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+# -------------------------
+# Product Image (gallery — the cover stays on Product.image)
+# -------------------------
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name="images",
+        on_delete=models.CASCADE,
+    )
+    image = models.ImageField(
+        upload_to="products/",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"Image for {self.product.name}"
 
 
 # -------------------------

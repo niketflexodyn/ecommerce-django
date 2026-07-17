@@ -52,6 +52,7 @@ class ProductSerializer(serializers.ModelSerializer):
     average_rating = serializers.SerializerMethodField()
     rating_count = serializers.SerializerMethodField()
     seller_name = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -73,14 +74,22 @@ class ProductSerializer(serializers.ModelSerializer):
         full = f"{seller.first_name} {seller.last_name}".strip()
         return full or seller.username
 
+    def get_images(self, obj):
+        # Gallery image URLs (the cover stays on obj.image)
+        return [img.image.url for img in obj.images.all()]
+
 
 class ProductWriteSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
-    image = serializers.ImageField(required=False, allow_null=True)
+    # Cover image is mandatory on create (required=True). On update the view
+    # uses partial=True, which skips required validation, so an admin can edit
+    # other fields without re-uploading the cover. Gallery images are handled
+    # separately in the view via request.data.getlist('images').
+    image = serializers.ImageField(required=True)
 
     class Meta:
         model = Product
-        fields = ['category', 'name', 'description', 'price', 'image']
+        fields = ['category', 'name', 'description', 'price', 'location', 'image']
 
 
 # -------------------------
@@ -172,7 +181,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             "id", "username", "email", "first_name", "last_name",
-            "role", "phone", "address", "is_staff",
+            "role", "phone", "address", "location", "is_staff",
         )
         read_only_fields = ("id", "username", "role", "is_staff")
 
@@ -226,13 +235,14 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='user.last_name', read_only=True)
     phone = serializers.CharField(source='user.phone', read_only=True)
     address = serializers.CharField(source='user.address', read_only=True)
+    location = serializers.CharField(source='user.location', read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
         fields = [
             'id', 'order_number', 'username', 'email', 'first_name', 'last_name',
-            'phone', 'address', 'created_at', 'total_amount', 'items', 'status',
+            'phone', 'address', 'location', 'created_at', 'total_amount', 'items', 'status',
         ]
 
 

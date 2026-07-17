@@ -16,6 +16,7 @@ export default function Profile() {
     email: user?.email || '',
     phone: user?.phone || '',
     address: user?.address || '',
+    location: user?.location || '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -163,6 +164,19 @@ export default function Profile() {
               className={inputClass}
               placeholder="Delivery address"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Location</label>
+            <input
+              type="text"
+              name="location"
+              value={form.location}
+              onChange={handleChange}
+              className={inputClass}
+              placeholder="e.g. Ahmedabad, India"
+            />
+            <p className="mt-1 text-xs text-slate-400">Shown to sellers with your orders.</p>
           </div>
 
           <div className="flex justify-end pt-2">

@@ -6,6 +6,12 @@ import ConfirmDialog from '../../components/admin/ConfirmDialog';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
+// Resolve a product image URL (absolute or media-relative) to a full URL.
+function resolveImgUrl(image) {
+  if (!image) return null;
+  return image.startsWith('http') ? image : `${API_BASE.replace('/api', '')}${image}`;
+}
+
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -17,9 +23,13 @@ export default function AdminProducts() {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  // Gallery images: { url, file?, existing } — existing ones come from the
+  // server (not re-sent), newly picked ones carry a File to upload.
+  const [gallery, setGallery] = useState([]);
+  const galleryRef = useRef(null);
 
   // Form state
-  const [form, setForm] = useState({ name: '', description: '', price: '', category: '', image: null });
+  const [form, setForm] = useState({ name: '', description: '', price: '', category: '', location: '', image: null });
   const fileRef = useRef(null);
 
   const fetchProducts = () => {
@@ -39,10 +49,19 @@ export default function AdminProducts() {
     fetchCategories();
   }, []);
 
+  const resetGallery = () => {
+    gallery.forEach((g) => {
+      if (!g.existing) URL.revokeObjectURL(g.url);
+    });
+    setGallery([]);
+    if (galleryRef.current) galleryRef.current.value = '';
+  };
+
   const openCreate = () => {
     setEditProduct(null);
-    setForm({ name: '', description: '', price: '', category: categories[0]?.id?.toString() || '', image: null });
+    setForm({ name: '', description: '', price: '', category: categories[0]?.id?.toString() || '', location: '', image: null });
     setImagePreview(null);
+    resetGallery();
     setFormError('');
     setModalOpen(true);
   };
@@ -54,9 +73,12 @@ export default function AdminProducts() {
       description: product.description || '',
       price: product.price,
       category: product.category?.id?.toString() || product.category?.toString() || '',
+      location: product.location || '',
       image: null,
     });
     setImagePreview(product.image || null);
+    resetGallery();
+    setGallery((product.images || []).map((url) => ({ url: resolveImgUrl(url), existing: true })));
     setFormError('');
     setModalOpen(true);
   };
@@ -67,12 +89,15 @@ export default function AdminProducts() {
     setSaving(true);
 
     try {
+      const newImages = gallery.filter((g) => !g.existing).map((g) => g.file);
       const data = {
         name: form.name,
         description: form.description,
         price: form.price,
         category: form.category,
+        location: form.location,
         ...(form.image ? { image: form.image } : {}),
+        ...(newImages.length ? { images: newImages } : {}),
       };
 
       if (editProduct) {
@@ -81,6 +106,7 @@ export default function AdminProducts() {
         await adminProductApi.create(data);
       }
       setModalOpen(false);
+      resetGallery();
       fetchProducts();
     } catch (err) {
       const data = err.data || {};
@@ -252,6 +278,18 @@ export default function AdminProducts() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8C766]/50 focus:border-[#C9A227]"
+                  placeholder="e.g. Ahmedabad, India"
+                />
+                <p className="mt-1 text-xs text-slate-400">Shown to customers on the product detail page.</p>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Price *</label>
                 <input
                   type="number"
@@ -266,18 +304,21 @@ export default function AdminProducts() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Image</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Cover image {!editProduct && '*'}
+                </label>
                 <input
                   ref={fileRef}
                   type="file"
                   accept="image/*"
+                  required={!editProduct && !editProduct?.image}
                   onChange={(e) => {
                     const file = e.target.files[0];
                     setForm({ ...form, image: file || null });
                     if (file) {
                       setImagePreview(URL.createObjectURL(file));
                     } else {
-                      setImagePreview(editProduct?.image || null);
+                      setImagePreview(editProduct?.image ? resolveImgUrl(editProduct.image) : null);
                     }
                   }}
                   className="w-full text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-[#2A1A2C] file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#3D2136] file:transition-colors"
@@ -288,6 +329,49 @@ export default function AdminProducts() {
                     alt="Preview"
                     className="mt-2 h-24 w-24 rounded-lg object-cover ring-1 ring-slate-200"
                   />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Additional images</label>
+                <input
+                  ref={galleryRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setGallery((prev) => [
+                      ...prev,
+                      ...files.map((f) => ({ url: URL.createObjectURL(f), file: f, existing: false })),
+                    ]);
+                  }}
+                  className="w-full text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-[#2A1A2C] file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#3D2136] file:transition-colors"
+                />
+                <p className="mt-1 text-xs text-slate-400">Optional. Shown in the product image gallery.</p>
+                {gallery.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {gallery.map((g, idx) => (
+                      <div key={idx} className="group relative">
+                        <img
+                          src={g.url}
+                          alt="Gallery"
+                          className="h-20 w-20 rounded-lg object-cover ring-1 ring-slate-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!g.existing) URL.revokeObjectURL(g.url);
+                            setGallery((prev) => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-[#2A1A2C] text-xs text-white shadow ring-2 ring-white hover:bg-[#3D2136]"
+                          aria-label="Remove image"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
