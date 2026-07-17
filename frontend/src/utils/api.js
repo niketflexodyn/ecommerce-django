@@ -174,4 +174,27 @@ export const dashboardApi = {
   },
 };
 
+// -------------------------
+// Ratings
+// -------------------------
+
+export const ratingApi = {
+  create(data) {
+    return request('/ratings/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  mine() {
+    return request('/ratings/mine/');
+  },
+  forProduct(productId) {
+    return request(`/products/${productId}/ratings/`);
+  },
+  // Admin: ratings for this admin's products
+  adminList() {
+    return request('/admin/ratings/');
+  },
+};
+
 export default request;

@@ -8,6 +8,7 @@ import SearchResults from './components/SearchResults'
 import CartPage from './pages/CartPage'
 import Hero from './components/Hero'
 import FeaturesStrip from './components/FeaturesStrip'
+import PromoCarousel from './components/PromoCarousel'
 import Register from './pages/Register'
 import Checkout from './pages/Checkout'
 import OrderSuccess from './pages/OrderSuccess'
@@ -19,6 +20,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProducts from './pages/admin/AdminProducts'
 import AdminCategories from './pages/admin/AdminCategories'
 import AdminOrders from './pages/admin/AdminOrders'
+import AdminRatings from './pages/admin/AdminRatings'
 
 export default function App() {
   return (
@@ -37,6 +39,7 @@ export default function App() {
           <Route path="products" element={<AdminProducts />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="orders" element={<AdminOrders />} />
+          <Route path="ratings" element={<AdminRatings />} />
         </Route>
 
         {/* Customer-facing routes — with Navbar/Footer */}
@@ -51,6 +54,7 @@ export default function App() {
                     <>
                       <Hero />
                       <FeaturesStrip />
+                      <PromoCarousel />
                       <ProductList hideBanner />
                     </>
                   } />

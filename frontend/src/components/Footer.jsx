@@ -19,17 +19,19 @@ export default function Footer() {
           <div>
             <Link to="/" className="flex items-center gap-2 text-lg font-bold">
               <span
-                className="flex size-8 items-center justify-center rounded-lg text-sm font-black text-[#2A1A2C]"
+                className="flex size-8 items-center justify-center rounded-lg"
                 style={{ backgroundColor: '#E8C766' }}
               >
-                M
+                <svg className="size-4 text-[#2A1A2C]" viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21V7.5m0 0 6.75-3.75v13.5M13.5 7.5l-6.75-3.75v13.5M6.75 17.25l6.75 3.75 6.75-3.75" />
+                </svg>
               </span>
               <span className="text-xl text-white" style={fontDisplay}>
-                MyStore
+                Luxora
               </span>
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-white/60">
-              Quality products, fast delivery, and a smooth shopping experience.
+              Premium products, fast delivery, and a seamless shopping experience.
             </p>
             {/* Social icons */}
             <div className="mt-4 flex gap-3">
@@ -92,7 +94,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 border-t border-[#E8C766]/20 pt-6 text-center text-sm text-white/40">
-          © {new Date().getFullYear()} MyStore. All rights reserved.
+          © {new Date().getFullYear()} Luxora. All rights reserved.
         </div>
       </div>
     </footer>

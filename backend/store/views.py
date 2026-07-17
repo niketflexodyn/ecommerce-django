@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-from .models import Product, Category, Cart, CartItem, Order, OrderItem
+from .models import Product, Category, Cart, CartItem, Order, OrderItem, Rating
 from .permissions import IsAdminOrSuperAdmin
 from .serializers import (
     ProductSerializer,
@@ -20,6 +20,8 @@ from .serializers import (
     OrderListSerializer,
     OrderDetailSerializer,
     DashboardStatsSerializer,
+    RatingSerializer,
+    RatingWriteSerializer,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -402,6 +404,64 @@ def get_dashboard_stats(request):
         'recent_orders': OrderListSerializer(recent_orders, many=True).data,
     }
     return Response(data)
+
+
+# -------------------------
+# Ratings (Customer)
+# -------------------------
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_rating(request):
+    """Create or update a rating for a product. User must have purchased the product."""
+    serializer = RatingWriteSerializer(data=request.data, context={'request': request})
+    if serializer.is_valid():
+        product = serializer.validated_data['product']
+        score = serializer.validated_data['score']
+        # Upsert: create or update the rating
+        rating, created = Rating.objects.update_or_create(
+            user=request.user,
+            product=product,
+            defaults={'score': score},
+        )
+        return Response(RatingSerializer(rating).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+    return Response(serializer.errors, status=400)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def my_ratings(request):
+    """Return all ratings by the authenticated user."""
+    ratings = Rating.objects.filter(user=request.user).select_related('product')
+    serializer = RatingSerializer(ratings, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+def product_ratings(request, pk):
+    """Public: return all ratings for a product."""
+    try:
+        product = Product.objects.get(id=pk)
+    except Product.DoesNotExist:
+        return Response({'error': 'Product not found'}, status=404)
+    ratings = Rating.objects.filter(product=product).select_related('user')
+    serializer = RatingSerializer(ratings, many=True)
+    return Response(serializer.data)
+
+
+# -------------------------
+# Ratings (Admin — scoped to their products)
+# -------------------------
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def admin_product_ratings(request):
+    """Return all ratings for products created by this admin."""
+    ratings = Rating.objects.filter(
+        product__created_by=request.user
+    ).select_related('user', 'product')
+    serializer = RatingSerializer(ratings, many=True)
+    return Response(serializer.data)
 
 
 # -------------------------

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Product, Cart, CartItem, Order, OrderItem, User
+from .models import Category, Product, Cart, CartItem, Order, OrderItem, Rating, User
 from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -49,10 +49,21 @@ class CategoryWriteSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    rating_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = '__all__'
+
+    def get_average_rating(self, obj):
+        ratings = obj.ratings.all()
+        if not ratings.exists():
+            return None
+        return round(sum(r.score for r in ratings) / ratings.count(), 1)
+
+    def get_rating_count(self, obj):
+        return obj.ratings.count()
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
@@ -215,6 +226,43 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name',
             'phone', 'address', 'created_at', 'total_amount', 'items', 'status',
         ]
+
+
+# -------------------------
+# Ratings
+# -------------------------
+
+class RatingSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True)
+
+    class Meta:
+        model = Rating
+        fields = ['id', 'user', 'product', 'score', 'created_at', 'updated_at', 'username', 'product_name']
+        read_only_fields = ['user', 'created_at', 'updated_at']
+
+
+class RatingWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = ['product', 'score']
+
+    def validate_score(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5.")
+        return value
+
+    def validate_product(self, product):
+        user = self.context.get('request').user
+        # Check that the user has purchased this product
+        has_purchased = OrderItem.objects.filter(
+            order__user=user,
+            product=product,
+            order__status='successful'
+        ).exists()
+        if not has_purchased:
+            raise serializers.ValidationError("You can only rate products you have purchased.")
+        return product
 
 
 # -------------------------

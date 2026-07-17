@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { formatPrice, getProductImageUrl } from '../utils/product'
+import StarRating from './StarRating'
 
 const fontDisplay = { fontFamily: "'Playfair Display', serif" }
 
@@ -36,6 +37,12 @@ export default function ProductCard({ product }) {
             {product.name}
           </h2>
           <p className="mt-1 line-clamp-2 text-sm text-slate-500">{product.description}</p>
+          {(product.average_rating != null) && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <StarRating value={product.average_rating} size="sm" />
+              <span className="text-xs text-slate-400">({product.rating_count || 0})</span>
+            </div>
+          )}
         </Link>
 
         <div className="mt-auto flex items-center justify-between pt-4">

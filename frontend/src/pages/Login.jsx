@@ -61,7 +61,7 @@ export default function Login() {
             style={{ background: 'linear-gradient(135deg, #2A1A2C 0%, #3D2136 55%, #4A2536 100%)' }}
           >
             <p className="text-sm uppercase tracking-[4px] text-[#E8C766]">
-              MyStore
+              Luxora
             </p>
 
             <h1 className="mt-5 text-4xl font-bold" style={fontDisplay}>

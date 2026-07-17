@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { useScrollReveal } from "../hooks/useScrollReveal";
@@ -97,9 +96,9 @@ export default function Hero() {
               className={`mt-6 text-5xl font-bold leading-[1.05] lg:text-6xl ${revealed ? "animate-fade-up delay-300" : "opacity-0"}`}
               style={fontDisplay}
             >
-              Shop Every Category,
+              Discover Premium Style,
               <span className="block italic text-[#E8C766]">
-                All in One Store
+                All in One Place
               </span>
             </h1>
 
@@ -110,19 +109,19 @@ export default function Hero() {
             </p>
 
             <div className={`mt-10 flex flex-wrap gap-4 ${revealed ? "animate-fade-up delay-600" : "opacity-0"}`}>
-              <Link
-                to="/#products"
+              <a
+                href="#products"
                 className="rounded-full bg-[#E8C766] px-8 py-4 font-semibold text-[#2A1A2C] shadow-md shadow-[#E8C766]/20 transition duration-300 hover:scale-[1.03] hover:bg-[#F1D9A0]"
               >
                 Shop Now
-              </Link>
+              </a>
 
-              <Link
-                to="/"
+              <a
+                href="#products"
                 className="rounded-full border border-white/30 px-8 py-4 font-semibold text-white transition hover:border-white hover:bg-white/10"
               >
                 Browse Categories
-              </Link>
+              </a>
             </div>
 
             {/* E-commerce trust strip */}
@@ -229,12 +228,12 @@ export default function Hero() {
                         {banner.subtitle}
                       </p>
 
-                      <Link
-                        to="/#products"
+                      <a
+                        href="#products"
                         className="mt-5 inline-block border-b border-[#E8C766] pb-1 text-sm font-semibold uppercase tracking-wide text-[#E8C766] transition hover:text-[#F1D9A0]"
                       >
                         {banner.cta} →
-                      </Link>
+                      </a>
                     </div>
                   </div>
                 </SwiperSlide>

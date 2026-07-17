@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 
 const fontDisplay = { fontFamily: "'Playfair Display', serif" }
@@ -14,7 +15,8 @@ const SORT_OPTIONS = [
 export default function ProductList({ hideBanner = false }) {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all')
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('featured')
@@ -24,6 +26,27 @@ export default function ProductList({ hideBanner = false }) {
 
   const BASE_URL = import.meta.env.VITE_DJANGO_URL
   const debounceRef = useRef(null)
+
+  // Sync category to URL search params
+  useEffect(() => {
+    if (selectedCategory && selectedCategory !== 'all') {
+      setSearchParams({ category: selectedCategory }, { replace: true })
+    } else {
+      setSearchParams({}, { replace: true })
+    }
+  }, [selectedCategory, setSearchParams])
+
+  // Scroll to #products when arriving with a category param
+  useEffect(() => {
+    const cat = searchParams.get('category')
+    if (cat) {
+      // Small delay to let products load first
+      const timer = setTimeout(() => {
+        document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounce the search input -> searchTerm
   useEffect(() => {
@@ -132,7 +155,7 @@ export default function ProductList({ hideBanner = false }) {
 
         <div className="page-container relative py-16 sm:py-20" style={fontBody}>
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#E8C766]">
-            {activeCategory ? 'Category' : 'Welcome to MyStore'}
+            {activeCategory ? 'Category' : 'Welcome to Luxora'}
           </p>
 
           <h1

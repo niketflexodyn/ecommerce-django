@@ -33,6 +33,12 @@ urlpatterns = [
     # Orders (Admin)
     path('orders/', views.get_orders),
     path('orders/<int:pk>/', views.get_order_detail),
+    # Ratings (Customer)
+    path('ratings/', views.create_rating),
+    path('ratings/mine/', views.my_ratings),
+    path('products/<int:pk>/ratings/', views.product_ratings),
+    # Ratings (Admin)
+    path('admin/ratings/', views.admin_product_ratings),
     # Dashboard (Admin)
     path('dashboard/stats/', views.get_dashboard_stats),
     # Auth
