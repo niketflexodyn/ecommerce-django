@@ -46,4 +46,5 @@ urlpatterns = [
     path('login/', CustomTokenObtainPairView.as_view()),
     path('refresh/', TokenRefreshView.as_view()),
     path('profile/', views.get_profile),
+    path('profile/update/', views.update_profile),
 ]

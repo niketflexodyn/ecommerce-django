@@ -502,3 +502,18 @@ def get_profile(request):
     """Return the authenticated user's profile including role."""
     serializer = UserProfileSerializer(request.user)
     return Response(serializer.data)
+
+
+@api_view(["PUT", "PATCH"])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    """Let the authenticated user update their own details.
+
+    Writable fields (per UserProfileSerializer): email, first_name,
+    last_name, phone, address. username, role, id, is_staff stay read-only.
+    """
+    serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=400)

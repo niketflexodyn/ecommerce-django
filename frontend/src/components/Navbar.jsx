@@ -269,6 +269,18 @@ export default function Navbar() {
                   </Link>
                 </MenuItem>
 
+                <MenuItem>
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 transition-colors hover:bg-[#FBF6F0] data-[focus]:bg-[#FBF6F0]"
+                  >
+                    <svg className="size-4 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
+                    </svg>
+                    My Profile
+                  </Link>
+                </MenuItem>
+
                 <div className="border-t border-slate-100 my-1" />
 
                 <MenuItem>
@@ -419,6 +431,17 @@ export default function Navbar() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m3 6.75h.008v.008H12v-.008ZM12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18Z" />
                   </svg>
                   My Orders
+                </Link>
+
+                <Link
+                  to="/profile"
+                  onClick={closeMobile}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  <svg className="size-4 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
+                  </svg>
+                  My Profile
                 </Link>
 
                 <button

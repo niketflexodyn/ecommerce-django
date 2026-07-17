@@ -15,6 +15,7 @@ import Register from './pages/Register'
 import Checkout from './pages/Checkout'
 import OrderSuccess from './pages/OrderSuccess'
 import OrderHistory from './pages/OrderHistory'
+import Profile from './pages/Profile'
 import BackToTop from './components/BackToTop'
 import AdminRoute from './components/AdminRoute'
 import AdminLayout from './components/admin/AdminLayout'
@@ -23,6 +24,7 @@ import AdminProducts from './pages/admin/AdminProducts'
 import AdminCategories from './pages/admin/AdminCategories'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminRatings from './pages/admin/AdminRatings'
+import EditAdminDetails from './components/admin/EditAdminDetails'
 
 export default function App() {
   return (
@@ -42,6 +44,7 @@ export default function App() {
           <Route path="categories" element={<AdminCategories />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="ratings" element={<AdminRatings />} />
+          <Route path="edit-details" element={<EditAdminDetails />} />
         </Route>
 
         {/* Customer-facing routes — with Navbar/Footer */}
@@ -70,6 +73,7 @@ export default function App() {
                   <Route path='/checkout' element={<Checkout />} />
                   <Route path='/order-success' element={<OrderSuccess />} />
                   <Route path='/orders' element={<OrderHistory />} />
+                  <Route path='/profile' element={<Profile />} />
                 </Routes>
               </main>
               <Footer />

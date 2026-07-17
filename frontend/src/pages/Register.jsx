@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+
 const fontDisplay = { fontFamily: "'Playfair Display', serif" }
 const fontBody = { fontFamily: "'Jost', sans-serif" }
 

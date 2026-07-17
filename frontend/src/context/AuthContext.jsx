@@ -120,9 +120,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('refresh_token')
   }
 
+  // Re-fetch the logged-in user's profile so the UI updates after an edit.
+  const refreshUser = async () => {
+    if (!tokens?.access) return
+    try {
+      const res = await fetch(`${BASE_URL}/api/profile/`, {
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      })
+      if (res.ok) setUser(await res.json())
+    } catch {
+      /* ignore — keep existing user */
+    }
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, tokens, loading, login, register, logout }}
+      value={{ user, tokens, loading, login, register, logout, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

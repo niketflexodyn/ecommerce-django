@@ -165,6 +165,22 @@ export const orderApi = {
 };
 
 // -------------------------
+// Profile (logged-in user — any role)
+// -------------------------
+
+export const profileApi = {
+  me() {
+    return request('/profile/');
+  },
+  update(data) {
+    return request('/profile/update/', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// -------------------------
 // Dashboard (Admin)
 // -------------------------
 
