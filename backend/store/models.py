@@ -167,7 +167,7 @@ class Order(models.Model):
     # Sequential number scoped to each customer — their 1st, 2nd, 3rd order...
     # Unique per user, so a new customer's first order is always #1.
     order_number = models.PositiveIntegerField(null=True, blank=True)
-
+    
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

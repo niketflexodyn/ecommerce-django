@@ -222,7 +222,7 @@ class OrderListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'order_number', 'username', 'email', 'created_at', 'total_amount', 'items_count', 'status']
+        fields = ['id', 'order_number', 'username', 'email', 'created_at', 'total_amount', 'items_count', 'status' ]
 
     def get_items_count(self, obj):
         return obj.items.count()
