@@ -154,10 +154,10 @@ class ProductImage(models.Model):
 class Order(models.Model):
 
     STATUS_CHOICES = (
+        ("pending", "Pending"),
         ("successful", "Successful"),
         ("unsuccessful", "Unsuccessful"),
     )
-
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -167,12 +167,12 @@ class Order(models.Model):
     # Sequential number scoped to each customer — their 1st, 2nd, 3rd order...
     # Unique per user, so a new customer's first order is always #1.
     order_number = models.PositiveIntegerField(null=True, blank=True)
-    
+
     status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="successful",
-    )
+    max_length=20,
+    choices=STATUS_CHOICES,
+    default="pending",
+)
 
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -182,6 +182,9 @@ class Order(models.Model):
         max_digits=10,
         decimal_places=2,
     )
+    # address = models.CharField(
+    #     max_length =
+    # )
 
     class Meta:
         unique_together = (("user", "order_number"),)

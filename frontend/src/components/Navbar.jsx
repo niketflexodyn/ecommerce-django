@@ -84,11 +84,10 @@ const ROLE_LABELS = {
 }
 
 const NAV_LINKS = [
-  { name: 'Home', to: '/' },
+  { name: 'Home', to: '/#products' },
   { name: 'Shop', to: '/#products' },
   { name: 'New Arrivals', to: '/#products' },
 ]
-
 /* ─── Component ─────────────────────────────────────────────────── */
 
 export default function Navbar() {
@@ -167,12 +166,16 @@ export default function Navbar() {
 
         {/* ── Center: Nav Links ────────────────── */}
         <div className="hidden md:flex md:flex-1 md:items-center md:justify-center md:gap-8">
-          {NAV_LINKS.map((link) => (
-            <NavLink key={link.name} to={link.to} className={navLinkClass} end={link.to === '/'}>
-              {link.name}
-            </NavLink>
-          ))}
-        </div>
+  {NAV_LINKS.map((link) => (
+    <a
+      key={link.name}
+      href={link.to}
+      className={typeof navLinkClass === 'function' ? navLinkClass({ isActive: false }) : navLinkClass}
+    >
+      {link.name}
+    </a>
+  ))}
+</div>
 
         {/* ── Right: Search + Cart + Auth ──────── */}
         <div className="hidden md:flex md:items-center md:gap-3 shrink-0">
@@ -380,23 +383,16 @@ export default function Navbar() {
         }`}
       >
         <div className="px-4 py-4 space-y-1">
-          {NAV_LINKS.map((link) => (
-            <NavLink
-              key={link.name}
-              to={link.to}
-              end={link.to === '/'}
-              onClick={closeMobile}
-              className={({ isActive }) =>
-                `block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-[#FBF6F0] text-[#2A1A2C]'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-[#2A1A2C]'
-                }`
-              }
-            >
-              {link.name}
-            </NavLink>
-          ))}
+        {NAV_LINKS.map((link) => (
+  <a
+  key={link.name}
+  href={link.to}
+  onClick={closeMobile}
+  className="block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50 hover:text-[#2A1A2C]"
+>
+  {link.name}
+</a>
+))}
 
           <div className="border-t border-slate-100 pt-3 mt-3">
             {user ? (

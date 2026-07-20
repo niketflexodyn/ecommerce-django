@@ -49,7 +49,15 @@ def get_products(request):
 
     category_slug = request.query_params.get('category', '').strip()
     if category_slug and category_slug != 'all':
-        products = products.filter(category__slug=category_slug)
+        # Match the selected category AND any siblings that share the same
+        # name. Multiple admins can create categories with the same name
+        # (different slugs); they should appear as one filter on the storefront
+        # and surface all of their products together.
+        selected = Category.objects.filter(slug=category_slug).first()
+        if selected is not None:
+            products = products.filter(category__name__iexact=selected.name)
+        else:
+            products = products.filter(category__slug=category_slug)
 
     serializer = ProductSerializer(products, many=True, context={'request': request})
     return Response(serializer.data)
@@ -142,7 +150,19 @@ def admin_products(request):
 def get_categories(request):
     categories = Category.objects.all()
     serializer = CategorySerializer(categories, many=True)
-    return Response(serializer.data)
+    data = serializer.data
+    # De-duplicate by name (case-insensitive). Multiple admins can each create
+    # a "Fashion" category (with distinct slugs); the storefront filter should
+    # list each name only once. Keep the first occurrence (lowest id).
+    seen = set()
+    unique = []
+    for cat in data:
+        key = (cat.get('name') or '').lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(cat)
+    return Response(unique)
 
 
 # -------------------------

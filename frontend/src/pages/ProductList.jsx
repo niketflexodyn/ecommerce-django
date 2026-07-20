@@ -12,6 +12,8 @@ const SORT_OPTIONS = [
   { value: 'name-asc', label: 'Name: A to Z' },
 ]
 
+const PAGE_SIZE = 8
+
 export default function ProductList({ hideBanner = false }) {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
@@ -23,6 +25,7 @@ export default function ProductList({ hideBanner = false }) {
   const [loading, setLoading] = useState(true)
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [page, setPage] = useState(1)
 
   const BASE_URL = import.meta.env.VITE_DJANGO_URL
   const debounceRef = useRef(null)
@@ -65,7 +68,17 @@ export default function ProductList({ hideBanner = false }) {
         return response.json()
       })
       .then((data) => {
-        setCategories(Array.isArray(data) ? data : data.results || [])
+        const list = Array.isArray(data) ? data : data.results || []
+        // De-duplicate by name (case-insensitive) so the filter never lists
+        // the same category twice, even if the backend serves duplicates.
+        const seen = new Set()
+        const unique = list.filter((c) => {
+          const key = (c.name || '').toLowerCase()
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+        setCategories(unique)
         setCategoriesLoading(false)
       })
       .catch(() => {
@@ -113,6 +126,33 @@ export default function ProductList({ hideBanner = false }) {
         return list
     }
   }, [products, sortBy])
+
+  // Reset to the first page whenever the filtered/sorted set changes so the
+  // user never lands on a page that no longer exists.
+  useEffect(() => {
+    setPage(1)
+  }, [selectedCategory, searchTerm, sortBy])
+
+  const totalPages = Math.max(1, Math.ceil(sortedProducts.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const paginatedProducts = sortedProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  )
+
+  // Windowed page numbers: show a few around the current page plus first/last.
+  const pageNumbers = useMemo(() => {
+    const pages = []
+    const span = 1 // pages either side of the current page
+    const start = Math.max(1, currentPage - span)
+    const end = Math.min(totalPages, currentPage + span)
+    if (start > 1) pages.push(1)
+    if (start > 2) pages.push('…')
+    for (let p = start; p <= end; p++) pages.push(p)
+    if (end < totalPages - 1) pages.push('…')
+    if (end < totalPages) pages.push(totalPages)
+    return pages
+  }, [currentPage, totalPages])
 
   const hasActiveFilters = selectedCategory !== 'all' || searchTerm
 
@@ -366,11 +406,71 @@ export default function ProductList({ hideBanner = false }) {
             ))}
           </div>
         ) : sortedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {sortedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {paginatedProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <nav
+                className="mt-10 flex flex-wrap items-center justify-center gap-2"
+                aria-label="Pagination"
+              >
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                  </svg>
+                  Prev
+                </button>
+
+                {pageNumbers.map((p, i) =>
+                  p === '…' ? (
+                    <span
+                      key={`ellipsis-${i}`}
+                      className="px-1.5 py-2 text-sm text-slate-400"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      aria-current={p === currentPage ? 'page' : undefined}
+                      className={`min-w-9 rounded-lg px-3.5 py-2 text-sm font-semibold transition ${
+                        p === currentPage
+                          ? 'bg-[#2A1A2C] text-white'
+                          : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                  <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              </nav>
+            )}
+
+            <p className="mt-4 text-center text-xs text-slate-400">
+              Showing {paginatedProducts.length} of {sortedProducts.length} items
+            </p>
+          </>
         ) : (
           <div className="card flex flex-col items-center p-12 text-center">
             <svg className="h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

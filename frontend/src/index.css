@@ -70,6 +70,15 @@
     @apply bg-slate-50 text-slate-900 antialiased;
     font-family: var(--font-sans);
   }
+
+  button:not(:disabled):not([disabled]) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  button[disabled] {
+    cursor: not-allowed;
+  }
 }
 
 @layer utilities {

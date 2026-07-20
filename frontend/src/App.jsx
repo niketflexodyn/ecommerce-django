@@ -10,7 +10,7 @@ import Hero from './components/Hero'
 import FeaturesStrip from './components/FeaturesStrip'
 import PromoCarousel from './components/PromoCarousel'
 import AboutStory from './components/AboutStory'
-import MarqueeStrip from './components/MarqueeStrip'
+// import MarqueeStrip from './components/MarqueeStrip'
 import Register from './pages/Register'
 import Checkout from './pages/Checkout'
 import OrderSuccess from './pages/OrderSuccess'
@@ -52,7 +52,7 @@ export default function App() {
           path="*"
           element={
             <>
-              <MarqueeStrip />
+              {/* <MarqueeStrip /> */}
               <Navbar />
               <main className="flex-1">
                 <Routes>

@@ -83,8 +83,8 @@ export default function Hero() {
         Discover
       </span>
 
-      <div className="page-container relative py-16 lg:py-24">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+      <div className="page-container relative py-10 sm:py-16 lg:py-24">
+        <div className="grid items-center gap-8 sm:gap-12 lg:grid-cols-2">
           {/* Left Content */}
           <div ref={revealRef} className={`text-white ${revealed ? "animate-fade-up" : "opacity-0"}`} style={fontBody}>
             <span className={`inline-flex items-center gap-2 rounded-full border border-[#C9A227]/40 bg-[#C9A227]/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.2em] text-[#E8C766] ${revealed ? "animate-fade-up delay-150" : "opacity-0"}`}>
@@ -93,7 +93,7 @@ export default function Hero() {
             </span>
 
             <h1
-              className={`mt-6 text-5xl font-bold leading-[1.05] lg:text-6xl ${revealed ? "animate-fade-up delay-300" : "opacity-0"}`}
+              className={`mt-5 text-4xl font-bold max-w-sm sm:max-w-lg leading-[1.08] sm:text-5xl sm:mt-6 lg:text-6xl ${revealed ? "animate-fade-up delay-300" : "opacity-0"}`}
               style={fontDisplay}
             >
               Discover Premium Style,
@@ -102,35 +102,37 @@ export default function Hero() {
               </span>
             </h1>
 
-            <p className={`mt-6 max-w-xl text-lg leading-8 text-white/70 ${revealed ? "animate-fade-up delay-450" : "opacity-0"}`}>
+            <p className={`mt-5 max-w-sm sm:max-w-xl  text-base leading-7 text-white/70 sm:mt-6 sm:text-lg sm:leading-8 ${revealed ? "animate-fade-up delay-450" : "opacity-0"}`}>
               From fashion and electronics to home essentials and beauty —
               discover thousands of products across every category, all in
               one place.
             </p>
 
-            <div className={`mt-10 flex flex-wrap gap-4 ${revealed ? "animate-fade-up delay-600" : "opacity-0"}`}>
+            <div className={`mt-8 flex flex-wrap gap-3 sm:mt-10 sm:gap-4 ${revealed ? "animate-fade-up delay-600" : "opacity-0"}`}>
               <a
                 href="#products"
-                className="rounded-full bg-[#E8C766] px-8 py-4 font-semibold text-[#2A1A2C] shadow-md shadow-[#E8C766]/20 transition duration-300 hover:scale-[1.03] hover:bg-[#F1D9A0]"
+
+
+                className="rounded-full bg-[#E8C766] px-6 py-3 text-sm font-semibold text-[#2A1A2C] shadow-md shadow-[#E8C766]/20 transition duration-300 hover:scale-[1.03] hover:bg-[#F1D9A0] sm:px-8 sm:py-4 sm:text-base"
               >
                 Shop Now
               </a>
 
               <a
                 href="#products"
-                className="rounded-full border border-white/30 px-8 py-4 font-semibold text-white transition hover:border-white hover:bg-white/10"
+                className="rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10 sm:px-8 sm:py-4 sm:text-base"
               >
                 Browse Categories
               </a>
             </div>
 
             {/* E-commerce trust strip */}
-            <div className={`mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 ${revealed ? "animate-fade-up" : "opacity-0"}`}>
+            <div className={`mt-6  flex flex-wrap items-center gap-x-4 gap-y-2 ${revealed ? "animate-fade-up" : "opacity-0"}`}>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1.5 text-xs text-white/70">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-4 shrink-0">
                   <path d="M8 1a3 3 0 0 0-3 3v2H3.5A1.5 1.5 0 0 0 2 7.5v6A1.5 1.5 0 0 0 3.5 15h9A1.5 1.5 0 0 0 14 13.5v-6A1.5 1.5 0 0 0 12.5 6H11V4a3 3 0 0 0-3-3Zm2 5V4a2 2 0 1 0-4 0v2h4Z" />
                 </svg>
-                Free shipping over $50
+                Free shipping over ₹50
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1.5 text-xs text-white/70">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-4 shrink-0">
@@ -154,26 +156,26 @@ export default function Hero() {
             </div>
 
             {/* Stats */}
-            <div className="mt-14 flex flex-wrap gap-10 border-t border-white/10 pt-8">
-              <div className="border-l-2 border-[#E8C766]/40 pl-6">
-                <h2 className="text-3xl font-bold" style={fontDisplay}>
+            <div className="mt-10 grid grid-cols-3 gap-4 border-t border-white/10 pt-6 sm:mt-14 sm:gap-10 sm:pt-8">
+              <div className="border-l-2 border-[#E8C766]/40 pl-3 sm:pl-6">
+                <h2 className="text-xl font-bold sm:text-3xl" style={fontDisplay}>
                   100K+
                 </h2>
-                <p className="text-white/60">Happy Customers</p>
+                <p className="text-xs text-white/60 sm:text-base">Happy Customers</p>
               </div>
 
-              <div className="border-l-2 border-[#E8C766]/40 pl-6">
-                <h2 className="text-3xl font-bold" style={fontDisplay}>
+              <div className="border-l-2 border-[#E8C766]/40 pl-3 sm:pl-6">
+                <h2 className="text-xl font-bold sm:text-3xl" style={fontDisplay}>
                   10,000+
                 </h2>
-                <p className="text-white/60">Products</p>
+                <p className="text-xs text-white/60 sm:text-base">Products</p>
               </div>
 
-              <div className="border-l-2 border-[#E8C766]/40 pl-6">
-                <h2 className="text-3xl font-bold" style={fontDisplay}>
+              <div className="border-l-2 border-[#E8C766]/40 pl-3 sm:pl-6">
+                <h2 className="text-xl font-bold sm:text-3xl" style={fontDisplay}>
                   20+
                 </h2>
-                <p className="text-white/60">Categories</p>
+                <p className="text-xs text-white/60 sm:text-base">Categories</p>
               </div>
             </div>
           </div>
@@ -198,39 +200,40 @@ export default function Hero() {
             >
               {banners.map((banner, index) => (
                 <SwiperSlide key={index}>
-                  <div className="relative h-[550px] overflow-hidden rounded-3xl">
+                  <div className="relative h-[320px] overflow-hidden rounded-2xl md:h-[420px] md:rounded-3xl">
                     <img
                       src={banner.image}
                       alt={banner.title}
+                      loading="lazy"
                       className="h-full w-full object-cover"
                     />
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#2A1A2C]/85 via-[#2A1A2C]/10 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-[#2A1A2C]/85 via-[#2A1A2C]/10 to-transparent" />
 
                     {/* Promo/status badge */}
-                    <span className="absolute right-6 top-6 rounded-full bg-[#E8C766] px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#2A1A2C]">
+                    <span className="absolute right-3 top-3 rounded-full bg-[#E8C766] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wide text-[#2A1A2C] md:right-4 md:top-4 md:px-3 md:py-1 md:text-[10px]">
                       {banner.badge}
                     </span>
 
-                    <div className="absolute bottom-10 left-10 text-white">
+                    <div className="absolute bottom-4 left-4 right-4 text-white md:bottom-6 md:left-6 md:right-6">
                       <p
-                        className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E8C766]"
+                        className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E8C766] md:text-[10px]"
                         style={fontBody}
                       >
                         {banner.category}
                       </p>
 
-                      <h2 className="mt-2 text-4xl font-bold" style={fontDisplay}>
+                      <h2 className="mt-1.5 text-lg font-bold leading-tight md:mt-2 md:text-2xl" style={fontDisplay}>
                         {banner.title}
                       </h2>
 
-                      <p className="mt-3 text-lg text-white/70">
+                      <p className="mt-1.5 text-xs text-white/70 md:mt-2 md:text-sm">
                         {banner.subtitle}
                       </p>
 
                       <a
                         href="#products"
-                        className="mt-5 inline-block border-b border-[#E8C766] pb-1 text-sm font-semibold uppercase tracking-wide text-[#E8C766] transition hover:text-[#F1D9A0]"
+                        className="mt-3 inline-block border-b border-[#E8C766] pb-1 text-[11px] font-semibold uppercase tracking-wide text-[#E8C766] transition hover:text-[#F1D9A0] md:mt-4 md:text-xs"
                       >
                         {banner.cta} →
                       </a>
