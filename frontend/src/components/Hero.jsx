@@ -6,10 +6,14 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
+import herophoto1 from "../assets/herophoto1.webp";
+import heroImage2 from "../assets/hero-image2.webp";
+import heroImage3 from "../assets/hero-image3.webp";
+import heroImage5 from "../assets/hero-image5.webp";
+
 const banners = [
   {
-    image:
-      "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1200",
+    image: herophoto1,
     category: "Fashion & Apparel",
     title: "Style That Speaks for You",
     subtitle: "Trending Looks, Every Season",
@@ -17,8 +21,7 @@ const banners = [
     cta: "Shop Fashion",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=1200",
+    image: heroImage2,
     category: "Electronics & Gadgets",
     title: "Tech That Powers Your Day",
     subtitle: "Latest Gadgets, Best Prices",
@@ -26,8 +29,7 @@ const banners = [
     cta: "Shop Electronics",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200",
+    image: heroImage3,
     category: "Home & Living",
     title: "Spaces You'll Love Coming Home To",
     subtitle: "Furniture, Decor & More",
@@ -35,8 +37,7 @@ const banners = [
     cta: "Shop Home",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200",
+    image: heroImage5,
     category: "Beauty & Personal Care",
     title: "Look Good. Feel Better.",
     subtitle: "Skincare, Makeup & Grooming",
@@ -181,7 +182,7 @@ export default function Hero() {
           </div>
 
           {/* Right Slider */}
-          <div className="relative">
+          <div className="relative min-w-0 overflow-hidden">
             <div className="absolute -top-20 -right-20 size-96 rounded-full bg-[#E8C766] opacity-[0.08] blur-3xl pointer-events-none" />
             <Swiper
               modules={[Autoplay, Pagination, Navigation]}
@@ -200,7 +201,7 @@ export default function Hero() {
             >
               {banners.map((banner, index) => (
                 <SwiperSlide key={index}>
-                  <div className="relative h-[320px] overflow-hidden rounded-2xl md:h-[420px] md:rounded-3xl">
+                  <div className="relative h-[280px] overflow-hidden rounded-2xl sm:h-[360px] md:h-[420px] md:rounded-3xl">
                     <img
                       src={banner.image}
                       alt={banner.title}
@@ -215,7 +216,7 @@ export default function Hero() {
                       {banner.badge}
                     </span>
 
-                    <div className="absolute bottom-4 left-4 right-4 text-white md:bottom-6 md:left-6 md:right-6">
+                    <div className="absolute bottom-3 left-3 right-3 text-white sm:bottom-4 sm:left-4 sm:right-4 md:bottom-6 md:left-6 md:right-6">
                       <p
                         className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E8C766] md:text-[10px]"
                         style={fontBody}
@@ -223,17 +224,17 @@ export default function Hero() {
                         {banner.category}
                       </p>
 
-                      <h2 className="mt-1.5 text-lg font-bold leading-tight md:mt-2 md:text-2xl" style={fontDisplay}>
+                      <h2 className="mt-1 text-base font-bold leading-tight sm:mt-1.5 sm:text-lg md:mt-2 md:text-2xl" style={fontDisplay}>
                         {banner.title}
                       </h2>
 
-                      <p className="mt-1.5 text-xs text-white/70 md:mt-2 md:text-sm">
+                      <p className="mt-1 text-[11px] text-white/70 sm:mt-1.5 sm:text-xs md:mt-2 md:text-sm">
                         {banner.subtitle}
                       </p>
 
                       <a
                         href="#products"
-                        className="mt-3 inline-block border-b border-[#E8C766] pb-1 text-[11px] font-semibold uppercase tracking-wide text-[#E8C766] transition hover:text-[#F1D9A0] md:mt-4 md:text-xs"
+                        className="mt-2 inline-block border-b border-[#E8C766] pb-1 text-[10px] font-semibold uppercase tracking-wide text-[#E8C766] transition hover:text-[#F1D9A0] sm:mt-3 sm:text-[11px] md:mt-4 md:text-xs"
                       >
                         {banner.cta} →
                       </a>
