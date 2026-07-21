@@ -414,62 +414,7 @@ export default function ProductList({ hideBanner = false }) {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <nav
-                className="mt-10 flex flex-wrap items-center justify-center gap-2"
-                aria-label="Pagination"
-              >
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                  </svg>
-                  Prev
-                </button>
-
-                {pageNumbers.map((p, i) =>
-                  p === '…' ? (
-                    <span
-                      key={`ellipsis-${i}`}
-                      className="px-1.5 py-2 text-sm text-slate-400"
-                    >
-                      …
-                    </span>
-                  ) : (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      aria-current={p === currentPage ? 'page' : undefined}
-                      className={`min-w-9 rounded-lg px-3.5 py-2 text-sm font-semibold transition ${
-                        p === currentPage
-                          ? 'bg-[#2A1A2C] text-white'
-                          : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  )
-                )}
-
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Next
-                  <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                  </svg>
-                </button>
-              </nav>
-            )}
-
-            <p className="mt-4 text-center text-xs text-slate-400">
-              Showing {paginatedProducts.length} of {sortedProducts.length} items
-            </p>
+       
           </>
         ) : (
           <div className="card flex flex-col items-center p-12 text-center">

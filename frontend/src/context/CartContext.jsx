@@ -9,8 +9,8 @@ export const CartProvider = ({ children }) => {
   const { user, tokens } = useAuth()
   const [cartItems, setCartItems] = useState([])
   const [serverCartId, setServerCartId] = useState(null)
+  const [isCartOpen, setIsCartOpen] = useState(false)
 
-  // Fetch cart from server when user logs in
   useEffect(() => {
     if (user && tokens?.access) {
       fetch(`${BASE_URL}/api/cart/`, {
@@ -40,7 +40,6 @@ export const CartProvider = ({ children }) => {
           // Failed to fetch server cart — keep local cart
         })
     } else {
-      // User logged out — clear cart
       setCartItems([])
       setServerCartId(null)
     }
@@ -58,7 +57,6 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = async (product) => {
     if (user && tokens?.access) {
-      // Authenticated: sync with server
       try {
         const res = await fetch(`${BASE_URL}/api/cart/add/`, {
           method: 'POST',
@@ -66,8 +64,7 @@ export const CartProvider = ({ children }) => {
           body: JSON.stringify({ product_id: product.id, quantity: 1 }),
         })
         if (!res.ok) throw new Error('Failed to add to cart')
-        const data = await res.json()
-        // Refresh cart from server
+        await res.json()
         const cartRes = await fetch(`${BASE_URL}/api/cart/`, {
           headers: getAuthHeaders(),
         })
@@ -86,13 +83,13 @@ export const CartProvider = ({ children }) => {
             setCartItems(items)
           }
         }
+        setIsCartOpen(true)
         return
       } catch {
         // Fallback to local
       }
     }
 
-    // Guest: local cart only
     const existing = cartItems.find((item) => item.id === product.id)
     if (existing) {
       setCartItems(
@@ -103,6 +100,7 @@ export const CartProvider = ({ children }) => {
     } else {
       setCartItems([...cartItems, { ...product, quantity: 1 }])
     }
+    setIsCartOpen(true)
   }
 
   const removeFromCart = async (productId) => {
@@ -153,8 +151,22 @@ export const CartProvider = ({ children }) => {
     setServerCartId(null)
   }
 
+  const closeCart = useCallback(() => setIsCartOpen(false), [])
+  const toggleCart = useCallback(() => setIsCartOpen((v) => !v), [])
+
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, updateQuantity, removeFromCart, clearCart }}>
+    <CartContext.Provider
+      value={{
+        cartItems,
+        addToCart,
+        updateQuantity,
+        removeFromCart,
+        clearCart,
+        isCartOpen,
+        closeCart,
+        toggleCart,
+      }}
+    >
       {children}
     </CartContext.Provider>
   )

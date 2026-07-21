@@ -20,18 +20,34 @@ export default function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  const validate = () => {
+    const next = {};
+    if (!formData.username.trim()) next.username = "Username is required.";
+    if (!formData.password) next.password = "Password is required.";
+    return next;
+  };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+    if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: "" });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const fieldErrors = validate();
+    if (Object.keys(fieldErrors).length) {
+      setErrors(fieldErrors);
+      return;
+    }
+    setErrors({});
 
     setLoading(true);
 
@@ -121,8 +137,10 @@ export default function Login() {
                   placeholder="johndoe"
                   value={formData.username}
                   onChange={handleChange}
-                  required
                 />
+                {errors.username && (
+                  <p className="mt-1 text-xs text-red-600">{errors.username}</p>
+                )}
               </div>
 
               <div>
@@ -137,7 +155,6 @@ export default function Login() {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
-                    required
                   />
 
                   <button
@@ -151,6 +168,9 @@ export default function Login() {
                   </button>
 
                 </div>
+                {errors.password && (
+                  <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+                )}
               </div>
 
               <button

@@ -185,7 +185,7 @@ export default function Hero() {
           <div className="relative min-w-0 overflow-hidden">
             <div className="absolute -top-20 -right-20 size-96 rounded-full bg-[#E8C766] opacity-[0.08] blur-3xl pointer-events-none" />
             <Swiper
-              modules={[Autoplay, Pagination, Navigation]}
+              modules={[Autoplay, Navigation]}
               spaceBetween={30}
               slidesPerView={1}
               loop={true}
@@ -193,9 +193,7 @@ export default function Hero() {
                 delay: 4000,
                 disableOnInteraction: false,
               }}
-              pagination={{
-                clickable: true,
-              }}
+             
               navigation={true}
               className="hero-swiper rounded-3xl shadow-2xl ring-1 ring-white/10"
             >

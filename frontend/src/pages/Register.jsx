@@ -11,6 +11,8 @@ const ROLE_OPTIONS = [
   { value: "admin", label: "Admin", desc: "Manage products & orders" },
 ];
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -30,23 +32,69 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  const validate = () => {
+    const next = {};
+    const { first_name, last_name, username, email, phone, address, password, confirm_password } = formData;
+
+    if (!first_name.trim()) next.first_name = "First name is required.";
+    if (!last_name.trim()) next.last_name = "Last name is required.";
+    if (!username.trim()) {
+      next.username = "Username is required.";
+    } else if (username.trim().length < 3) {
+      next.username = "Username must be at least 3 characters.";
+    }
+
+    if (!email.trim()) {
+      next.email = "Email is required.";
+    } else if (!EMAIL_RE.test(email.trim())) {
+      next.email = "Enter a valid email address.";
+    }
+
+    const digits = phone.replace(/\D/g, "");
+    if (!phone.trim()) {
+      next.phone = "Phone number is required.";
+    } else if (digits.length < 10 || digits.length > 15) {
+      next.phone = "Enter a valid phone number (10–15 digits).";
+    }
+
+    if (!address.trim()) next.address = "Address is required.";
+
+    if (!password) {
+      next.password = "Password is required.";
+    } else if (password.length < 8) {
+      next.password = "Password must be at least 8 characters.";
+    }
+
+    if (!confirm_password) {
+      next.confirm_password = "Please confirm your password.";
+    } else if (password !== confirm_password) {
+      next.confirm_password = "Passwords do not match.";
+    }
+
+    return next;
+  };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+    if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: "" });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (formData.password !== formData.confirm_password) {
-      setError("Passwords do not match");
+    const fieldErrors = validate();
+    if (Object.keys(fieldErrors).length) {
+      setErrors(fieldErrors);
       return;
     }
+    setErrors({});
 
     setLoading(true);
 
@@ -147,8 +195,10 @@ export default function Register() {
                     placeholder="John"
                     value={formData.first_name}
                     onChange={handleChange}
-                    required
                   />
+                  {errors.first_name && (
+                    <p className="mt-1 text-xs text-red-600">{errors.first_name}</p>
+                  )}
                 </div>
 
                 <div>
@@ -160,8 +210,10 @@ export default function Register() {
                     placeholder="Doe"
                     value={formData.last_name}
                     onChange={handleChange}
-                    required
                   />
+                  {errors.last_name && (
+                    <p className="mt-1 text-xs text-red-600">{errors.last_name}</p>
+                  )}
                 </div>
 
               </div>
@@ -175,34 +227,40 @@ export default function Register() {
                   placeholder="johndoe"
                   value={formData.username}
                   onChange={handleChange}
-                  required
                 />
+                {errors.username && (
+                  <p className="mt-1 text-xs text-red-600">{errors.username}</p>
+                )}
               </div>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
                 <input
-                  type="email"
+                  type="text"
                   name="email"
                   className="input-field"
                   placeholder="john@example.com"
                   value={formData.email}
                   onChange={handleChange}
-                  required
                 />
+                {errors.email && (
+                  <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                )}
               </div>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Phone Number</label>
                 <input
-                  type="tel"
+                  type="text"
                   name="phone"
                   className="input-field"
                   placeholder="+1 234 567 8901"
                   value={formData.phone}
                   onChange={handleChange}
-                  required
                 />
+                {errors.phone && (
+                  <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+                )}
               </div>
 
               <div>
@@ -214,8 +272,10 @@ export default function Register() {
                   placeholder="Enter your full address"
                   value={formData.address}
                   onChange={handleChange}
-                  required
                 />
+                {errors.address && (
+                  <p className="mt-1 text-xs text-red-600">{errors.address}</p>
+                )}
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
@@ -232,7 +292,6 @@ export default function Register() {
                       placeholder="••••••••"
                       value={formData.password}
                       onChange={handleChange}
-                      required
                     />
 
                     <button
@@ -244,6 +303,9 @@ export default function Register() {
                     </button>
 
                   </div>
+                  {errors.password && (
+                    <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+                  )}
                 </div>
 
                 <div>
@@ -258,7 +320,6 @@ export default function Register() {
                       placeholder="••••••••"
                       value={formData.confirm_password}
                       onChange={handleChange}
-                      required
                     />
 
                     <button
@@ -272,6 +333,9 @@ export default function Register() {
                     </button>
 
                   </div>
+                  {errors.confirm_password && (
+                    <p className="mt-1 text-xs text-red-600">{errors.confirm_password}</p>
+                  )}
                 </div>
 
               </div>
