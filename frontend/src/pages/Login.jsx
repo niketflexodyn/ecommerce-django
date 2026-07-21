@@ -11,6 +11,7 @@ export default function Login() {
   const location = useLocation();
 
   const registered = location.state?.registered
+  const passwordReset = location.state?.passwordReset
 
   const [formData, setFormData] = useState({
     username: "",
@@ -100,6 +101,12 @@ export default function Login() {
               </div>
             )}
 
+            {passwordReset && !error && (
+              <div className="mt-4 rounded-xl border border-[#C9A227]/30 bg-[#E8C766]/10 px-4 py-3 text-sm text-[#8a6d1f]">
+                Password reset successfully! You can now sign in.
+              </div>
+            )}
+
             <form
               onSubmit={handleSubmit}
               className="mt-8 space-y-6"
@@ -164,6 +171,14 @@ export default function Login() {
                 className="font-semibold text-[#8a6d1f] transition hover:text-[#C9A227]"
               >
                 Register
+              </Link>
+            </p>
+            <p className="mt-4 text-center text-sm text-slate-500">
+              <Link
+                to="/forgot-password"
+                className="font-semibold text-[#8a6d1f] transition hover:text-[#C9A227]"
+              >
+                Forgot password?
               </Link>
             </p>
 

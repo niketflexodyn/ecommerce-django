@@ -333,32 +333,33 @@ export default function Navbar() {
         </div>
 
         {/* ── Mobile: Cart + Hamburger ─────────── */}
-        <div className="md:hidden col-start-3 flex items-center justify-self-end gap-1">
-          <Link
-            to="/cart"
-            aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
-            className="relative flex size-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100"
-          >
-            <CartIcon className="size-5" />
-            {cartCount > 0 && (
-              <span
-                className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold leading-none text-[#2A1A2C] ring-2 ring-white"
-                style={{ backgroundColor: '#E8C766' }}
-              >
-                {cartCount}
-              </span>
-            )}
-          </Link>
-          <button
-            type="button"
-            className="rounded-md p-2 text-slate-500 transition-colors hover:bg-slate-100"
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Toggle menu"
-            aria-expanded={mobileOpen}
-          >
-            {mobileOpen ? <CloseIcon className="size-5" /> : <MenuIcon className="size-5" />}
-          </button>
-        </div>
+       {/* ── Mobile: Cart + Hamburger ─────────── */}
+<div className="md:hidden ml-auto flex items-center gap-1">
+  <Link
+    to="/cart"
+    aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
+    className="relative flex size-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100"
+  >
+    <CartIcon className="size-5" />
+    {cartCount > 0 && (
+      <span
+        className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold leading-none text-[#2A1A2C] ring-2 ring-white"
+        style={{ backgroundColor: '#E8C766' }}
+      >
+        {cartCount}
+      </span>
+    )}
+  </Link>
+  <button
+    type="button"
+    className="rounded-md p-2 text-slate-500 transition-colors hover:bg-slate-100"
+    onClick={() => setMobileOpen((v) => !v)}
+    aria-label="Toggle menu"
+    aria-expanded={mobileOpen}
+  >
+    {mobileOpen ? <CloseIcon className="size-5" /> : <MenuIcon className="size-5" />}
+  </button>
+</div>
       </nav>
 
       {/* ── Mobile Search Bar ─────────────────── */}

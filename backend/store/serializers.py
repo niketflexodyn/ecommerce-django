@@ -293,3 +293,25 @@ class DashboardStatsSerializer(serializers.Serializer):
     total_orders = serializers.IntegerField()
     total_revenue = serializers.DecimalField(max_digits=12, decimal_places=2)
     recent_orders = OrderListSerializer(many=True)
+
+
+# -------------------------
+# Password reset
+# -------------------------
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    uid = serializers.CharField(write_only=True)
+    token = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+        # Reuse Django's built-in strength validators (settings.AUTH_PASSWORD_VALIDATORS).
+        validate_password(attrs["password"])
+        return attrs

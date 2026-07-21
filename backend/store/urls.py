@@ -44,6 +44,8 @@ urlpatterns = [
     # Auth
     path('register/', views.register),
     path('login/', CustomTokenObtainPairView.as_view()),
+    path('forgot-password/', views.forgot_password),
+    path('reset-password/', views.reset_password),
     path('refresh/', TokenRefreshView.as_view()),
     path('profile/', views.get_profile),
     path('profile/update/', views.update_profile),

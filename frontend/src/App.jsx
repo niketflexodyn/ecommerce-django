@@ -25,7 +25,8 @@ import AdminCategories from './pages/admin/AdminCategories'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminRatings from './pages/admin/AdminRatings'
 import EditAdminDetails from './components/admin/EditAdminDetails'
-
+import ForgotPassword from './pages/ForgetPassword'
+import ResetPassword from './pages/ResetPassword'
 export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
@@ -63,7 +64,7 @@ export default function App() {
                       <ProductList hideBanner />
                       <PromoCarousel />
                       <AboutStory />
-                      
+
                     </>
                   } />
                   <Route path="/product/:id" element={<ProductDetails />} />
@@ -75,6 +76,11 @@ export default function App() {
                   <Route path='/order-success' element={<OrderSuccess />} />
                   <Route path='/orders' element={<OrderHistory />} />
                   <Route path='/profile' element={<Profile />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route
+                    path="/reset-password/:uid/:token"
+                    element={<ResetPassword />}
+                  />
                 </Routes>
               </main>
               <Footer />

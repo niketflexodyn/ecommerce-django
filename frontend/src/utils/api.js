@@ -138,6 +138,30 @@ export const adminCategoryApi = {
   },
 };
 
+
+export const authApi = {
+
+  forgotPassword(data) {
+      return request(
+          "/forgot-password/",
+          {
+              method:"POST",
+              body:JSON.stringify(data)
+          }
+      );
+  },
+
+  resetPassword(data){
+      return request(
+          "/reset-password/",
+          {
+              method:"POST",
+              body:JSON.stringify(data)
+          }
+      );
+  }
+
+};
 // -------------------------
 // Checkout (Customer)
 // -------------------------

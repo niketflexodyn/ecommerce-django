@@ -15,6 +15,13 @@ from pathlib import Path
 from token import NAME
 from dotenv import load_dotenv
 load_dotenv()
+
+# The python.org macOS Python ships without a usable CA bundle, so Gmail's
+# STARTTLS handshake fails with CERTIFICATE_VERIFY_FAILED. Point the ssl
+# module at certifi's bundle so SMTP TLS verification works out of the box.
+import certifi
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -121,7 +128,34 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Email — Gmail SMTP for the password-reset flow.
+# Set these in backend/.env:
+#   EMAIL_HOST_USER=yourgmail@gmail.com
+#   EMAIL_HOST_PASSWORD=your-16-char-app-password   (NOT your Gmail password)
+#   DEFAULT_FROM_EMAIL=yourgmail@gmail.com
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "admin@mystore.com")
 
+# Surface app logs (e.g. password-reset email failures) in the runserver
+# terminal without disturbing Django's own logging defaults.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "loggers": {
+        "store": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+}
+
+# Frontend origin used to build the password-reset link emailed to users.
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
