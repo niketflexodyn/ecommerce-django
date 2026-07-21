@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 
@@ -26,6 +26,8 @@ export default function ProductList({ hideBanner = false }) {
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [error, setError] = useState(null)
   const [page, setPage] = useState(1)
+  // Total count comes from the server now that pagination is server-side.
+  const [totalCount, setTotalCount] = useState(0)
 
   const BASE_URL = import.meta.env.VITE_DJANGO_URL
   const debounceRef = useRef(null)
@@ -86,15 +88,19 @@ export default function ProductList({ hideBanner = false }) {
       })
   }, [BASE_URL])
 
-  // Re-fetch products whenever category or search changes
+  // Re-fetch products whenever category, search, sort, or page changes.
+  // Pagination and sorting are handled server-side now, so each request asks
+  // for exactly one page of already-sorted results.
   useEffect(() => {
     setLoading(true)
     const params = new URLSearchParams()
     if (selectedCategory !== 'all') params.set('category', selectedCategory)
     if (searchTerm) params.set('search', searchTerm)
+    if (sortBy !== 'featured') params.set('sort', sortBy)
+    params.set('page', page)
+    params.set('page_size', PAGE_SIZE)
 
-    const query = params.toString()
-    const url = `${BASE_URL}/api/products/${query ? `?${query}` : ''}`
+    const url = `${BASE_URL}/api/products/?${params.toString()}`
 
     fetch(url)
       .then((response) => {
@@ -102,30 +108,18 @@ export default function ProductList({ hideBanner = false }) {
         return response.json()
       })
       .then((data) => {
-        setProducts(Array.isArray(data) ? data : data.results || [])
+        // Server now returns a paginated payload: {count, next, previous, results}
+        setProducts(data.results || [])
+        setTotalCount(data.count || 0)
         setLoading(false)
       })
       .catch((err) => {
         setError(err.message)
         setLoading(false)
       })
-  }, [BASE_URL, selectedCategory, searchTerm])
+  }, [BASE_URL, selectedCategory, searchTerm, sortBy, page])
 
   const activeCategory = categories.find((c) => c.slug === selectedCategory)
-
-  const sortedProducts = useMemo(() => {
-    const list = [...products]
-    switch (sortBy) {
-      case 'price-asc':
-        return list.sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
-      case 'price-desc':
-        return list.sort((a, b) => parseFloat(b.price) - parseFloat(a.price))
-      case 'name-asc':
-        return list.sort((a, b) => a.name.localeCompare(b.name))
-      default:
-        return list
-    }
-  }, [products, sortBy])
 
   // Reset to the first page whenever the filtered/sorted set changes so the
   // user never lands on a page that no longer exists.
@@ -133,15 +127,11 @@ export default function ProductList({ hideBanner = false }) {
     setPage(1)
   }, [selectedCategory, searchTerm, sortBy])
 
-  const totalPages = Math.max(1, Math.ceil(sortedProducts.length / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
-  const paginatedProducts = sortedProducts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  )
 
   // Windowed page numbers: show a few around the current page plus first/last.
-  const pageNumbers = useMemo(() => {
+  const pageNumbers = (() => {
     const pages = []
     const span = 1 // pages either side of the current page
     const start = Math.max(1, currentPage - span)
@@ -152,7 +142,7 @@ export default function ProductList({ hideBanner = false }) {
     if (end < totalPages - 1) pages.push('…')
     if (end < totalPages) pages.push(totalPages)
     return pages
-  }, [currentPage, totalPages])
+  })()
 
   const hasActiveFilters = selectedCategory !== 'all' || searchTerm
 
@@ -246,7 +236,7 @@ export default function ProductList({ hideBanner = false }) {
               Shop Now
             </a>
             <span className="inline-flex items-center rounded-full border border-white/30 px-6 py-3 text-sm font-medium text-white">
-              {products.length} product{products.length !== 1 ? 's' : ''} available
+              {totalCount} product{totalCount !== 1 ? 's' : ''} available
             </span>
           </div>
         </div>
@@ -336,7 +326,7 @@ export default function ProductList({ hideBanner = false }) {
                 <p className="mt-1 text-sm text-slate-500">
                   {loading
                     ? 'Loading...'
-                    : `${sortedProducts.length} item${sortedProducts.length !== 1 ? 's' : ''}${
+                    : `${totalCount} item${totalCount !== 1 ? 's' : ''}${
                         activeCategory ? ` in ${activeCategory.name}` : ' in our catalog'
                       }`}
                 </p>
@@ -405,16 +395,54 @@ export default function ProductList({ hideBanner = false }) {
               <div key={i} className="card h-80 animate-pulse bg-slate-100" />
             ))}
           </div>
-        ) : sortedProducts.length > 0 ? (
+        ) : products.length > 0 ? (
           <>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {paginatedProducts.map((product) => (
+              {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
 
-            {/* Pagination */}
-       
+            {/* Pagination (server-side) */}
+            {totalPages > 1 && (
+              <div className="mt-10 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Prev
+                </button>
+
+                {pageNumbers.map((p, i) =>
+                  p === '…' ? (
+                    <span key={`gap-${i}`} className="px-2 text-sm text-slate-400">
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                        p === currentPage
+                          ? 'bg-[#2A1A2C] text-white'
+                          : 'border border-slate-200 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </>
         ) : (
           <div className="card flex flex-col items-center p-12 text-center">

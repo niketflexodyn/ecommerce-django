@@ -39,9 +39,14 @@ export default function Profile() {
       setSuccess(true);
     } catch (err) {
       const data = err.data || {};
-      const msg = Object.entries(data)
-        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
-        .join(' | ');
+      // Prefer SimpleJWT's `detail` (e.g. "Given token not valid…") over the
+      // raw `messages` array, which would otherwise stringify to [object Object].
+      const msg =
+        data.detail ||
+        Object.entries(data)
+          .filter(([k]) => k !== 'messages' && k !== 'code')
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+          .join(' | ');
       setError(msg || 'Failed to update details. Please try again.');
     } finally {
       setSaving(false);
@@ -70,7 +75,7 @@ export default function Profile() {
     'w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8C766]/40 focus:border-[#C9A227]';
 
   return (
-    <div className="page-container py-8 sm:py-12" style={fontBody}>
+    <div className="page-container py-8 sm:py-12 mx-auto justify-center " style={fontBody}>
       <nav className="mb-6 text-sm text-slate-500">
         <Link to="/" className="transition hover:text-[#E8C766]">Home</Link>
         <span className="mx-2 text-slate-300">/</span>

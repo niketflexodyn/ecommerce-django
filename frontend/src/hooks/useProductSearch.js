@@ -23,12 +23,16 @@ export function useProductSearch(query, debounceMs = 200) {
     setError(null)
 
     const timer = setTimeout(() => {
-      fetch(`${BASE_URL}/api/products/?search=${encodeURIComponent(trimmed)}`)
+      // The products endpoint is paginated server-side; pull the page of
+      // matches out of the {count, next, previous, results} payload.
+      fetch(
+        `${BASE_URL}/api/products/?search=${encodeURIComponent(trimmed)}&page_size=20`
+      )
         .then((response) => {
           if (!response.ok) throw new Error('Failed to fetch search results')
           return response.json()
         })
-        .then((data) => setResults(data))
+        .then((data) => setResults(data.results || []))
         .catch(() => setError('Something went wrong. Please try again.'))
         .finally(() => setLoading(false))
     }, debounceMs)

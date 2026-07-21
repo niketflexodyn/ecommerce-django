@@ -9,8 +9,35 @@ function getAuthHeaders() {
   return headers;
 }
 
+// Refresh the access token using the stored refresh token. Returns the new
+// access token, or null if the refresh token is missing/invalid/expired.
+// A shared in-flight promise dedupes concurrent 401s so we only hit the
+// refresh endpoint once even when several requests fail at the same time.
+let refreshingPromise = null;
+
+async function refreshAccessToken() {
+  const refresh = localStorage.getItem('refresh_token');
+  if (!refresh) return null;
+  try {
+    const res = await fetch(`${API_BASE}/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.access) return null;
+    localStorage.setItem('access_token', data.access);
+    // Some SimpleJWT configs rotate the refresh token; persist it if present.
+    if (data.refresh) localStorage.setItem('refresh_token', data.refresh);
+    return data.access;
+  } catch {
+    return null;
+  }
+}
+
 async function request(endpoint, options = {}) {
-  const { isFormData, ...rest } = options;
+  const { isFormData, _retry, ...rest } = options;
   const config = {
     ...rest,
     headers: {
@@ -20,7 +47,21 @@ async function request(endpoint, options = {}) {
     },
   };
 
-  const response = await fetch(`${API_BASE}${endpoint}`, config);
+  let response = await fetch(`${API_BASE}${endpoint}`, config);
+
+  // Access token expired (SimpleJWT returns 401 with code token_not_valid).
+  // Refresh once and retry the original request with the new token.
+  if (response.status === 401 && !_retry) {
+    const newToken = await (refreshingPromise ??= refreshAccessToken());
+    refreshingPromise = null;
+    if (newToken) {
+      const retryConfig = {
+        ...config,
+        headers: { ...config.headers, Authorization: `Bearer ${newToken}` },
+      };
+      response = await fetch(`${API_BASE}${endpoint}`, retryConfig);
+    }
+  }
 
   if (!response.ok) {
     const error = new Error('Request failed');

@@ -18,6 +18,7 @@ User = get_user_model()
 logger = logging.getLogger("store")
 
 from .models import Product, Category, Cart, CartItem, Order, OrderItem, Rating, ProductImage
+from .pagination import ProductPagination
 from .permissions import IsAdminOrSuperAdmin
 from .serializers import (
     ProductSerializer,
@@ -135,8 +136,22 @@ def get_products(request):
         else:
             products = products.filter(category__slug=category_slug)
 
-    serializer = ProductSerializer(products, many=True, context={'request': request})
-    return Response(serializer.data)
+    # Server-side sort. Sorting must happen on the server now that the list is
+    # paginated — otherwise each page would only be sorted within itself.
+    sort = request.query_params.get('sort', '').strip()
+    sort_map = {
+        'price-asc': 'price',
+        'price-desc': '-price',
+        'name-asc': 'name',
+    }
+    products = products.order_by(sort_map.get(sort, '-created_at'))
+
+    # Server-side pagination. Returns {count, next, previous, results} instead
+    # of a bare array; page_size is overridable via ?page_size= (capped at 50).
+    paginator = ProductPagination()
+    page = paginator.paginate_queryset(products, request)
+    serializer = ProductSerializer(page, many=True, context={'request': request})
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(["GET"])
