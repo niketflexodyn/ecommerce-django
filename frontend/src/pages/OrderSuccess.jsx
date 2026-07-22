@@ -1,8 +1,5 @@
 import { useLocation, Link } from 'react-router-dom';
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" };
-const fontBody = { fontFamily: "'Jost', sans-serif" };
-
 export default function OrderSuccess() {
   const location = useLocation();
   const orderId = location.state?.orderId;
@@ -10,7 +7,7 @@ export default function OrderSuccess() {
   const total = location.state?.total;
 
   return (
-    <div className="page-container py-12" style={fontBody}>
+    <div className="page-container font-body py-12">
       <div className="mx-auto max-w-md text-center">
         {/* Success icon */}
         <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-emerald-100">
@@ -19,7 +16,7 @@ export default function OrderSuccess() {
           </svg>
         </div>
 
-        <h1 className="mt-6 text-3xl font-bold text-slate-900" style={fontDisplay}>
+        <h1 className="font-display mt-6 text-3xl font-bold text-slate-900">
           Order Placed!
         </h1>
 
@@ -34,7 +31,7 @@ export default function OrderSuccess() {
         )}
 
         {total && (
-          <p className="mt-1 text-lg font-semibold text-[#2A1A2C]">
+          <p className="mt-1 text-lg font-semibold text-plum-950">
             ₹{Number(total).toLocaleString()}
           </p>
         )}
@@ -42,8 +39,7 @@ export default function OrderSuccess() {
         <div className="mt-8 flex flex-col gap-3">
           <Link
             to="/"
-            className="inline-block rounded-xl px-6 py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90"
-            style={{ backgroundColor: '#E8C766' }}
+            className="inline-block rounded-xl bg-gold-500 px-6 py-3 font-semibold text-plum-950 transition hover:opacity-90"
           >
             Continue Shopping
           </Link>

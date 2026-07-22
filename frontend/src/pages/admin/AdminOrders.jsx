@@ -54,7 +54,7 @@ export default function AdminOrders() {
   if (loading && orders.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#2A1A2C]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-plum-950" />
       </div>
     );
   }
@@ -72,11 +72,11 @@ export default function AdminOrders() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by customer name or email..."
-          className="w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8C766]/50 focus:border-[#C9A227]"
+          className="w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
         />
         <button
           type="submit"
-          className="rounded-lg bg-[#2A1A2C] px-4 py-2 text-sm font-medium text-white hover:bg-[#3D2136] transition-colors"
+          className="rounded-lg bg-plum-950 px-4 py-2 text-sm font-medium text-white hover:bg-plum-900 transition-colors"
         >
           Search
         </button>
@@ -103,7 +103,7 @@ export default function AdminOrders() {
                 className="flex w-full items-center justify-between px-6 py-4 text-left hover:bg-slate-50/50 transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <span className="text-sm font-semibold text-[#2A1A2C]">#{order.id}</span>
+                  <span className="text-sm font-semibold text-plum-950">#{order.id}</span>
                   <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}>
                     {statusStyle.label}
                   </span>
@@ -115,7 +115,7 @@ export default function AdminOrders() {
                   </span>
                 </div>
                 <div className="flex items-center gap-6">
-                  <span className="text-sm font-semibold text-[#2A1A2C]">
+                  <span className="text-sm font-semibold text-plum-950">
                     ₹{Number(order.total_amount).toLocaleString()}
                   </span>
                   <span className="text-xs text-slate-400">
@@ -138,7 +138,7 @@ export default function AdminOrders() {
                 <div className="border-t border-slate-100 px-6 py-4">
                   {!detail ? (
                     <div className="flex justify-center py-4">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[#2A1A2C]" />
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-plum-950" />
                     </div>
                   ) : (
                     <>
@@ -146,7 +146,7 @@ export default function AdminOrders() {
                       <div className="mb-4 grid gap-4 sm:grid-cols-3">
                         <div>
                           <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Customer</p>
-                          <p className="mt-1 text-sm font-medium text-[#2A1A2C]">
+                          <p className="mt-1 text-sm font-medium text-plum-950">
                             {detail.first_name} {detail.last_name}
                           </p>
                           <p className="text-sm text-slate-600">@{detail.username}</p>
@@ -161,7 +161,7 @@ export default function AdminOrders() {
                           <p className="text-sm text-slate-600">{detail.address || '—'}</p>
                           {detail.location && (
                             <p className="mt-1 flex items-center gap-1 text-sm text-slate-600">
-                              <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                              <svg className="size-4 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                               </svg>
@@ -195,7 +195,7 @@ export default function AdminOrders() {
                               <td className="py-2 text-slate-800">{item.product_name}</td>
                               <td className="py-2 text-right text-slate-600">₹{Number(item.product_price).toLocaleString()}</td>
                               <td className="py-2 text-right text-slate-600">{item.quantity}</td>
-                              <td className="py-2 text-right font-medium text-[#2A1A2C]">
+                              <td className="py-2 text-right font-medium text-plum-950">
                                 ₹{(Number(item.product_price) * item.quantity).toLocaleString()}
                               </td>
                             </tr>
@@ -203,7 +203,7 @@ export default function AdminOrders() {
                         </tbody>
                       </table>
                       <div className="mt-3 flex justify-end border-t border-slate-100 pt-3">
-                        <p className="text-sm font-semibold text-[#2A1A2C]">
+                        <p className="text-sm font-semibold text-plum-950">
                           Total: ₹{Number(detail.total_amount).toLocaleString()}
                         </p>
                       </div>

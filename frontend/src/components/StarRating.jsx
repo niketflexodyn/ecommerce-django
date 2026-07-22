@@ -40,15 +40,15 @@ export default function StarRating({
           >
             {filled ? (
               /* Full star */
-              <svg className={`${sizeClass} text-[#E8C766]`} viewBox="0 0 24 24" fill="currentColor">
+              <svg className={`${sizeClass} text-gold-500`} viewBox="0 0 24 24" fill="currentColor">
                 <path d="M10.788 3.21c.448-1.077 1.978-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.228 5.295c.266 1.148-.903 2.087-1.841 1.444L12 18.162l-4.716 3.069c-.938.643-2.107-.296-1.841-1.444l1.228-5.295-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.006Z" />
               </svg>
             ) : half ? (
               /* Half star */
-              <svg className={`${sizeClass} text-[#E8C766]`} viewBox="0 0 24 24">
+              <svg className={`${sizeClass} text-gold-500`} viewBox="0 0 24 24">
                 <defs>
                   <linearGradient id="half-fill">
-                    <stop offset="50%" stopColor="#E8C766" />
+                    <stop offset="50%" stopColor="var(--color-gold-500)" />
                     <stop offset="50%" stopColor="#D1D5DB" />
                   </linearGradient>
                 </defs>

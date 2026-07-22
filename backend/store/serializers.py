@@ -243,6 +243,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'order_number', 'username', 'email', 'first_name', 'last_name',
             'phone', 'address', 'location', 'created_at', 'total_amount', 'items', 'status',
+            'payment_status',
         ]
 
 

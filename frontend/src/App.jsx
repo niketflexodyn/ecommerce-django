@@ -28,6 +28,7 @@ import EditAdminDetails from './components/admin/EditAdminDetails'
 import ForgotPassword from './pages/ForgetPassword'
 import ResetPassword from './pages/ResetPassword'
 import CartDrawer from './components/CartDrawer'
+// import ScrollToTop from './pages/ScrollToTop'
 export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
@@ -84,7 +85,7 @@ export default function App() {
                   />
                 </Routes>
                 <CartDrawer />
-
+                  {/* <ScrollToTop /> */}
               </main>
               <Footer />
               <BackToTop />

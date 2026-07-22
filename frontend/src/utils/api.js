@@ -214,6 +214,20 @@ export const checkoutApi = {
       body: JSON.stringify(data),
     });
   },
+  // Razorpay: create a Razorpay order + pending Django order.
+  razorpay(data) {
+    return request('/checkoutRaz/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  // Razorpay: verify the payment signature and finalize the order.
+  verifyRazorpay(data) {
+    return request('/checkoutRaz/verify/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 // -------------------------

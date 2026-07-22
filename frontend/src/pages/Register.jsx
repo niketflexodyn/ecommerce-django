@@ -3,9 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" }
-const fontBody = { fontFamily: "'Jost', sans-serif" }
-
 const ROLE_OPTIONS = [
   { value: "customer", label: "Customer", desc: "Shop & place orders" },
   { value: "admin", label: "Admin", desc: "Manage products & orders" },
@@ -110,19 +107,18 @@ export default function Register() {
 
   return (
     <div className="page-container py-12">
-      <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-white shadow-xl" style={fontBody}>
+      <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-white shadow-xl font-body">
         <div className="grid lg:grid-cols-2">
 
           {/* Left */}
           <div
-            className="p-10 text-white"
-            style={{ background: 'linear-gradient(135deg, #2A1A2C 0%, #3D2136 55%, #4A2536 100%)' }}
+            className="bg-linear-to-br from-plum-950 via-plum-900 to-plum-800 p-10 text-white"
           >
-            <p className="text-sm uppercase tracking-[4px] text-[#E8C766]">
+            <p className="text-sm uppercase tracking-[4px] text-gold-500">
               Luxora
             </p>
 
-            <h1 className="mt-5 text-4xl font-bold" style={fontDisplay}>
+            <h1 className="mt-5 text-4xl font-bold font-display">
               Create Your Account
             </h1>
 
@@ -142,7 +138,7 @@ export default function Register() {
           {/* Right */}
           <div className="p-10">
 
-            <h2 className="text-3xl font-bold text-slate-800" style={fontDisplay}>
+            <h2 className="text-3xl font-bold text-slate-800 font-display">
               Register
             </h2>
 
@@ -169,11 +165,11 @@ export default function Register() {
                       onClick={() => setFormData({ ...formData, role: opt.value })}
                       className={`rounded-xl border-2 p-3 text-left transition ${
                         formData.role === opt.value
-                          ? "border-[#E8C766] bg-[#E8C766]/10 ring-1 ring-[#E8C766]"
+                          ? "border-gold-500 bg-gold-500/10 ring-1 ring-gold-500"
                           : "border-slate-200 bg-white hover:border-slate-300"
                       }`}
                     >
-                      <span className={`block text-sm font-semibold ${formData.role === opt.value ? "text-[#2A1A2C]" : "text-slate-900"}`}>
+                      <span className={`block text-sm font-semibold ${formData.role === opt.value ? "text-plum-950" : "text-slate-900"}`}>
                         {opt.label}
                       </span>
                       <span className="mt-0.5 block text-xs text-slate-500">
@@ -343,8 +339,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ backgroundColor: '#E8C766' }}
+                className="w-full rounded-xl bg-gold-500 py-3 font-semibold text-plum-950 transition hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? "Creating Account..." : "Create Account"}
               </button>
@@ -355,7 +350,7 @@ export default function Register() {
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="font-semibold text-[#8a6d1f] transition hover:text-[#C9A227]"
+                className="font-semibold text-gold-700 transition hover:text-gold-600"
               >
                 Login
               </Link>

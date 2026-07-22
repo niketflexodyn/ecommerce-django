@@ -1,8 +1,5 @@
 import { useScrollReveal } from '../hooks/useScrollReveal';
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" };
-const fontBody = { fontFamily: "'Jost', sans-serif" };
-
 // Small trust tiles that back up the brand story with a few numbers.
 const STATS = [
   { value: '500+', label: 'Curated products' },
@@ -19,17 +16,17 @@ export default function AboutStory() {
   };
 
   return (
-    <section ref={ref} className="border-y border-slate-100 bg-[#FBF8F3]" style={fontBody}>
+    <section ref={ref} className="font-body border-y border-slate-100 bg-cream">
       <div className="page-container py-16 sm:py-20">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Copy */}
           <div className={`max-w-xl ${revealed ? 'animate-fade-up' : 'opacity-0'}`}>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#C9A227]/40 bg-[#C9A227]/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-[#C9A227]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#E8C766]" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-gold-600/40 bg-gold-600/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-gold-600">
+              <span className="h-1.5 w-1.5 rounded-full bg-gold-500" />
               Our Story
             </span>
 
-            <h2 className="mt-4 text-3xl font-bold text-[#2A1A2C] sm:text-4xl" style={fontDisplay}>
+            <h2 className="font-display mt-4 text-3xl font-bold text-plum-950 sm:text-4xl">
               Curated for the modern shopper
             </h2>
 
@@ -49,7 +46,7 @@ export default function AboutStory() {
               <a
                 href="#products"
                 onClick={scrollToProducts}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#2A1A2C] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[#3D2136]"
+                className="inline-flex items-center gap-2 rounded-lg bg-plum-950 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-plum-900"
               >
                 Explore the collection
                 <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -62,32 +59,32 @@ export default function AboutStory() {
 
           {/* Visual panel */}
           <div
-            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#2A1A2C] via-[#3D2136] to-[#4A2536] p-8 text-white shadow-xl sm:p-10 ${
+            className={`relative overflow-hidden rounded-2xl bg-linear-to-br from-plum-950 via-plum-900 to-plum-800 p-8 text-white shadow-xl sm:p-10 ${
               revealed ? 'animate-fade-up delay-150' : 'opacity-0'
             }`}
           >
             {/* soft gold glow */}
-            <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#E8C766]/[0.08] blur-3xl" />
-            <div className="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-[#E8C766]/[0.06] blur-3xl" />
+            <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gold-500/[0.08] blur-3xl" />
+            <div className="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-gold-500/[0.06] blur-3xl" />
 
             <div className="relative">
-              <svg className="size-8 text-[#E8C766]" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="size-8 text-gold-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z" />
               </svg>
 
-              <p className="mt-6 text-xl font-medium leading-relaxed sm:text-2xl" style={fontDisplay}>
+              <p className="font-display mt-6 text-xl font-medium leading-relaxed sm:text-2xl">
                 Quality you can trust, prices you'll love, and a checkout that's done in seconds.
               </p>
 
               <div className="mt-8 border-t border-white/10 pt-6">
-                <p className="text-sm font-semibold tracking-wide text-[#E8C766]">The Marketplace Team</p>
+                <p className="text-sm font-semibold tracking-wide text-gold-500">The Marketplace Team</p>
                 <p className="mt-1 text-sm text-white/50">Curating better shopping, every day.</p>
               </div>
 
               <div className="mt-8 grid grid-cols-3 gap-4">
                 {STATS.map((stat) => (
                   <div key={stat.label} className="rounded-xl bg-white/5 px-3 py-4 text-center ring-1 ring-white/10">
-                    <div className="text-lg font-bold text-white" style={fontDisplay}>
+                    <div className="font-display text-lg font-bold text-white">
                       {stat.value}
                     </div>
                     <div className="mt-1 text-[11px] uppercase tracking-wide text-white/50">{stat.label}</div>

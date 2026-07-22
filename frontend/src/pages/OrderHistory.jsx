@@ -4,9 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { orderApi, ratingApi } from '../utils/api';
 import StarRating from '../components/StarRating';
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" };
-const fontBody = { fontFamily: "'Jost', sans-serif" };
-
 const STATUS_STYLES = {
   successful: { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Successful' },
   unsuccessful: { bg: 'bg-red-50', text: 'text-red-700', label: 'Unsuccessful' },
@@ -27,7 +24,10 @@ export default function OrderHistory() {
     if (!user) return;
     orderApi
       .mine()
-      .then(setOrders)
+      .then((data) => {
+        const sorted = [...data].sort((a, b) => b.id - a.id);
+        setOrders(sorted);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user]);
@@ -83,14 +83,13 @@ export default function OrderHistory() {
 
   if (!user) {
     return (
-      <div className="page-container py-12" style={fontBody}>
+      <div className="page-container font-body py-12">
         <div className="mx-auto max-w-lg text-center">
-          <h1 className="text-3xl font-bold text-slate-900" style={fontDisplay}>Please Sign In</h1>
+          <h1 className="font-display text-3xl font-bold text-slate-900">Please Sign In</h1>
           <p className="mt-3 text-slate-500">You need to be logged in to view your orders.</p>
           <button
             onClick={() => navigate('/login')}
-            className="mt-6 inline-block rounded-xl px-6 py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90"
-            style={{ backgroundColor: '#E8C766' }}
+            className="mt-6 inline-block rounded-xl bg-gold-500 px-6 py-3 font-semibold text-plum-950 transition hover:opacity-90"
           >
             Go to Login
           </button>
@@ -101,38 +100,38 @@ export default function OrderHistory() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center" style={fontBody}>
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#2A1A2C]" />
+      <div className="flex min-h-[40vh] items-center justify-center font-body">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-plum-950" />
       </div>
     );
   }
 
   return (
-    <div className="page-container py-8 sm:py-12" style={fontBody}>
+    <div className="page-container font-body py-8 sm:py-12">
       <div className="mb-8">
         <nav className="mb-4 text-sm text-slate-500">
-          <Link to="/" className="transition hover:text-[#E8C766]">Home</Link>
+          <Link to="/" className="transition hover:text-gold-500">Home</Link>
           <span className="mx-2 text-slate-300">/</span>
           <span className="text-slate-900">My Orders</span>
         </nav>
-        <h1 className="text-3xl font-bold text-slate-900" style={fontDisplay}>My Orders</h1>
-        <div className="mt-2 h-1 w-12 rounded-full bg-[#E8C766]" />
+        <h1 className="font-display text-3xl font-bold text-slate-900">My Orders</h1>
+        <div className="mt-2 h-1 w-12 rounded-full bg-gold-500" />
       </div>
 
       {orders.length === 0 ? (
         <div className="card mx-auto max-w-lg p-12 text-center">
-          <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-[#E8C766]/10">
-            <svg className="size-10 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-gold-500/10">
+            <svg className="size-10 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.25 18.75a.75.75 0 0 1 .75-.75h6a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75Z" />
             </svg>
           </div>
-          <h2 className="mt-5 text-xl font-bold text-slate-900" style={fontDisplay}>No orders yet</h2>
+          <h2 className="font-display mt-5 text-xl font-bold text-slate-900">No orders yet</h2>
           <p className="mt-2 text-sm text-slate-500">
             Start shopping and your orders will appear here.
           </p>
           <Link
             to="/"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#2A1A2C] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#2A1A2C]/20 transition hover:bg-[#3D2136]"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-plum-950 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-plum-950/20 transition hover:bg-plum-900"
           >
             Start Shopping
           </Link>
@@ -151,7 +150,7 @@ export default function OrderHistory() {
                   className="flex w-full items-center justify-between px-6 py-4 text-left hover:bg-slate-50/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold text-[#2A1A2C]">#{order.order_number}</span>
+                    <span className="text-sm font-semibold text-plum-950">#{order.order_number}</span>
                     <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusStyle.bg} ${statusStyle.text}`}>
                       {statusStyle.label}
                     </span>
@@ -160,7 +159,7 @@ export default function OrderHistory() {
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold text-[#2A1A2C]">₹{Number(order.total_amount).toLocaleString()}</span>
+                    <span className="text-sm font-semibold text-plum-950">₹{Number(order.total_amount).toLocaleString()}</span>
                     <span className="text-xs text-slate-400">{new Date(order.created_at).toLocaleDateString()}</span>
                     <svg
                       className={`size-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -175,7 +174,7 @@ export default function OrderHistory() {
                   <div className="border-t border-slate-100 px-6 py-4">
                     {!detail ? (
                       <div className="flex justify-center py-4">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[#2A1A2C]" />
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-plum-950" />
                       </div>
                     ) : (
                       <table className="w-full text-left text-sm">
@@ -201,17 +200,14 @@ export default function OrderHistory() {
                                 <td className="py-3 text-slate-800">{item.product_name}</td>
                                 <td className="py-3 text-right text-slate-600">₹{Number(item.product_price).toLocaleString()}</td>
                                 <td className="py-3 text-right text-slate-600">{item.quantity}</td>
-                                <td className="py-3 text-right font-medium text-[#2A1A2C]">
+                                <td className="py-3 text-right font-medium text-plum-950">
                                   ₹{(Number(item.product_price) * item.quantity).toLocaleString()}
                                 </td>
                                 <td className="py-3 text-right align-top">
-                                  <p className="text-sm text-slate-600">{item.address || '—'}</p>
+                                  <p className="text-sm text-slate-600">{detail.address || '—'}</p>
                                   {detail.location && (
                                     <p className="mt-1 flex items-center justify-end gap-1 text-sm text-slate-600">
-                                      <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-                                      </svg>
+
                                       {detail.location}
                                     </p>
                                   )}
@@ -226,7 +222,7 @@ export default function OrderHistory() {
                                           size="sm"
                                         />
                                         {existingRating && !msg && (
-                                          <span className="text-xs text-[#8a6d1f] font-medium">✓</span>
+                                          <span className="text-xs font-medium text-gold-700">✓</span>
                                         )}
                                       </>
                                     ) : (

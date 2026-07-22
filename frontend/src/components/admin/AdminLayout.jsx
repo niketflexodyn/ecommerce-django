@@ -69,23 +69,22 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="flex min-h-screen" style={{ fontFamily: "'Jost', sans-serif" }}>
+    <div className="flex min-h-screen font-body">
       {/* Sidebar */}
-      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col bg-[#2A1A2C] text-white">
+      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col bg-plum-950 text-white">
         {/* Logo */}
         <div className="flex items-center gap-2 border-b border-white/10 px-6 py-5">
           <span
-            className="flex size-8 items-center justify-center rounded-lg text-sm font-black text-[#2A1A2C]"
-            style={{ backgroundColor: '#E8C766' }}
+            className="flex size-8 items-center justify-center rounded-lg bg-gold-500 text-sm font-black text-plum-950"
           >
-             <svg className="size-5 text-[#2A1A2C]" viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor">
+             <svg className="size-5 text-plum-950" viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21V7.5m0 0 6.75-3.75v13.5M13.5 7.5l-6.75-3.75v13.5M6.75 17.25l6.75 3.75 6.75-3.75" />
             </svg>
           </span>
-          <span className="text-lg font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <span className="text-lg font-bold font-display">
             Luxora
           </span>
-          <span className="ml-auto rounded bg-[#E8C766]/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8C766]">
+          <span className="ml-auto rounded bg-gold-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-500">
             Admin
           </span>
         </div>
@@ -115,7 +114,7 @@ export default function AdminLayout() {
         <div className="border-t border-white/10 px-4 py-4 space-y-2">
           <div className="px-2 text-xs text-slate-400">
             {user?.first_name || user?.username}
-            <span className="ml-2 rounded bg-[#E8C766]/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8C766]">
+            <span className="ml-2 rounded bg-gold-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-500">
               {user?.role}
             </span>
           </div>

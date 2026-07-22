@@ -5,37 +5,34 @@ import { useScrollReveal } from '../hooks/useScrollReveal'
 
 import 'swiper/css'
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" }
-const fontBody = { fontFamily: "'Jost', sans-serif" }
-
 const DEALS = [
   {
     image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800',
     title: 'Summer Collection',
     subtitle: 'Up to 50% Off',
     cta: 'Shop Fashion',
-    gradient: 'from-[#2A1A2C]/90 via-[#2A1A2C]/60 to-transparent',
+    gradient: 'from-plum-950/90 via-plum-950/60 to-transparent',
   },
   {
     image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800',
     title: 'Tech Essentials',
     subtitle: 'Latest Gadgets',
     cta: 'Shop Electronics',
-    gradient: 'from-[#3D2136]/90 via-[#3D2136]/60 to-transparent',
+    gradient: 'from-plum-900/90 via-plum-900/60 to-transparent',
   },
   {
     image: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800',
     title: 'Home & Living',
     subtitle: 'Starting at $29',
     cta: 'Shop Home',
-    gradient: 'from-[#4A2536]/90 via-[#4A2536]/60 to-transparent',
+    gradient: 'from-plum-800/90 via-plum-800/60 to-transparent',
   },
   {
     image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800',
     title: 'Beauty Picks',
     subtitle: 'New Arrivals',
     cta: 'Shop Beauty',
-    gradient: 'from-[#2A1A2C]/90 via-[#2A1A2C]/60 to-transparent',
+    gradient: 'from-plum-950/90 via-plum-950/60 to-transparent',
   },
 ]
 
@@ -83,25 +80,22 @@ export default function PromoCarousel() {
   return (
     <section
       ref={ref}
-      className="relative overflow-hidden py-14 sm:py-20"
-      style={{
-        background: 'linear-gradient(135deg, #2A1A2C 0%, #3D2136 55%, #4A2536 100%)',
-      }}
+      className="relative overflow-hidden bg-linear-to-br from-plum-950 via-plum-900 to-plum-800 py-14 sm:py-20"
     >
       {/* Decorative background elements */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-32 top-1/4 size-80 rounded-full bg-[#E8C766]/[0.06] blur-3xl" />
-        <div className="absolute -right-20 bottom-1/4 size-64 rounded-full bg-[#E8C766]/[0.04] blur-3xl" />
+        <div className="absolute -left-32 top-1/4 size-80 rounded-full bg-gold-500/[0.06] blur-3xl" />
+        <div className="absolute -right-20 bottom-1/4 size-64 rounded-full bg-gold-500/[0.04] blur-3xl" />
       </div>
 
-      <div className="page-container relative" style={fontBody}>
+      <div className="page-container font-body relative">
         {/* ── Heading ────────────────────────────── */}
         <div className={`mb-10 text-center ${revealed ? 'animate-fade-up' : 'opacity-0'}`}>
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#C9A227]/40 bg-[#C9A227]/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-[#E8C766]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#E8C766]" />
+          <span className="inline-flex items-center gap-2 rounded-full border border-gold-600/40 bg-gold-600/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-gold-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-gold-500" />
             Limited Time Offers
           </span>
-          <h2 className="mt-4 text-3xl font-bold text-white sm:text-4xl" style={fontDisplay}>
+          <h2 className="font-display mt-4 text-3xl font-bold text-white sm:text-4xl">
             Deals You'll Love
           </h2>
           <p className="mx-auto mt-3 max-w-md text-white/60">
@@ -144,20 +138,19 @@ export default function PromoCarousel() {
             alt={deal.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
-          <div className={`absolute inset-0 bg-gradient-to-r ${deal.gradient}`} />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <div className={`absolute inset-0 bg-linear-to-r ${deal.gradient}`} />
+          <div className="absolute inset-0 bg-linear-to-t from-black/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
           <div className="absolute bottom-0 left-0 right-0 p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#E8C766]">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-500">
               {deal.subtitle}
             </p>
             <h3
-              className="mt-1 text-2xl font-bold text-white sm:text-3xl"
-              style={fontDisplay}
+              className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl"
             >
               {deal.title}
             </h3>
-            <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#E8C766] transition-colors group-hover:text-[#F1D9A0]">
+            <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-gold-500 transition-colors group-hover:text-gold-400">
               {deal.cta}
               <svg className="size-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -173,7 +166,7 @@ export default function PromoCarousel() {
         {/* ── Shop by Category ──────────────────── */}
       {/* ── Shop by Category ──────────────────── */}
 <div className={`text-center ${revealed ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
-  <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E8C766]">
+  <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">
     Shop by Category
   </h3>
   <Swiper
@@ -207,17 +200,16 @@ export default function PromoCarousel() {
             alt={cat.name}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#2A1A2C]/80 via-[#2A1A2C]/20 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-plum-950/80 via-plum-950/20 to-transparent" />
           <div className="absolute inset-0 flex items-end justify-start p-5">
             <span
-              className="text-lg font-bold text-white sm:text-xl"
-              style={fontDisplay}
+              className="font-display text-lg font-bold text-white sm:text-xl"
             >
               {cat.name}
             </span>
           </div>
           {/* Gold accent line at bottom */}
-          <div className="absolute bottom-0 left-0 h-1 w-0 bg-[#E8C766] transition-all duration-300 group-hover:w-full" />
+          <div className="absolute bottom-0 left-0 h-1 w-0 bg-gold-500 transition-all duration-300 group-hover:w-full" />
         </a>
       </SwiperSlide>
     ))}

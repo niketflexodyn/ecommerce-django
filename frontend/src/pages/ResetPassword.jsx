@@ -2,9 +2,6 @@ import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { authApi } from "../utils/api";
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" };
-const fontBody = { fontFamily: "'Jost', sans-serif" };
-
 export default function ResetPassword() {
   const { uid, token } = useParams();
   const navigate = useNavigate();
@@ -62,11 +59,10 @@ export default function ResetPassword() {
   return (
     <div className="page-container py-12">
       <div
-        className="mx-auto max-w-md overflow-hidden rounded-3xl bg-white shadow-xl"
-        style={fontBody}
+        className="mx-auto max-w-md overflow-hidden rounded-3xl bg-white shadow-xl font-body"
       >
         <div className="p-10">
-          <h2 className="text-3xl font-bold text-slate-800" style={fontDisplay}>
+          <h2 className="text-3xl font-bold text-slate-800 font-display">
             Reset Password
           </h2>
 
@@ -125,8 +121,7 @@ export default function ResetPassword() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ backgroundColor: "#E8C766" }}
+              className="w-full rounded-xl bg-gold-500 py-3 font-semibold text-plum-950 transition hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Resetting..." : "Reset Password"}
             </button>
@@ -135,7 +130,7 @@ export default function ResetPassword() {
           <p className="mt-8 text-center text-slate-500">
             <Link
               to="/login"
-              className="font-semibold text-[#8a6d1f] transition hover:text-[#C9A227]"
+              className="font-semibold text-gold-700 transition hover:text-gold-600"
             >
               Back to login
             </Link>

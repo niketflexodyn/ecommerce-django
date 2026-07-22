@@ -4,8 +4,53 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { checkoutApi } from '../utils/api';
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" };
-const fontBody = { fontFamily: "'Jost', sans-serif" };
+// Lazily inject the Razorpay checkout.js script (once). The backend returns
+// the public key_id with the order, so no frontend env config is needed.
+let razorpayPromise = null;
+function loadRazorpay() {
+  if (!razorpayPromise) {
+    razorpayPromise = new Promise((resolve, reject) => {
+      if (window.Razorpay) return resolve();
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => {
+        razorpayPromise = null; // allow a retry on the next attempt
+        reject(new Error('Could not load Razorpay. Check your connection.'));
+      };
+      document.body.appendChild(script);
+    });
+  }
+  return razorpayPromise;
+}
+
+// Turn a backend/gateway error into a customer-friendly message. The backend
+// returns {"error": "..."} on failure (e.g. "Razorpay rejected the order:
+// Authentication failed" when the keys are misconfigured); surface that as
+// something the customer can act on instead of raw gateway jargon.
+function friendlyPaymentError(err) {
+  const raw = err?.data?.error || err?.data?.detail || err?.message || '';
+  const lower = String(raw).toLowerCase();
+  if (
+    lower.includes('authentication failed') ||
+    lower.includes('keys are not configured') ||
+    lower.includes('keys are invalid') ||
+    lower.includes('invalid or expired')
+  ) {
+    return 'Payment gateway is not configured correctly. Please contact support and try again later.';
+  }
+  if (lower.includes('cart is empty')) {
+    return 'Your cart is empty. Add some items before checking out.';
+  }
+  if (lower.includes('signature') || lower.includes('verification')) {
+    return 'Payment verification failed. If money was debited, it will be refunded automatically. Please contact support.';
+  }
+  if (lower.includes('order mismatch') || lower.includes('order not found')) {
+    return 'This order could not be found. Please refresh the page and try again.';
+  }
+  return raw || 'Could not start payment. Please try again.';
+}
 
 export default function Checkout() {
   const { cartItems, user } = useAuth() ? useAuth() : { user: null };
@@ -34,29 +79,72 @@ export default function Checkout() {
     setLoading(true);
 
     try {
-      const order = await checkoutApi.place({
+      // 1. Create a Razorpay order on the backend (also saves shipping info).
+      const rzp = await checkoutApi.razorpay({
         address: form.address,
         phone: form.phone,
       });
-      clearCart();
-      navigate('/order-success', { state: { orderId: order.id, orderNumber: order.order_number, total: order.total_amount } });
+
+      // 2. Load the Razorpay checkout script, then open the modal.
+      await loadRazorpay();
+
+      const options = {
+        key: rzp.key_id,
+        amount: rzp.amount,
+        currency: rzp.currency,
+        name: rzp.name,
+        order_id: rzp.razorpay_order_id,
+        prefill: rzp.prefill,
+        handler: async (response) => {
+          // 3. Verify the signature server-side and finalize the order.
+          try {
+            const order = await checkoutApi.verifyRazorpay({
+              order_id: rzp.order_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            clearCart();
+            navigate('/order-success', {
+              state: { orderId: order.id, orderNumber: order.order_number, total: order.total_amount },
+            });
+          } catch (verifyErr) {
+            setError(friendlyPaymentError(verifyErr));
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            setError('Payment was cancelled. You can try again.');
+          },
+        },
+      };
+
+      const rzpInstance = new window.Razorpay(options);
+      rzpInstance.on('payment.failed', (resp) => {
+        setError(
+          `Payment failed: ${resp?.error?.description || 'unknown error'}. No money was debited.`
+        );
+        setLoading(false);
+      });
+      rzpInstance.open();
     } catch (err) {
-      setError(err.data?.error || err.data?.detail || 'Checkout failed. Please try again.');
-    } finally {
+      setError(friendlyPaymentError(err));
       setLoading(false);
     }
   };
 
   if (!auth.user) {
     return (
-      <div className="page-container py-12" style={fontBody}>
+      <div className="page-container py-12 font-body">
         <div className="mx-auto max-w-lg text-center">
-          <h1 className="text-3xl font-bold text-slate-900" style={fontDisplay}>Please Sign In</h1>
+          <h1 className="text-3xl font-bold text-slate-900 font-display">Please Sign In</h1>
           <p className="mt-3 text-slate-500">You need to be logged in to checkout.</p>
           <button
             onClick={() => navigate('/login')}
-            className="mt-6 inline-block rounded-xl px-6 py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90"
-            style={{ backgroundColor: '#E8C766' }}
+            className="mt-6 inline-block rounded-xl bg-gold-500 px-6 py-3 font-semibold text-plum-950 transition hover:opacity-90"
           >
             Go to Login
           </button>
@@ -67,14 +155,13 @@ export default function Checkout() {
 
   if (items.length === 0) {
     return (
-      <div className="page-container py-12" style={fontBody}>
+      <div className="page-container py-12 font-body">
         <div className="mx-auto max-w-lg text-center">
-          <h1 className="text-3xl font-bold text-slate-900" style={fontDisplay}>Your Cart is Empty</h1>
+          <h1 className="text-3xl font-bold text-slate-900 font-display">Your Cart is Empty</h1>
           <p className="mt-3 text-slate-500">Add some products before checking out.</p>
           <button
             onClick={() => navigate('/')}
-            className="mt-6 inline-block rounded-xl px-6 py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90"
-            style={{ backgroundColor: '#E8C766' }}
+            className="mt-6 inline-block rounded-xl bg-gold-500 px-6 py-3 font-semibold text-plum-950 transition hover:opacity-90"
           >
             Continue Shopping
           </button>
@@ -84,8 +171,8 @@ export default function Checkout() {
   }
 
   return (
-    <div className="page-container py-8 sm:py-12" style={fontBody}>
-      <h1 className="text-3xl font-bold text-slate-900" style={fontDisplay}>Checkout</h1>
+    <div className="page-container py-8 sm:py-12 font-body">
+      <h1 className="text-3xl font-bold text-slate-900 font-display">Checkout</h1>
       <p className="mt-1 text-sm text-slate-500">Complete your order</p>
 
       {error && (
@@ -99,7 +186,7 @@ export default function Checkout() {
           {/* Left: Shipping info */}
           <div className="space-y-6 lg:col-span-2">
             <div className="card p-6">
-              <h2 className="text-lg font-semibold text-[#2A1A2C]" style={fontDisplay}>Shipping Information</h2>
+              <h2 className="text-lg font-semibold text-plum-950 font-display">Shipping Information</h2>
 
               <div className="mt-4 space-y-4">
                 <div>
@@ -131,7 +218,7 @@ export default function Checkout() {
                     value={form.phone}
                     onChange={handleChange}
                     placeholder="Your phone number"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8C766]/50 focus:border-[#C9A227]"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
                   />
                 </div>
 
@@ -144,7 +231,7 @@ export default function Checkout() {
                     onChange={handleChange}
                     rows={3}
                     placeholder="Full delivery address"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8C766]/50 focus:border-[#C9A227]"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
                   />
                 </div>
               </div>
@@ -153,7 +240,7 @@ export default function Checkout() {
 
           {/* Right: Order summary */}
           <aside className="card h-fit p-6 lg:sticky lg:top-24">
-            <h2 className="text-lg font-bold text-slate-900" style={fontDisplay}>Order Summary</h2>
+            <h2 className="text-lg font-bold text-slate-900 font-display">Order Summary</h2>
 
             <div className="mt-4 space-y-3">
               {items.map((item) => (
@@ -173,7 +260,7 @@ export default function Checkout() {
                     <p className="text-sm font-medium text-slate-800 truncate">{item.name}</p>
                     <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
                   </div>
-                  <p className="text-sm font-semibold text-[#2A1A2C]">
+                  <p className="text-sm font-semibold text-plum-950">
                     ₹{(Number(item.price) * item.quantity).toLocaleString()}
                   </p>
                 </div>
@@ -187,7 +274,7 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>Shipping</span>
-                <span className="font-medium text-[#8a6d1f]">{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
+                <span className="font-medium text-gold-700">{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
               </div>
             </div>
 
@@ -201,10 +288,9 @@ export default function Checkout() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-6 w-full rounded-xl py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ backgroundColor: '#E8C766' }}
+              className="mt-6 w-full rounded-xl bg-gold-500 py-3 font-semibold text-plum-950 transition hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? 'Placing Order...' : 'Place Order'}
+              {loading ? 'Processing...' : 'Pay Now'}
             </button>
           </aside>
         </div>

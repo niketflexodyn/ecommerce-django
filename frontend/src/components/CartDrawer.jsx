@@ -2,9 +2,6 @@ import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { getProductImageUrl } from '../utils/product'
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" }
-const fontBody = { fontFamily: "'Jost', sans-serif" }
-
 function CloseIcon(props) {
   return (
     <svg {...props} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -42,16 +39,15 @@ export default function CartDrawer() {
 
       {/* Drawer */}
       <aside
-        className={`fixed right-0 top-0 z-[70] flex h-full w-full max-w-sm flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 top-0 z-[70] flex h-full w-full max-w-sm flex-col bg-white font-body shadow-2xl transition-transform duration-300 ease-in-out ${
           isCartOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
-        style={fontBody}
         role="dialog"
         aria-modal="true"
         aria-label="Shopping cart"
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="text-lg font-bold text-[#2A1A2C]" style={fontDisplay}>
+          <h2 className="font-display text-lg font-bold text-plum-950">
             Your Cart {cartItems.length > 0 && `(${cartItems.length})`}
           </h2>
           <button
@@ -68,7 +64,7 @@ export default function CartDrawer() {
             <p className="text-sm text-slate-500">Your cart is empty.</p>
             <button
               onClick={closeCart}
-              className="mt-4 rounded-full bg-[#2A1A2C] px-5 py-2 text-sm font-semibold text-white hover:bg-[#3D2136]"
+              className="mt-4 rounded-full bg-plum-950 px-5 py-2 text-sm font-semibold text-white hover:bg-plum-900"
             >
               Continue shopping
             </button>
@@ -109,7 +105,7 @@ export default function CartDrawer() {
                     <div className="mt-2 inline-flex items-center rounded-full border border-slate-200">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="flex size-7 items-center justify-center text-slate-500 hover:text-[#2A1A2C]"
+                        className="flex size-7 items-center justify-center text-slate-500 hover:text-plum-950"
                         aria-label="Decrease quantity"
                       >
                         −
@@ -117,7 +113,7 @@ export default function CartDrawer() {
                       <span className="w-6 text-center text-sm">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="flex size-7 items-center justify-center text-slate-500 hover:text-[#2A1A2C]"
+                        className="flex size-7 items-center justify-center text-slate-500 hover:text-plum-950"
                         aria-label="Increase quantity"
                       >
                         +
@@ -137,7 +133,7 @@ export default function CartDrawer() {
               <Link
                 to="/checkout"
                 onClick={closeCart}
-                className="block w-full rounded-full bg-[#2A1A2C] py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-[#3D2136]"
+                className="block w-full rounded-full bg-plum-950 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-plum-900"
               >
                 Proceed to Checkout
               </Link>

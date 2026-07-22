@@ -3,9 +3,6 @@ import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { formatPrice, getProductImageUrl } from '../utils/product'
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" }
-const fontBody = { fontFamily: "'Jost', sans-serif" }
-
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity } = useCart()
   const { user } = useAuth()
@@ -17,20 +14,20 @@ export default function CartPage() {
   const grandTotal = total + shipping
 
   return (
-    <div className="page-container py-8 sm:py-12" style={fontBody}>
+    <div className="page-container py-8 sm:py-12 font-body">
       {/* Header */}
       <div className="mb-8">
         <nav className="mb-4 text-sm text-slate-500">
-          <Link to="/" className="transition hover:text-[#E8C766]">Home</Link>
+          <Link to="/" className="transition hover:text-gold-500">Home</Link>
           <span className="mx-2 text-slate-300">/</span>
           <span className="text-slate-900">Cart</span>
         </nav>
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900" style={fontDisplay}>
+            <h1 className="text-3xl font-bold text-slate-900 font-display">
               Shopping Cart
             </h1>
-            <div className="mt-2 h-1 w-12 rounded-full bg-[#E8C766]" />
+            <div className="mt-2 h-1 w-12 rounded-full bg-gold-500" />
           </div>
           {cartItems.length > 0 && (
             <p className="text-sm text-slate-500">
@@ -43,12 +40,12 @@ export default function CartPage() {
       {cartItems.length === 0 ? (
         /* ── Empty state ── */
         <div className="card mx-auto max-w-lg p-12 text-center">
-          <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-[#E8C766]/10">
-            <svg className="size-10 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-gold-500/10">
+            <svg className="size-10 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.936-4.708 2.436-7.18.075-.37-.221-.7-.598-.7H5.106M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
             </svg>
           </div>
-          <h2 className="mt-5 text-xl font-bold text-slate-900" style={fontDisplay}>
+          <h2 className="mt-5 text-xl font-bold text-slate-900 font-display">
             Your cart is empty
           </h2>
           <p className="mt-2 text-sm text-slate-500">
@@ -56,7 +53,7 @@ export default function CartPage() {
           </p>
           <Link
             to="/"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#2A1A2C] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#2A1A2C]/20 transition hover:bg-[#3D2136]"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-plum-950 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-plum-950/20 transition hover:bg-plum-900"
           >
             <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -101,12 +98,12 @@ export default function CartPage() {
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/product/${item.id}`}
-                      className="text-lg font-semibold text-slate-900 transition hover:text-[#8a6d1f]"
+                      className="text-lg font-semibold text-slate-900 transition hover:text-gold-700"
                     >
                       {item.name}
                     </Link>
                     <p className="mt-1 text-sm text-slate-500">{formatPrice(item.price)} each</p>
-                    <p className="mt-2 text-lg font-bold tracking-tight text-[#2A1A2C]" style={fontDisplay}>
+                    <p className="mt-2 text-lg font-bold tracking-tight text-plum-950 font-display">
                       {formatPrice(lineTotal)}
                     </p>
                   </div>
@@ -128,7 +125,7 @@ export default function CartPage() {
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="flex size-9 items-center justify-center bg-[#2A1A2C] text-white transition hover:bg-[#3D2136]"
+                        className="flex size-9 items-center justify-center bg-plum-950 text-white transition hover:bg-plum-900"
                         aria-label="Increase quantity"
                       >
                         <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -154,7 +151,7 @@ export default function CartPage() {
             {/* Continue shopping link */}
             <Link
               to="/"
-              className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-[#8a6d1f] transition hover:text-[#C9A227]"
+              className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-gold-700 transition hover:text-gold-600"
             >
               <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
@@ -166,10 +163,10 @@ export default function CartPage() {
           {/* ── Order Summary ── */}
           <aside className="card h-fit overflow-hidden p-0 lg:sticky lg:top-24">
             {/* Gold accent bar */}
-            <div className="h-1.5 bg-gradient-to-r from-[#E8C766] via-[#F1D9A0] to-[#E8C766]" />
+            <div className="h-1.5 bg-linear-to-r from-gold-500 via-gold-400 to-gold-500" />
 
             <div className="p-6">
-              <h2 className="text-xl font-bold text-slate-900" style={fontDisplay}>
+              <h2 className="text-xl font-bold text-slate-900 font-display">
                 Order Summary
               </h2>
 
@@ -196,13 +193,13 @@ export default function CartPage() {
               </dl>
 
               {shipping > 0 && (
-                <p className="mt-2 rounded-lg bg-[#E8C766]/10 px-3 py-2 text-xs text-[#8a6d1f]">
+                <p className="mt-2 rounded-lg bg-gold-500/10 px-3 py-2 text-xs text-gold-700">
                   Add {formatPrice(50 - total)} more to qualify for free shipping
                 </p>
               )}
 
               <div className="mt-5 border-t border-slate-100 pt-5">
-                <div className="flex justify-between text-xl font-bold text-slate-900" style={fontDisplay}>
+                <div className="flex justify-between text-xl font-bold text-slate-900 font-display">
                   <span>Total</span>
                   <span>{formatPrice(grandTotal)}</span>
                 </div>
@@ -217,7 +214,7 @@ export default function CartPage() {
                     navigate('/checkout')
                   }
                 }}
-                className="mt-6 w-full rounded-xl bg-[#E8C766] py-3.5 text-sm font-bold uppercase tracking-wide text-[#2A1A2C] shadow-lg shadow-[#E8C766]/30 transition hover:bg-[#F1D9A0] hover:shadow-xl active:opacity-90"
+                className="mt-6 w-full rounded-xl bg-gold-500 py-3.5 text-sm font-bold uppercase tracking-wide text-plum-950 shadow-lg shadow-gold-500/30 transition hover:bg-gold-400 hover:shadow-xl active:opacity-90"
               >
                 Proceed to Checkout
               </button>
@@ -231,25 +228,25 @@ export default function CartPage() {
               {/* Trust badges */}
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <svg className="size-4 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
                   </svg>
                   Secure checkout
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <svg className="size-4 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 1-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 1-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a8.25 8.25 0 0 0-2.034-4.926l-.726-.726a1.125 1.125 0 0 1-.298-.774V6.375c0-.621-.504-1.125-1.125-1.125H14.25M3.75 14.25h7.875c.621 0 1.125.504 1.125 1.125v3.75M3.75 14.25V6.375c0-.621.504-1.125 1.125-1.125h6.75" />
                   </svg>
                   Free delivery over ₹50
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <svg className="size-4 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
                   </svg>
                   30-day returns
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <svg className="size-4 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.625h12M4.5 6.375h15M6.75 3.75h10.5" />
                   </svg>
                   Easy payments

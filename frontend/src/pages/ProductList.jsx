@@ -2,9 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" }
-const fontBody = { fontFamily: "'Jost', sans-serif" }
-
 const SORT_OPTIONS = [
   { value: 'featured', label: 'Featured' },
   { value: 'price-asc', label: 'Price: Low to High' },
@@ -168,29 +165,24 @@ export default function ProductList({ hideBanner = false }) {
       {/* Banner — hidden on homepage where Hero provides the banner */}
       {!hideBanner && (
       <section
-        className="relative overflow-hidden text-white"
-        style={{
-          background: 'linear-gradient(135deg, #2A1A2C 0%, #3D2136 55%, #4A2536 100%)',
-        }}
+        className="relative overflow-hidden bg-linear-to-br from-plum-950 via-plum-900 to-plum-800 text-white"
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,199,102,0.12),transparent_50%)]" />
 
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -right-8 -top-6 hidden select-none text-[180px] font-bold italic leading-none text-white/[0.04] lg:block"
-          style={fontDisplay}
+          className="font-display pointer-events-none absolute -right-8 -top-6 hidden select-none text-[180px] font-bold italic leading-none text-white/[0.04] lg:block"
         >
           Browse
         </span>
 
-        <div className="page-container relative py-16 sm:py-20" style={fontBody}>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#E8C766]">
+        <div className="page-container font-body relative py-16 sm:py-20">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-gold-500">
             {activeCategory ? 'Category' : 'Welcome to Luxora'}
           </p>
 
           <h1
-            className="mt-3 max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl"
-            style={fontDisplay}
+            className="font-display mt-3 max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl"
           >
             {activeCategory ? activeCategory.name : "Discover products you'll love"}
           </h1>
@@ -203,7 +195,7 @@ export default function ProductList({ hideBanner = false }) {
 
           {/* Search */}
           <div className="mt-8 max-w-md">
-            <div className="flex items-center gap-3 rounded-full bg-white/10 px-5 py-3 backdrop-blur transition focus-within:bg-white/15 focus-within:ring-1 focus-within:ring-[#E8C766]">
+            <div className="flex items-center gap-3 rounded-full bg-white/10 px-5 py-3 backdrop-blur transition focus-within:bg-white/15 focus-within:ring-1 focus-within:ring-gold-500">
               <svg className="h-4 w-4 shrink-0 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -231,7 +223,7 @@ export default function ProductList({ hideBanner = false }) {
           <div className="mt-6 flex flex-wrap gap-3">
             
              <a href="#products"
-              className="rounded-full bg-[#E8C766] px-6 py-3 text-sm font-semibold text-[#2A1A2C] transition hover:bg-[#F1D9A0]"
+              className="rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-plum-950 transition hover:bg-gold-400"
             >
               Shop Now
             </a>
@@ -251,8 +243,8 @@ export default function ProductList({ hideBanner = false }) {
             onClick={() => setSelectedCategory('all')}
             className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${
               selectedCategory === 'all'
-                ? 'bg-[#2A1A2C] text-white'
-                : 'bg-[#E8C766]/10 text-[#8a6d1f] hover:bg-[#E8C766]/20'
+                ? 'bg-plum-950 text-white'
+                : 'bg-gold-500/10 text-gold-700 hover:bg-gold-500/20'
             }`}
           >
             All
@@ -267,8 +259,8 @@ export default function ProductList({ hideBanner = false }) {
                   onClick={() => setSelectedCategory(category.slug)}
                   className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${
                     selectedCategory === category.slug
-                      ? 'bg-[#2A1A2C] text-white'
-                      : 'bg-[#E8C766]/10 text-[#8a6d1f] hover:bg-[#E8C766]/20'
+                      ? 'bg-plum-950 text-white'
+                      : 'bg-gold-500/10 text-gold-700 hover:bg-gold-500/20'
                   }`}
                 >
                   {category.name}
@@ -288,8 +280,8 @@ export default function ProductList({ hideBanner = false }) {
                   onClick={() => setSelectedCategory('all')}
                   className={`flex w-full items-center rounded-lg px-4 py-2.5 text-sm font-medium transition ${
                     selectedCategory === 'all'
-                      ? 'bg-[#2A1A2C] text-white'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-[#2A1A2C]'
+                      ? 'bg-plum-950 text-white'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-plum-950'
                   }`}
                 >
                   All Products
@@ -304,8 +296,8 @@ export default function ProductList({ hideBanner = false }) {
                         onClick={() => setSelectedCategory(category.slug)}
                         className={`flex w-full items-center rounded-lg px-4 py-2.5 text-sm font-medium transition ${
                           selectedCategory === category.slug
-                            ? 'bg-[#2A1A2C] text-white'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-[#2A1A2C]'
+                            ? 'bg-plum-950 text-white'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-plum-950'
                         }`}
                       >
                         {category.name}
@@ -319,10 +311,10 @@ export default function ProductList({ hideBanner = false }) {
           <div className="min-w-0 flex-1">
             <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900" style={fontDisplay}>
+                <h2 className="font-display text-2xl font-bold text-slate-900">
                   {activeCategory ? activeCategory.name : 'All Products'}
                 </h2>
-                <div className="mt-2 h-1 w-12 rounded-full bg-[#E8C766]" />
+                <div className="mt-2 h-1 w-12 rounded-full bg-gold-500" />
                 <p className="mt-1 text-sm text-slate-500">
                   {loading
                     ? 'Loading...'
@@ -340,7 +332,7 @@ export default function ProductList({ hideBanner = false }) {
                   id="sort"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#2A1A2C]"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-plum-950"
                 >
                   {SORT_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -382,7 +374,7 @@ export default function ProductList({ hideBanner = false }) {
             )}
             <button
               onClick={clearFilters}
-              className="text-xs font-semibold text-[#8a6d1f] underline-offset-2 hover:underline"
+              className="text-xs font-semibold text-gold-700 underline-offset-2 hover:underline"
             >
               Clear all
             </button>
@@ -425,7 +417,7 @@ export default function ProductList({ hideBanner = false }) {
                       onClick={() => setPage(p)}
                       className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                         p === currentPage
-                          ? 'bg-[#2A1A2C] text-white'
+                          ? 'bg-plum-950 text-white'
                           : 'border border-slate-200 text-slate-600 hover:bg-slate-100'
                       }`}
                     >
@@ -458,7 +450,7 @@ export default function ProductList({ hideBanner = false }) {
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="mt-4 rounded-full bg-[#2A1A2C] px-5 py-2 text-sm font-semibold text-white hover:bg-[#3D2136]"
+                className="mt-4 rounded-full bg-plum-950 px-5 py-2 text-sm font-semibold text-white hover:bg-plum-900"
               >
                 Clear filters
               </button>

@@ -122,7 +122,7 @@ export default function AdminCategories() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#2A1A2C]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-plum-950" />
       </div>
     );
   }
@@ -151,7 +151,7 @@ export default function AdminCategories() {
             </button>
             <button
               onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#2A1A2C] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#3D2136] transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg bg-plum-950 px-4 py-2.5 text-sm font-medium text-white hover:bg-plum-900 transition-colors"
             >
               <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -178,7 +178,7 @@ export default function AdminCategories() {
           <tbody className="divide-y divide-slate-100">
             {categories.map((cat) => (
               <tr key={cat.id} className="hover:bg-slate-50/50">
-                <td className="px-4 py-3 font-medium text-[#2A1A2C]">{cat.name}</td>
+                <td className="px-4 py-3 font-medium text-plum-950">{cat.name}</td>
                 <td className="px-4 py-3 text-slate-500 font-mono text-xs">{cat.slug}</td>
                 <td className="px-4 py-3 text-slate-700">{cat.product_count ?? 0}</td>
                 <td className="px-4 py-3 text-right">
@@ -213,7 +213,7 @@ export default function AdminCategories() {
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <DialogTitle className="text-lg font-semibold text-[#2A1A2C]">
+            <DialogTitle className="text-lg font-semibold text-plum-950">
               {editCategory ? 'Edit Category' : 'Add Category'}
             </DialogTitle>
 
@@ -229,7 +229,7 @@ export default function AdminCategories() {
                   required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8C766]/50 focus:border-[#C9A227]"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
                   placeholder="Category name"
                 />
               </div>
@@ -240,7 +240,7 @@ export default function AdminCategories() {
                   type="text"
                   value={form.slug}
                   onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8C766]/50 focus:border-[#C9A227]"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
                   placeholder="Auto-generated from name if left empty"
                 />
                 <p className="mt-1 text-xs text-slate-400">Leave empty to auto-generate from the name.</p>
@@ -257,7 +257,7 @@ export default function AdminCategories() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-[#2A1A2C] px-4 py-2 text-sm font-medium text-white hover:bg-[#3D2136] transition-colors disabled:opacity-50"
+                  className="rounded-lg bg-plum-950 px-4 py-2 text-sm font-medium text-white hover:bg-plum-900 transition-colors disabled:opacity-50"
                 >
                   {saving ? 'Saving...' : editCategory ? 'Update Category' : 'Create Category'}
                 </button>

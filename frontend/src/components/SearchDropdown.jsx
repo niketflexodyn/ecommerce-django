@@ -53,7 +53,7 @@ export default function SearchDropdown({ query, onSelect }) {
         <Link
           to={`/search?q=${encodeURIComponent(query.trim())}`}
           onClick={onSelect}
-          className="block border-t border-slate-100 px-4 py-2.5 text-center text-sm font-medium text-[#8a6d1f] hover:bg-slate-50"
+          className="block border-t border-slate-100 px-4 py-2.5 text-center text-sm font-medium text-gold-700 hover:bg-slate-50"
         >
           View all results
         </Link>

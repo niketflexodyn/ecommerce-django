@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 
+from django.utils import timezone
 
 # -------------------------
 # Custom User Model
@@ -155,8 +156,11 @@ class Order(models.Model):
 
     STATUS_CHOICES = (
         ("pending", "Pending"),
-        ("successful", "Successful"),
-        ("unsuccessful", "Unsuccessful"),
+        ("confirmed", "Confirmed"),
+        ("dispatched", "Dispatched"),
+        ("out_for_delivery", "Out for Delivery"),
+        ("delivered", "Delivered"),
+        ("cancelled", "Cancelled"),
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -172,12 +176,49 @@ class Order(models.Model):
     max_length=20,
     choices=STATUS_CHOICES,
     default="pending",
-)
+    )   
+    estimated_delivery = models.DateField(
+        null=True,
+        blank=True
+    )
 
+    dispatched_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    delivered_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    # Razorpay linkage. Set when a Razorpay order is created for this order
+    # (at /checkoutRaz/) and again when the payment is verified.
+    
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
+    payment_status = models.CharField(
+    max_length=20,
+    choices=[
+        ("pending", "Pending"),
+        ("paid", "Paid"),
+        ("failed", "Failed"),
+    ],
+    default="pending",
+)
 
+    payment_id = models.CharField(
+    max_length=255,
+    blank=True,
+    null=True,
+)
+
+    razorpay_order_id = models.CharField(
+    max_length=255,
+    blank=True,
+    null=True,
+)
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -186,6 +227,14 @@ class Order(models.Model):
     #     max_length =
     # )
 
+    def save(self, *args, **kwargs):
+        if self.status == "dispatched" and self.dispatched_at is None:
+            self.dispatched_at = timezone.now()
+
+        if self.status == "delivered" and self.delivered_at is None:
+            self.delivered_at = timezone.now()
+
+        super().save(*args, **kwargs)
     class Meta:
         unique_together = (("user", "order_number"),)
 
@@ -223,7 +272,7 @@ class OrderItem(models.Model):
 
 # -------------------------
 # Cart
-# -------------------------
+# ------------------------- 
 
 class Cart(models.Model):
 

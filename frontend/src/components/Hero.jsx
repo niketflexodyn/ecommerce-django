@@ -46,19 +46,12 @@ const banners = [
   },
 ];
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" };
-const fontBody = { fontFamily: "'Jost', sans-serif" };
-
 export default function Hero() {
   const [revealRef, revealed] = useScrollReveal();
 
   return (
     <section
-      className="relative overflow-hidden"
-      style={{
-        background:
-          "linear-gradient(135deg, #2A1A2C 0%, #3D2136 55%, #4A2536 100%)",
-      }}
+      className="relative overflow-hidden bg-linear-to-br from-plum-950 via-plum-900 to-plum-800"
     >
       {/* Swiper theme overrides */}
       <style>{`
@@ -67,19 +60,18 @@ export default function Hero() {
           opacity: 1;
         }
         .hero-swiper .swiper-pagination-bullet-active {
-          background: #E8C766;
+          background: var(--color-gold-500);
         }
         .hero-swiper .swiper-button-next,
         .hero-swiper .swiper-button-prev {
-          color: #E8C766;
+          color: var(--color-gold-500);
         }
       `}</style>
 
       {/* Signature: oversized ghost word behind the copy */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-6 top-1/2 hidden -translate-y-1/2 select-none text-[220px] font-bold italic leading-none text-white/[0.04] lg:block"
-        style={fontDisplay}
+        className="font-display pointer-events-none absolute -left-6 top-1/2 hidden -translate-y-1/2 select-none text-[220px] font-bold italic leading-none text-white/[0.04] lg:block"
       >
         Discover
       </span>
@@ -87,18 +79,17 @@ export default function Hero() {
       <div className="page-container relative py-10 sm:py-16 lg:py-24">
         <div className="grid items-center gap-8 sm:gap-12 lg:grid-cols-2">
           {/* Left Content */}
-          <div ref={revealRef} className={`text-white ${revealed ? "animate-fade-up" : "opacity-0"}`} style={fontBody}>
-            <span className={`inline-flex items-center gap-2 rounded-full border border-[#C9A227]/40 bg-[#C9A227]/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.2em] text-[#E8C766] ${revealed ? "animate-fade-up delay-150" : "opacity-0"}`}>
-              <span className="h-1.5 w-1.5 rounded-full bg-[#E8C766]" />
+          <div ref={revealRef} className={`font-body text-white ${revealed ? "animate-fade-up" : "opacity-0"}`}>
+            <span className={`inline-flex items-center gap-2 rounded-full border border-gold-600/40 bg-gold-600/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.2em] text-gold-500 ${revealed ? "animate-fade-up delay-150" : "opacity-0"}`}>
+              <span className="h-1.5 w-1.5 rounded-full bg-gold-500" />
               Everything You Need, In One Place
             </span>
 
             <h1
-              className={`mt-5 text-4xl font-bold max-w-sm sm:max-w-lg leading-[1.08] sm:text-5xl sm:mt-6 lg:text-6xl ${revealed ? "animate-fade-up delay-300" : "opacity-0"}`}
-              style={fontDisplay}
+              className={`font-display mt-5 text-4xl font-bold max-w-sm sm:max-w-lg leading-[1.08] sm:text-5xl sm:mt-6 lg:text-6xl ${revealed ? "animate-fade-up delay-300" : "opacity-0"}`}
             >
               Discover Premium Style,
-              <span className="block italic text-[#E8C766]">
+              <span className="block italic text-gold-500">
                 All in One Place
               </span>
             </h1>
@@ -114,7 +105,7 @@ export default function Hero() {
                 href="#products"
 
 
-                className="rounded-full bg-[#E8C766] px-6 py-3 text-sm font-semibold text-[#2A1A2C] shadow-md shadow-[#E8C766]/20 transition duration-300 hover:scale-[1.03] hover:bg-[#F1D9A0] sm:px-8 sm:py-4 sm:text-base"
+                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-plum-950 shadow-md shadow-gold-500/20 transition duration-300 hover:scale-[1.03] hover:bg-gold-400 sm:px-8 sm:py-4 sm:text-base"
               >
                 Shop Now
               </a>
@@ -158,22 +149,22 @@ export default function Hero() {
 
             {/* Stats */}
             <div className="mt-10 grid grid-cols-3 gap-4 border-t border-white/10 pt-6 sm:mt-14 sm:gap-10 sm:pt-8">
-              <div className="border-l-2 border-[#E8C766]/40 pl-3 sm:pl-6">
-                <h2 className="text-xl font-bold sm:text-3xl" style={fontDisplay}>
+              <div className="border-l-2 border-gold-500/40 pl-3 sm:pl-6">
+                <h2 className="font-display text-xl font-bold sm:text-3xl">
                   100K+
                 </h2>
                 <p className="text-xs text-white/60 sm:text-base">Happy Customers</p>
               </div>
 
-              <div className="border-l-2 border-[#E8C766]/40 pl-3 sm:pl-6">
-                <h2 className="text-xl font-bold sm:text-3xl" style={fontDisplay}>
+              <div className="border-l-2 border-gold-500/40 pl-3 sm:pl-6">
+                <h2 className="font-display text-xl font-bold sm:text-3xl">
                   10,000+
                 </h2>
                 <p className="text-xs text-white/60 sm:text-base">Products</p>
               </div>
 
-              <div className="border-l-2 border-[#E8C766]/40 pl-3 sm:pl-6">
-                <h2 className="text-xl font-bold sm:text-3xl" style={fontDisplay}>
+              <div className="border-l-2 border-gold-500/40 pl-3 sm:pl-6">
+                <h2 className="font-display text-xl font-bold sm:text-3xl">
                   20+
                 </h2>
                 <p className="text-xs text-white/60 sm:text-base">Categories</p>
@@ -183,7 +174,7 @@ export default function Hero() {
 
           {/* Right Slider */}
           <div className="relative min-w-0 overflow-hidden">
-            <div className="absolute -top-20 -right-20 size-96 rounded-full bg-[#E8C766] opacity-[0.08] blur-3xl pointer-events-none" />
+            <div className="absolute -top-20 -right-20 size-96 rounded-full bg-gold-500 opacity-[0.08] blur-3xl pointer-events-none" />
             <Swiper
               modules={[Autoplay, Navigation]}
               spaceBetween={30}
@@ -193,7 +184,7 @@ export default function Hero() {
                 delay: 4000,
                 disableOnInteraction: false,
               }}
-             
+
               navigation={true}
               className="hero-swiper rounded-3xl shadow-2xl ring-1 ring-white/10"
             >
@@ -207,22 +198,21 @@ export default function Hero() {
                       className="h-full w-full object-cover"
                     />
 
-                    <div className="absolute inset-0 bg-linear-to-t from-[#2A1A2C]/85 via-[#2A1A2C]/10 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-plum-950/85 via-plum-950/10 to-transparent" />
 
                     {/* Promo/status badge */}
-                    <span className="absolute right-3 top-3 rounded-full bg-[#E8C766] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wide text-[#2A1A2C] md:right-4 md:top-4 md:px-3 md:py-1 md:text-[10px]">
+                    <span className="absolute right-3 top-3 rounded-full bg-gold-500 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wide text-plum-950 md:right-4 md:top-4 md:px-3 md:py-1 md:text-[10px]">
                       {banner.badge}
                     </span>
 
                     <div className="absolute bottom-3 left-3 right-3 text-white sm:bottom-4 sm:left-4 sm:right-4 md:bottom-6 md:left-6 md:right-6">
                       <p
-                        className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E8C766] md:text-[10px]"
-                        style={fontBody}
+                        className="font-body text-[9px] font-semibold uppercase tracking-[0.2em] text-gold-500 md:text-[10px]"
                       >
                         {banner.category}
                       </p>
 
-                      <h2 className="mt-1 text-base font-bold leading-tight sm:mt-1.5 sm:text-lg md:mt-2 md:text-2xl" style={fontDisplay}>
+                      <h2 className="font-display mt-1 text-base font-bold leading-tight sm:mt-1.5 sm:text-lg md:mt-2 md:text-2xl">
                         {banner.title}
                       </h2>
 
@@ -232,7 +222,7 @@ export default function Hero() {
 
                       <a
                         href="#products"
-                        className="mt-2 inline-block border-b border-[#E8C766] pb-1 text-[10px] font-semibold uppercase tracking-wide text-[#E8C766] transition hover:text-[#F1D9A0] sm:mt-3 sm:text-[11px] md:mt-4 md:text-xs"
+                        className="mt-2 inline-block border-b border-gold-500 pb-1 text-[10px] font-semibold uppercase tracking-wide text-gold-500 transition hover:text-gold-400 sm:mt-3 sm:text-[11px] md:mt-4 md:text-xs"
                       >
                         {banner.cta} →
                       </a>

@@ -3,9 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { profileApi } from '../utils/api';
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" };
-const fontBody = { fontFamily: "'Jost', sans-serif" };
-
 export default function Profile() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -55,14 +52,13 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <div className="page-container py-12" style={fontBody}>
+      <div className="page-container font-body py-12">
         <div className="mx-auto max-w-lg text-center">
-          <h1 className="text-3xl font-bold text-slate-900" style={fontDisplay}>Please Sign In</h1>
+          <h1 className="font-display text-3xl font-bold text-slate-900">Please Sign In</h1>
           <p className="mt-3 text-slate-500">You need to be logged in to view your profile.</p>
           <button
             onClick={() => navigate('/login')}
-            className="mt-6 inline-block rounded-xl px-6 py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90"
-            style={{ backgroundColor: '#E8C766' }}
+            className="mt-6 inline-block rounded-xl bg-gold-500 px-6 py-3 font-semibold text-plum-950 transition hover:opacity-90"
           >
             Go to Login
           </button>
@@ -72,17 +68,17 @@ export default function Profile() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8C766]/40 focus:border-[#C9A227]';
+    'w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/40 focus:border-gold-600';
 
   return (
-    <div className="page-container py-8 sm:py-12 mx-auto justify-center " style={fontBody}>
+    <div className="page-container font-body mx-auto justify-center py-8 sm:py-12">
       <nav className="mb-6 text-sm text-slate-500">
-        <Link to="/" className="transition hover:text-[#E8C766]">Home</Link>
+        <Link to="/" className="transition hover:text-gold-500">Home</Link>
         <span className="mx-2 text-slate-300">/</span>
         <span className="text-slate-900">My Profile</span>
       </nav>
 
-      <h1 className="text-3xl font-bold text-[#2A1A2C]" style={fontDisplay}>My Profile</h1>
+      <h1 className="font-display text-3xl font-bold text-plum-950">My Profile</h1>
       <p className="mt-1 text-sm text-slate-500">Update your personal details and delivery address.</p>
 
       <div className="mt-6 max-w-2xl overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/80">
@@ -92,7 +88,7 @@ export default function Profile() {
             <span className="text-slate-500">
               Username: <span className="font-medium text-slate-900">{user.username}</span>
             </span>
-            <span className="rounded-full bg-[#E8C766]/20 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#8a6d1f]">
+            <span className="rounded-full bg-gold-500/20 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gold-700">
               {user.role}
             </span>
           </div>
@@ -188,8 +184,7 @@ export default function Profile() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#2A1A2C' }}
+              className="inline-flex items-center justify-center rounded-xl bg-plum-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>

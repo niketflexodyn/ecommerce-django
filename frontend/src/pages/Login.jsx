@@ -2,9 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" }
-const fontBody = { fontFamily: "'Jost', sans-serif" }
-
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -68,20 +65,19 @@ export default function Login() {
 
   return (
     <div className="page-container py-12">
-      <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl bg-white shadow-xl" style={fontBody}>
+      <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl bg-white shadow-xl font-body">
 
         <div className="grid lg:grid-cols-2">
 
           {/* Left */}
           <div
-            className="p-10 text-white"
-            style={{ background: 'linear-gradient(135deg, #2A1A2C 0%, #3D2136 55%, #4A2536 100%)' }}
+            className="bg-linear-to-br from-plum-950 via-plum-900 to-plum-800 p-10 text-white"
           >
-            <p className="text-sm uppercase tracking-[4px] text-[#E8C766]">
+            <p className="text-sm uppercase tracking-[4px] text-gold-500">
               Luxora
             </p>
 
-            <h1 className="mt-5 text-4xl font-bold" style={fontDisplay}>
+            <h1 className="mt-5 text-4xl font-bold font-display">
               Welcome Back
             </h1>
 
@@ -101,7 +97,7 @@ export default function Login() {
           {/* Right */}
           <div className="p-10">
 
-            <h2 className="text-3xl font-bold text-slate-800" style={fontDisplay}>
+            <h2 className="text-3xl font-bold text-slate-800 font-display">
               Login
             </h2>
 
@@ -112,13 +108,13 @@ export default function Login() {
             )}
 
             {registered && !error && (
-              <div className="mt-4 rounded-xl border border-[#C9A227]/30 bg-[#E8C766]/10 px-4 py-3 text-sm text-[#8a6d1f]">
+              <div className="mt-4 rounded-xl border border-gold-600/30 bg-gold-500/10 px-4 py-3 text-sm text-gold-700">
                 Account created successfully! Please sign in.
               </div>
             )}
 
             {passwordReset && !error && (
-              <div className="mt-4 rounded-xl border border-[#C9A227]/30 bg-[#E8C766]/10 px-4 py-3 text-sm text-[#8a6d1f]">
+              <div className="mt-4 rounded-xl border border-gold-600/30 bg-gold-500/10 px-4 py-3 text-sm text-gold-700">
                 Password reset successfully! You can now sign in.
               </div>
             )}
@@ -176,8 +172,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl py-3 font-semibold text-[#2A1A2C] transition hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ backgroundColor: '#E8C766' }}
+                className="w-full rounded-xl bg-gold-500 py-3 font-semibold text-plum-950 transition hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? "Signing in..." : "Login"}
               </button>
@@ -188,7 +183,7 @@ export default function Login() {
               Don't have an account?{" "}
               <Link
                 to="/register"
-                className="font-semibold text-[#8a6d1f] transition hover:text-[#C9A227]"
+                className="font-semibold text-gold-700 transition hover:text-gold-600"
               >
                 Register
               </Link>
@@ -196,7 +191,7 @@ export default function Login() {
             <p className="mt-4 text-center text-sm text-slate-500">
               <Link
                 to="/forgot-password"
-                className="font-semibold text-[#8a6d1f] transition hover:text-[#C9A227]"
+                className="font-semibold text-gold-700 transition hover:text-gold-600"
               >
                 Forgot password?
               </Link>

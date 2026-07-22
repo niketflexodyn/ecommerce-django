@@ -44,7 +44,7 @@ export default function EditAdminDetails() {
   };
 
   const inputClass =
-    'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8C766]/50 focus:border-[#C9A227]';
+    'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600';
 
   return (
     <div className="p-8">
@@ -61,7 +61,7 @@ export default function EditAdminDetails() {
               Username:{' '}
               <span className="font-medium text-slate-900">{user?.username}</span>
             </span>
-            <span className="rounded-full bg-[#E8C766]/20 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#8a6d1f]">
+            <span className="rounded-full bg-gold-500/20 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gold-700">
               {user?.role}
             </span>
           </div>
@@ -146,7 +146,7 @@ export default function EditAdminDetails() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-[#2A1A2C] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#3D2136] disabled:opacity-50"
+              className="rounded-lg bg-plum-950 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-plum-900 disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>

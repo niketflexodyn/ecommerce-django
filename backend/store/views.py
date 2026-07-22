@@ -1,5 +1,8 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 import logging
+import uuid
+
+import razorpay
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
@@ -434,6 +437,262 @@ def checkout(request):
 
     serializer = OrderDetailSerializer(order)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+# -------------------------
+# Checkout — Razorpay (Customer, TEST mode)
+# -------------------------
+#
+# Razorpay has two key pairs: "test" (rzp_test_...) and "live" (rzp_live_...).
+# Whichever pair is set in .env as RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET is the
+# pair this flow uses. For local/dev, put the TEST keys in .env and pay with the
+# Razorpay test card (4111 1111 1111 1111, any future expiry, any CVV) — no real
+# money moves. No code change is needed to switch to live: just swap the keys.
+#
+# Order status vs. payment status:
+#   - Order.status        = fulfillment lifecycle (pending/confirmed/dispatched/...)
+#   - Order.payment_status = payment lifecycle  (pending/paid/failed)
+# On a verified payment we set payment_status='paid' and status='confirmed'
+# (the order is paid + accepted, ready for the admin to dispatch).
+
+def _is_razorpay_test_mode():
+    """True when the configured key is a test key (rzp_test_*). Used only to
+    surface a hint in API responses; it does not change the flow."""
+    key_id = settings.RAZORPAY_KEY_ID or ""
+    return key_id.startswith("rzp_test_")
+
+
+def _razorpay_client():
+    """Build a Razorpay client from the keys in settings/.env.
+
+    Raises RuntimeError if the keys aren't configured, so the calling view can
+    return a clean 500 instead of a confusing Razorpay auth failure.
+    """
+    key_id = settings.RAZORPAY_KEY_ID
+    key_secret = settings.RAZORPAY_KEY_SECRET
+    if not key_id or not key_secret:
+        raise RuntimeError("Razorpay keys are not configured (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET).")
+    return razorpay.Client(auth=(key_id, key_secret))
+
+
+def _cart_grand_total(user):
+    """Return (subtotal, shipping, grand_total) Decimals for the user's cart.
+
+    Replicates the storefront free-shipping rule shown in Checkout.jsx:
+    shipping is free once the subtotal reaches ₹50, otherwise ₹9.99.
+    Returns (None, None, None) when the cart is empty.
+    """
+    cart = Cart.objects.filter(user=user).first()
+    if not cart:
+        return None, None, None
+    cart_items = cart.items.select_related('product').all()
+    if not cart_items.exists():
+        return None, None, None
+
+    subtotal = sum(item.product.price * item.quantity for item in cart_items)
+    subtotal = Decimal(subtotal).quantize(Decimal('0.01'))
+    shipping = Decimal('0.00') if subtotal >= 50 else Decimal('9.99')
+    grand_total = (subtotal + shipping).quantize(Decimal('0.01'))
+    return subtotal, shipping, grand_total
+
+
+def _allocate_order_number(user):
+    """Allocate the next per-customer order_number with a retry loop for the
+    unique-together constraint (mirrors the logic in checkout())."""
+    for _ in range(5):
+        last_number = (
+            Order.objects.filter(user=user).aggregate(
+                max_number=Max('order_number')
+            )['max_number']
+        ) or 0
+        try:
+            with transaction.atomic():
+                order = Order.objects.create(
+                    user=user,
+                    order_number=last_number + 1,
+                    total_amount=Decimal('0.00'),
+                    status='pending',
+                    payment_status='pending',
+                )
+            return order
+        except IntegrityError:
+            continue
+    return None
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def checkout_razorpay(request):
+    """Create a Razorpay order for the user's cart and return the details the
+    frontend needs to open the Razorpay checkout modal.
+
+    Body: { "address": "...", "phone": "..." } (optional overrides; saved to
+    the user's profile like the regular checkout flow).
+
+    The cart is NOT cleared here — that happens only after the payment is
+    verified in checkout_razorpay_verify().
+    """
+    user = request.user
+
+    subtotal, shipping, grand_total = _cart_grand_total(user)
+    if grand_total is None:
+        return Response({'error': 'Cart is empty'}, status=400)
+
+    # Save shipping info to the profile (same behavior as regular checkout).
+    address = request.data.get('address', '').strip() or user.address
+    phone = request.data.get('phone', '').strip() or user.phone
+    updated = False
+    if address and address != user.address:
+        user.address = address
+        updated = True
+    if phone and phone != user.phone:
+        user.phone = phone
+        updated = True
+    if updated:
+        user.save()
+
+    # Amount in paise (Razorpay's smallest currency unit). Round to avoid
+    # float drift from Decimal -> int conversion.
+    amount_paise = int((grand_total * 100).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+
+    # Create the Razorpay order first (no DB side effect yet), so a Razorpay
+    # failure leaves no dangling Django order behind.
+    try:
+        client = _razorpay_client()
+        rzp_order = client.order.create({
+            "amount": amount_paise,
+            "currency": "INR",
+            "receipt": f"rcpt_{uuid.uuid4().hex[:30]}",
+            "payment_capture": 1,
+            "notes": {"django_user": user.username},
+        })
+    except RuntimeError as exc:
+        return Response({'error': str(exc)}, status=500)
+    except razorpay.errors.BadRequestError as exc:
+        msg = str(exc)
+        # The most common cause of a BadRequestError here is "Authentication
+        # failed" — i.e. the RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in .env are
+        # invalid, mismatched, or revoked. Surface that clearly (and log it)
+        # so it isn't mistaken for a code bug.
+        if "authentication failed" in msg.lower():
+            logger.error(
+                "Razorpay authentication failed — invalid/expired keys in .env "
+                "(RAZORPAY_KEY_ID=%s). Regenerate the test key pair in the Razorpay "
+                "dashboard and restart the server.",
+                settings.RAZORPAY_KEY_ID,
+            )
+            return Response({
+                'error': 'Razorpay keys are invalid or expired. Update RAZORPAY_KEY_ID and '
+                         'RAZORPAY_KEY_SECRET in backend/.env with valid test keys from the '
+                         'Razorpay dashboard, then restart the Django server.'
+            }, status=500)
+        return Response({'error': f'Razorpay rejected the order: {msg}'}, status=400)
+    except Exception:
+        logger.exception("Failed to create Razorpay order for user %s", user.username)
+        return Response({'error': 'Could not initiate payment. Please try again.'}, status=500)
+
+    # Create the pending Django order + its items, linked to the Razorpay order.
+    order = _allocate_order_number(user)
+    if order is None:
+        return Response({'error': 'Could not create order, please try again.'}, status=500)
+
+    cart_items = Cart.objects.get(user=user).items.select_related('product').all()
+    for item in cart_items:
+        OrderItem.objects.create(
+            order=order,
+            product=item.product,
+            quantity=item.quantity,
+            price=item.product.price,
+        )
+
+    order.total_amount = grand_total
+    order.razorpay_order_id = rzp_order['id']
+    order.save(update_fields=['total_amount', 'razorpay_order_id'])
+
+    return Response({
+        'order_id': order.id,
+        'razorpay_order_id': rzp_order['id'],
+        'amount': amount_paise,
+        'currency': 'INR',
+        # Public key — safe to expose to the browser; it only authorizes
+        # opening the checkout modal, not server-side actions.
+        'key_id': settings.RAZORPAY_KEY_ID,
+        'name': 'MyStore',
+        'test_mode': _is_razorpay_test_mode(),
+        'prefill': {
+            'name': f"{user.first_name} {user.last_name}".strip() or user.username,
+            'email': user.email,
+            'contact': phone or user.phone,
+        },
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def checkout_razorpay_verify(request):
+    """Verify a Razorpay payment and finalize the order.
+
+    Body: {
+        "order_id": <django order id>,
+        "razorpay_order_id": "...",
+        "razorpay_payment_id": "...",
+        "razorpay_signature": "..."
+    }
+
+    On success the order's payment_status is set to 'paid', the fulfillment
+    status to 'confirmed', and the cart is cleared. Idempotent: re-verifying
+    an already-paid order just returns it.
+    """
+    django_order_id = request.data.get('order_id')
+    rzp_order_id = request.data.get('razorpay_order_id')
+    rzp_payment_id = request.data.get('razorpay_payment_id')
+    rzp_signature = request.data.get('razorpay_signature')
+
+    if not all([django_order_id, rzp_order_id, rzp_payment_id, rzp_signature]):
+        return Response({'error': 'Missing payment parameters.'}, status=400)
+
+    try:
+        order = Order.objects.get(id=django_order_id, user=request.user)
+    except (Order.DoesNotExist, ValueError):
+        return Response({'error': 'Order not found'}, status=404)
+
+    if order.razorpay_order_id != rzp_order_id:
+        return Response({'error': 'Order mismatch'}, status=400)
+
+    # Idempotent: a second verify for the same paid order returns success
+    # without re-hitting Razorpay or clearing the cart again.
+    if order.payment_status == 'paid' and order.payment_id:
+        return Response(OrderDetailSerializer(order).data)
+
+    try:
+        client = _razorpay_client()
+        client.utility.verify_payment_signature({
+            "razorpay_order_id": rzp_order_id,
+            "razorpay_payment_id": rzp_payment_id,
+            "razorpay_signature": rzp_signature,
+        })
+    except razorpay.errors.SignatureVerificationError:
+        order.payment_status = 'failed'
+        order.payment_id = rzp_payment_id
+        order.save(update_fields=['payment_status', 'payment_id'])
+        return Response({'error': 'Payment signature verification failed.'}, status=400)
+    except RuntimeError as exc:
+        return Response({'error': str(exc)}, status=500)
+    except Exception:
+        logger.exception("Razorpay signature verification failed for order %s", django_order_id)
+        return Response({'error': 'Could not verify payment.'}, status=500)
+
+    order.payment_status = 'paid'
+    order.payment_id = rzp_payment_id
+    order.status = 'confirmed'
+    order.save(update_fields=['payment_status', 'payment_id', 'status'])
+
+    # Clear the cart now that payment is confirmed.
+    cart = Cart.objects.filter(user=request.user).first()
+    if cart:
+        cart.items.all().delete()
+
+    return Response(OrderDetailSerializer(order).data)
 
 
 # -------------------------

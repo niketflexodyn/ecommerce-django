@@ -27,6 +27,9 @@ urlpatterns = [
     path('cart/update/<int:pk>/', views.update_cart),
     # Checkout (Customer)
     path('checkout/', views.checkout),
+    # Checkout via Razorpay (Customer)
+    path('checkoutRaz/', views.checkout_razorpay, name='checkout-razorpay'),
+    path('checkoutRaz/verify/', views.checkout_razorpay_verify, name='checkout-razorpay-verify'),
     # Order History (Customer)
     path('orders/mine/', views.my_orders),
     path('orders/mine/<int:pk>/', views.my_order_detail),

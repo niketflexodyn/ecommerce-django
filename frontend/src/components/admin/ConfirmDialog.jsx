@@ -6,7 +6,7 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title, message
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <DialogPanel className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-          <DialogTitle className="text-lg font-semibold text-[#2A1A2C]">
+          <DialogTitle className="text-lg font-semibold text-plum-950">
             {title}
           </DialogTitle>
           <p className="mt-3 text-sm text-slate-600">{message}</p>
@@ -20,7 +20,7 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title, message
             <button
               onClick={onConfirm}
               className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${
-                danger ? 'bg-red-600 hover:bg-red-700' : 'bg-[#2A1A2C] hover:bg-[#3D2136]'
+                danger ? 'bg-red-600 hover:bg-red-700' : 'bg-plum-950 hover:bg-plum-900'
               }`}
             >
               {confirmLabel}

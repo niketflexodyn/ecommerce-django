@@ -6,8 +6,6 @@ import { formatPrice, getProductImageUrl } from '../utils/product'
 import { ratingApi } from '../utils/api'
 import StarRating from '../components/StarRating'
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" }
-
 export default function ProductDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -152,9 +150,9 @@ export default function ProductDetails() {
   const ratingCount = product.rating_count || productRatings.length
 
   return (
-    <div className="page-container py-8 sm:py-12" style={{ fontFamily: "'Jost', sans-serif" }}>
+    <div className="page-container font-body py-8 sm:py-12">
       <nav className="mb-6 text-sm text-slate-500">
-        <Link to="/" className="transition hover:text-[#E8C766]">Home</Link>
+        <Link to="/" className="transition hover:text-gold-500">Home</Link>
         <span className="mx-2 text-slate-300">/</span>
         <span className="text-slate-900">{product.name}</span>
       </nav>
@@ -178,6 +176,7 @@ export default function ProductDetails() {
                       <img
                         key={i}
                         src={src}
+                        loading='lazy'
                         alt={product.name}
                         className="h-72 w-full shrink-0 object-cover sm:h-[28rem]"
                         draggable={false}
@@ -191,7 +190,7 @@ export default function ProductDetails() {
                         type="button"
                         onClick={() => setCurrent((c) => (c - 1 + gallery.length) % gallery.length)}
                         aria-label="Previous image"
-                        className="absolute left-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[#2A1A2C] shadow-sm transition hover:bg-white"
+                        className="absolute left-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-plum-950 shadow-sm transition hover:bg-white"
                       >
                         <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
@@ -201,7 +200,7 @@ export default function ProductDetails() {
                         type="button"
                         onClick={() => setCurrent((c) => (c + 1) % gallery.length)}
                         aria-label="Next image"
-                        className="absolute right-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[#2A1A2C] shadow-sm transition hover:bg-white"
+                        className="absolute right-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-plum-950 shadow-sm transition hover:bg-white"
                       >
                         <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
@@ -220,7 +219,7 @@ export default function ProductDetails() {
                           type="button"
                           onClick={() => setCurrent(i)}
                           aria-label={`Go to image ${i + 1}`}
-                          className={`h-2 rounded-full transition-all ${i === current ? 'w-6 bg-[#2A1A2C]' : 'w-2 bg-slate-300 hover:bg-slate-400'}`}
+                          className={`h-2 rounded-full transition-all ${i === current ? 'w-6 bg-plum-950' : 'w-2 bg-slate-300 hover:bg-slate-400'}`}
                         />
                       ))}
                     </div>
@@ -230,7 +229,7 @@ export default function ProductDetails() {
                           key={i}
                           type="button"
                           onClick={() => setCurrent(i)}
-                          className={`overflow-hidden rounded-lg ring-2 transition ${i === current ? 'ring-[#C9A227]' : 'ring-transparent hover:ring-slate-300'}`}
+                          className={`overflow-hidden rounded-lg ring-2 transition ${i === current ? 'ring-gold-600' : 'ring-transparent hover:ring-slate-300'}`}
                         >
                           <img src={src} alt="" className="h-14 w-14 object-cover" />
                         </button>
@@ -256,11 +255,11 @@ export default function ProductDetails() {
 
           <div className="flex flex-col justify-center p-6 sm:p-10">
             {product.category?.name && (
-              <span className="mb-3 w-fit rounded-full bg-[#E8C766]/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#8a6d1f]">
+              <span className="mb-3 w-fit rounded-full bg-gold-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gold-700">
                 {product.category.name}
               </span>
             )}
-            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl" style={fontDisplay}>
+            <h1 className="font-display text-3xl font-bold text-slate-900 sm:text-4xl">
               {product.name}
             </h1>
 
@@ -281,7 +280,7 @@ export default function ProductDetails() {
 
             {/* Seller */}
             <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
-              <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <svg className="size-4 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21V7.5m0 0 6.75-3.75v13.5M13.5 7.5l-6.75-3.75v13.5M6.75 17.25l6.75 3.75 6.75-3.75" />
               </svg>
               Sold by
@@ -293,7 +292,7 @@ export default function ProductDetails() {
             {/* Location */}
             {product.location && (
               <p className="mt-1.5 flex items-center gap-1.5 text-sm text-slate-500">
-                <svg className="size-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <svg className="size-4 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                 </svg>
@@ -306,7 +305,7 @@ export default function ProductDetails() {
             {/* Price */}
             <div className="mt-6">
               <span className="text-xs font-medium uppercase tracking-wide text-slate-400">Price</span>
-              <p className="text-4xl font-bold tracking-tight text-[#2A1A2C]" style={fontDisplay}>
+              <p className="font-display text-4xl font-bold tracking-tight text-plum-950">
                 {formatPrice(product.price)}
               </p>
             </div>
@@ -317,7 +316,7 @@ export default function ProductDetails() {
                 type="button"
                 onClick={handleAddToCart}
                 disabled={adding}
-                className="btn-primary min-w-[180px] flex items-center justify-center gap-2 shadow-lg shadow-[#2A1A2C]/20 disabled:opacity-50"
+                className="btn-primary min-w-[180px] flex items-center justify-center gap-2 shadow-lg shadow-plum-950/20 disabled:opacity-50"
               >
                 {adding ? (
                   <>
@@ -367,7 +366,7 @@ export default function ProductDetails() {
                         size="md"
                       />
                       {myRatingScore && (
-                        <span className="rounded-full bg-[#E8C766]/20 px-2 py-0.5 text-xs font-semibold text-[#8a6d1f]">
+                        <span className="rounded-full bg-gold-500/20 px-2 py-0.5 text-xs font-semibold text-gold-700">
                           {myRatingScore}/5
                         </span>
                       )}
@@ -400,7 +399,7 @@ export default function ProductDetails() {
                 </div>
               ) : (
                 <p className="mt-2 text-sm text-slate-500">
-                  <Link to="/login" className="font-medium text-[#8a6d1f] hover:underline">Sign in</Link> to rate this product.
+                  <Link to="/login" className="font-medium text-gold-700 hover:underline">Sign in</Link> to rate this product.
                 </p>
               )}
             </div>
@@ -408,19 +407,19 @@ export default function ProductDetails() {
             {/* Trust signals */}
             <ul className="mt-6 space-y-3 border-t border-slate-100 pt-6">
               <li className="flex items-center gap-3 text-sm text-slate-500">
-                <svg className="size-5 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <svg className="size-5 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 1-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 1-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a8.25 8.25 0 0 0-2.034-4.926l-.726-.726a1.125 1.125 0 0 1-.298-.774V6.375c0-.621-.504-1.125-1.125-1.125H14.25M3.75 14.25h7.875c.621 0 1.125.504 1.125 1.125v3.75M3.75 14.25V6.375c0-.621.504-1.125 1.125-1.125h6.75" />
                 </svg>
                 Free delivery on orders over ₹50
               </li>
               <li className="flex items-center gap-3 text-sm text-slate-500">
-                <svg className="size-5 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <svg className="size-5 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
                 </svg>
                 Secure checkout
               </li>
               <li className="flex items-center gap-3 text-sm text-slate-500">
-                <svg className="size-5 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <svg className="size-5 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
                 </svg>
                 30-day easy returns
@@ -433,16 +432,16 @@ export default function ProductDetails() {
       {/* Reviews section */}
       {productRatings.length > 0 && (
         <div className="mt-10 card p-6 sm:p-8">
-          <h2 className="text-xl font-bold text-slate-900" style={fontDisplay}>
+          <h2 className="font-display text-xl font-bold text-slate-900">
             Customer Reviews
           </h2>
-          <div className="mt-2 h-1 w-12 rounded-full bg-[#E8C766]" />
+          <div className="mt-2 h-1 w-12 rounded-full bg-gold-500" />
 
           <div className="mt-6 space-y-4">
             {productRatings.map((r) => (
               <div key={r.id} className="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-8 items-center justify-center rounded-full bg-[#2A1A2C] text-xs font-bold text-white">
+                  <div className="flex size-8 items-center justify-center rounded-full bg-plum-950 text-xs font-bold text-white">
                     {r.username?.charAt(0).toUpperCase() || '?'}
                   </div>
                   <div>

@@ -39,23 +39,20 @@ const FEATURES = [
   },
 ];
 
-const fontDisplay = { fontFamily: "'Playfair Display', serif" };
-const fontBody = { fontFamily: "'Jost', sans-serif" };
-
 export default function FeaturesStrip() {
   const [ref, revealed] = useScrollReveal(0.2);
 
   return (
-    <section ref={ref} className="border-y border-slate-100 bg-white" style={fontBody}>
+    <section ref={ref} className="font-body border-y border-slate-100 bg-white">
       <div className="page-container py-10 sm:py-12">
         <div className={`grid grid-cols-2 gap-8 md:grid-cols-4 ${revealed ? 'animate-fade-up' : 'opacity-0'}`}>
           {FEATURES.map((feature) => (
             <div key={feature.title} className="flex items-start gap-4">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#E8C766]/15 text-[#C9A227]">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gold-500/15 text-gold-600">
                 {feature.icon}
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-[#2A1A2C]" style={fontDisplay}>
+                <h3 className="font-display text-sm font-semibold text-plum-950">
                   {feature.title}
                 </h3>
                 <p className="mt-0.5 text-xs text-slate-500">{feature.subtitle}</p>

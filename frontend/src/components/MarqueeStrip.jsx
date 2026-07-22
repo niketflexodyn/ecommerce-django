@@ -1,4 +1,4 @@
-// const fontBody = { fontFamily: "'Jost', sans-serif" };
+// const fontBody = { fontFamily: "font-body" };
 
 // // Single thin announcement bar — brand promises scrolling left.
 // const PROMISES = [
@@ -10,7 +10,7 @@
 // ];
 
 // const Star = () => (
-//   <span className="mx-5 inline-flex text-[#C9A227]/80" aria-hidden="true">
+//   <span className="mx-5 inline-flex text-gold-600/80" aria-hidden="true">
 //     <svg className="size-3" viewBox="0 0 24 24" fill="currentColor">
 //       <path d="M12 2l2.39 7.36H22l-6.18 4.49L18.21 21 12 16.51 5.79 21l2.39-7.15L2 9.36h7.61z" />
 //     </svg>
@@ -40,16 +40,16 @@
 
 // export default function MarqueeStrip() {
 //   return (
-//     <section className="relative overflow-hidden bg-[#2A1A2C] py-1.5 text-[#E8C766]" style={fontBody}>
+//     <section className="relative overflow-hidden bg-plum-950 py-1.5 text-gold-500 font-body">
 //       {/* Edge fades so items dissolve in/out instead of hard-cutting */}
-//       <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[#2A1A2C] to-transparent sm:w-20" />
-//       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[#2A1A2C] to-transparent sm:w-20" />
+//       <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-linear-to-r from-plum-950 to-transparent sm:w-20" />
+//       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-linear-to-l from-plum-950 to-transparent sm:w-20" />
 
 //       <div className="marquee-pause relative select-none">
 //         <Row
 //           items={PROMISES}
 //           separator={Star}
-//           className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#E8C766] sm:text-xs"
+//           className="text-[11px] font-medium uppercase tracking-[0.18em] text-gold-500 sm:text-xs"
 //         />
 //       </div>
 //     </section>
