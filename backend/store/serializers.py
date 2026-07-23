@@ -5,10 +5,6 @@ from django.utils.text import slugify
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
-# -------------------------
-# Category
-# -------------------------
-
 class CategorySerializer(serializers.ModelSerializer):
     product_count = serializers.IntegerField(source='products.count', read_only=True)
 
@@ -25,16 +21,13 @@ class CategoryWriteSerializer(serializers.ModelSerializer):
         fields = ['name', 'slug']
 
     def validate(self, attrs):
-        # Auto-generate slug from name if not provided
         if not attrs.get('slug'):
             base_slug = slugify(attrs.get('name', ''))
             if not base_slug:
                 raise serializers.ValidationError({"name": "Name must not be empty"})
-            # Ensure slug uniqueness
             slug = base_slug
             counter = 1
             while Category.objects.filter(slug=slug).exists():
-                # If updating, exclude current instance
                 if self.instance and self.instance.slug == slug:
                     break
                 slug = f"{base_slug}-{counter}"
@@ -42,10 +35,6 @@ class CategoryWriteSerializer(serializers.ModelSerializer):
             attrs['slug'] = slug
         return attrs
 
-
-# -------------------------
-# Product
-# -------------------------
 
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
@@ -75,26 +64,20 @@ class ProductSerializer(serializers.ModelSerializer):
         return full or seller.username
 
     def get_images(self, obj):
-        # Gallery image URLs (the cover stays on obj.image)
         return [img.image.url for img in obj.images.all()]
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
-    # Cover image is mandatory on create (required=True). On update the view
-    # uses partial=True, which skips required validation, so an admin can edit
-    # other fields without re-uploading the cover. Gallery images are handled
-    # separately in the view via request.data.getlist('images').
     image = serializers.ImageField(required=True)
 
     class Meta:
         model = Product
-        fields = ['category', 'name', 'description', 'price', 'location', 'image']
+        fields = [
+            'category', 'name', 'description', 'price', 'location', 'image',
+            'shipping_days', 'dispatch_days', 'out_for_delivery_days',
+        ]
 
-
-# -------------------------
-# Cart
-# -------------------------
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
@@ -117,10 +100,6 @@ class CartSerializer(serializers.ModelSerializer):
     def get_total(self, obj):
         return obj.total
 
-
-# -------------------------
-# Auth
-# -------------------------
 
 class RegisterSerializer(serializers.ModelSerializer):
 
@@ -165,7 +144,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.role = role
 
-        # Grant Django admin access for admin roles
         if role in ("admin", "super_admin"):
             user.is_staff = True
 
@@ -202,10 +180,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
-# -------------------------
-# Orders
-# -------------------------
-
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_price = serializers.DecimalField(source='product.price', max_digits=10, decimal_places=2, read_only=True)
@@ -222,7 +196,11 @@ class OrderListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'order_number', 'username', 'email', 'created_at', 'total_amount', 'items_count', 'status' ]
+        fields = [
+            'id', 'order_number', 'username', 'email', 'created_at', 'total_amount',
+            'items_count', 'status',
+            'estimated_delivery', 'shipping_eta', 'dispatch_eta', 'out_for_delivery_eta',
+        ]
 
     def get_items_count(self, obj):
         return obj.items.count()
@@ -244,12 +222,10 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             'id', 'order_number', 'username', 'email', 'first_name', 'last_name',
             'phone', 'address', 'location', 'created_at', 'total_amount', 'items', 'status',
             'payment_status',
+            'estimated_delivery', 'shipping_eta', 'dispatch_eta', 'out_for_delivery_eta',
+            'dispatched_at', 'delivered_at',
         ]
 
-
-# -------------------------
-# Ratings
-# -------------------------
 
 class RatingSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
@@ -273,7 +249,6 @@ class RatingWriteSerializer(serializers.ModelSerializer):
 
     def validate_product(self, product):
         user = self.context.get('request').user
-        # Check that the user has purchased this product
         has_purchased = OrderItem.objects.filter(
             order__user=user,
             product=product,
@@ -284,10 +259,6 @@ class RatingWriteSerializer(serializers.ModelSerializer):
         return product
 
 
-# -------------------------
-# Dashboard
-# -------------------------
-
 class DashboardStatsSerializer(serializers.Serializer):
     total_products = serializers.IntegerField()
     total_categories = serializers.IntegerField()
@@ -295,10 +266,6 @@ class DashboardStatsSerializer(serializers.Serializer):
     total_revenue = serializers.DecimalField(max_digits=12, decimal_places=2)
     recent_orders = OrderListSerializer(many=True)
 
-
-# -------------------------
-# Password reset
-# -------------------------
 
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -313,6 +280,5 @@ class ResetPasswordSerializer(serializers.Serializer):
     def validate(self, attrs):
         if attrs["password"] != attrs["confirm_password"]:
             raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
-        # Reuse Django's built-in strength validators (settings.AUTH_PASSWORD_VALIDATORS).
         validate_password(attrs["password"])
         return attrs

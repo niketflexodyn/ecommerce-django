@@ -4,9 +4,6 @@ from django.contrib.auth.models import AbstractUser
 
 from django.utils import timezone
 
-# -------------------------
-# Custom User Model
-# -------------------------
 
 class User(AbstractUser):
     ROLE_CHOICES = (
@@ -30,20 +27,15 @@ class User(AbstractUser):
         blank=True,
     )
 
-    # Short location shown to admins alongside the customer's address
-    # (e.g. "Ahmedabad, India"). Filled by the customer in their profile.
     location = models.CharField(
         max_length=200,
         blank=True,
     )
 
     def save(self, *args, **kwargs):
-        # Keep role in sync with is_staff / is_superuser
-        # so createsuperuser and Django admin always get the right role
         if self.is_superuser:
             self.role = "super_admin"
         elif self.is_staff:
-            # Only promote; never downgrade an explicit admin role
             if self.role not in ("admin", "super_admin"):
                 self.role = "admin"
         super().save(*args, **kwargs)
@@ -51,10 +43,6 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
-
-# -------------------------
-# Category
-# -------------------------
 
 class Category(models.Model):
     name = models.CharField(max_length=200)
@@ -70,10 +58,6 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-
-# -------------------------
-# Product
-# -------------------------
 
 class Product(models.Model):
     category = models.ForeignKey(
@@ -91,8 +75,6 @@ class Product(models.Model):
         decimal_places=2,
     )
 
-    # Human-readable location shown to customers on the product detail page
-    # (e.g. "Ahmedabad, India"). Filled by the admin when creating a product.
     location = models.CharField(
         max_length=200,
         blank=True,
@@ -119,14 +101,17 @@ class Product(models.Model):
         blank=True,
         related_name="created_products",
     )
+    shipping_days = models.PositiveIntegerField(default=5)
+    dispatch_days = models.PositiveIntegerField(default=5)
+    out_for_delivery_days = models.PositiveIntegerField(default=5)
+
+    @property
+    def estimated_delivery_days(self):
+        return self.shipping_days + self.dispatch_days + self.out_for_delivery_days
 
     def __str__(self):
         return self.name
 
-
-# -------------------------
-# Product Image (gallery — the cover stays on Product.image)
-# -------------------------
 
 class ProductImage(models.Model):
     product = models.ForeignKey(
@@ -148,10 +133,6 @@ class ProductImage(models.Model):
         return f"Image for {self.product.name}"
 
 
-# -------------------------
-# Order
-# -------------------------
-
 class Order(models.Model):
 
     STATUS_CHOICES = (
@@ -167,16 +148,17 @@ class Order(models.Model):
         on_delete=models.CASCADE,
         related_name="orders",
     )
+    shipping_eta          = models.DateField(null=True, blank=True)
+    dispatch_eta          = models.DateField(null=True, blank=True)
+    out_for_delivery_eta  = models.DateField(null=True, blank=True)
 
-    # Sequential number scoped to each customer — their 1st, 2nd, 3rd order...
-    # Unique per user, so a new customer's first order is always #1.
     order_number = models.PositiveIntegerField(null=True, blank=True)
 
     status = models.CharField(
     max_length=20,
     choices=STATUS_CHOICES,
     default="pending",
-    )   
+    )
     estimated_delivery = models.DateField(
         null=True,
         blank=True
@@ -192,9 +174,6 @@ class Order(models.Model):
         blank=True
     )
 
-    # Razorpay linkage. Set when a Razorpay order is created for this order
-    # (at /checkoutRaz/) and again when the payment is verified.
-    
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
@@ -206,26 +185,23 @@ class Order(models.Model):
         ("failed", "Failed"),
     ],
     default="pending",
-)
+    )
 
     payment_id = models.CharField(
-    max_length=255,
-    blank=True,
-    null=True,
-)
+        max_length=255,
+        blank=True,
+        null=True,
+    )
 
     razorpay_order_id = models.CharField(
-    max_length=255,
-    blank=True,
-    null=True,
-)
+        max_length=255,
+        blank=True,
+        null=True,
+    )
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
     )
-    # address = models.CharField(
-    #     max_length =
-    # )
 
     def save(self, *args, **kwargs):
         if self.status == "dispatched" and self.dispatched_at is None:
@@ -241,10 +217,6 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.order_number} ({self.user.username})"
 
-
-# -------------------------
-# Order Items
-# -------------------------
 
 class OrderItem(models.Model):
 
@@ -270,10 +242,6 @@ class OrderItem(models.Model):
         return f"{self.quantity} × {self.product.name}"
 
 
-# -------------------------
-# Cart
-# ------------------------- 
-
 class Cart(models.Model):
 
     user = models.ForeignKey(
@@ -295,10 +263,6 @@ class Cart(models.Model):
     def total(self):
         return sum(item.subtotal for item in self.items.all())
 
-
-# -------------------------
-# Cart Item
-# -------------------------
 
 class CartItem(models.Model):
 
@@ -322,10 +286,6 @@ class CartItem(models.Model):
     def subtotal(self):
         return self.product.price * self.quantity
 
-
-# -------------------------
-# Rating
-# -------------------------
 
 class Rating(models.Model):
     user = models.ForeignKey(

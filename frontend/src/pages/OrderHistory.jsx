@@ -3,10 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { orderApi, ratingApi } from '../utils/api';
 import StarRating from '../components/StarRating';
+import DeliveryTimeline from '../components/DeliveryTimeline';
 
 const STATUS_STYLES = {
-  successful: { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Successful' },
-  unsuccessful: { bg: 'bg-red-50', text: 'text-red-700', label: 'Unsuccessful' },
+  pending:          { bg: 'bg-slate-100',    text: 'text-slate-600',    label: 'Pending' },
+  confirmed:        { bg: 'bg-gold-500/10',   text: 'text-gold-700',     label: 'Confirmed' },
+  successful:       { bg: 'bg-emerald-50',    text: 'text-emerald-700',  label: 'Successful' },
+  dispatched:       { bg: 'bg-emerald-50',    text: 'text-emerald-700',  label: 'Dispatched' },
+  out_for_delivery: { bg: 'bg-gold-500/10',   text: 'text-gold-700',     label: 'Out for Delivery' },
+  delivered:        { bg: 'bg-emerald-50',    text: 'text-emerald-700',  label: 'Delivered' },
+  cancelled:        { bg: 'bg-red-50',        text: 'text-red-700',      label: 'Cancelled' },
+  unsuccessful:     { bg: 'bg-red-50',        text: 'text-red-700',      label: 'Unsuccessful' },
 };
 
 export default function OrderHistory() {
@@ -177,6 +184,13 @@ export default function OrderHistory() {
                         <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-plum-950" />
                       </div>
                     ) : (
+                      <>
+                        <div className="mb-4 rounded-xl bg-slate-50/60 p-4 ring-1 ring-slate-100">
+                          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Delivery timeline
+                          </h3>
+                          <DeliveryTimeline order={detail} cancelled={order.status === 'cancelled'} />
+                        </div>
                       <table className="w-full text-left text-sm">
                         <thead className="border-b border-slate-100">
                           <tr>
@@ -241,6 +255,7 @@ export default function OrderHistory() {
                           })}
                         </tbody>
                       </table>
+                      </>
                     )}
                   </div>
                 )}

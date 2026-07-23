@@ -106,7 +106,18 @@ export default function Checkout() {
             });
             clearCart();
             navigate('/order-success', {
-              state: { orderId: order.id, orderNumber: order.order_number, total: order.total_amount },
+              state: {
+                orderId: order.id,
+                orderNumber: order.order_number,
+                total: order.total_amount,
+                eta: {
+                  created_at: order.created_at,
+                  shipping_eta: order.shipping_eta,
+                  dispatch_eta: order.dispatch_eta,
+                  out_for_delivery_eta: order.out_for_delivery_eta,
+                  estimated_delivery: order.estimated_delivery,
+                },
+              },
             });
           } catch (verifyErr) {
             setError(friendlyPaymentError(verifyErr));

@@ -29,7 +29,17 @@ export default function AdminProducts() {
   const galleryRef = useRef(null);
 
   // Form state
-  const [form, setForm] = useState({ name: '', description: '', price: '', category: '', location: '', image: null });
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: '',
+    location: '',
+    shipping_days: '5',
+    dispatch_days: '5',
+    out_for_delivery_days: '5',
+    image: null,
+  });
   const fileRef = useRef(null);
 
   const fetchProducts = () => {
@@ -59,7 +69,17 @@ export default function AdminProducts() {
 
   const openCreate = () => {
     setEditProduct(null);
-    setForm({ name: '', description: '', price: '', category: categories[0]?.id?.toString() || '', location: '', image: null });
+    setForm({
+      name: '',
+      description: '',
+      price: '',
+      category: categories[0]?.id?.toString() || '',
+      location: '',
+      shipping_days: '5',
+      dispatch_days: '5',
+      out_for_delivery_days: '5',
+      image: null,
+    });
     setImagePreview(null);
     resetGallery();
     setFormError('');
@@ -74,6 +94,9 @@ export default function AdminProducts() {
       price: product.price,
       category: product.category?.id?.toString() || product.category?.toString() || '',
       location: product.location || '',
+      shipping_days: String(product.shipping_days ?? 5),
+      dispatch_days: String(product.dispatch_days ?? 5),
+      out_for_delivery_days: String(product.out_for_delivery_days ?? 5),
       image: null,
     });
     setImagePreview(product.image || null);
@@ -96,6 +119,9 @@ export default function AdminProducts() {
         price: form.price,
         category: form.category,
         location: form.location,
+        shipping_days: form.shipping_days,
+        dispatch_days: form.dispatch_days,
+        out_for_delivery_days: form.out_for_delivery_days,
         ...(form.image ? { image: form.image } : {}),
         ...(newImages.length ? { images: newImages } : {}),
       };
@@ -172,6 +198,7 @@ export default function AdminProducts() {
               <th className="px-4 py-3 font-medium text-slate-500">Name</th>
               <th className="px-4 py-3 font-medium text-slate-500">Category</th>
               <th className="px-4 py-3 font-medium text-slate-500">Price</th>
+              <th className="px-4 py-3 font-medium text-slate-500">Delivery days</th>
               <th className="px-4 py-3 font-medium text-slate-500 text-right">Actions</th>
             </tr>
           </thead>
@@ -196,6 +223,14 @@ export default function AdminProducts() {
                 <td className="px-4 py-3 font-medium text-plum-950">{product.name}</td>
                 <td className="px-4 py-3 text-slate-600">{getCategoryName(product)}</td>
                 <td className="px-4 py-3 text-slate-700">₹{Number(product.price).toLocaleString()}</td>
+                <td className="px-4 py-3 text-slate-600">
+                  {(Number(product.shipping_days) || 0) +
+                    (Number(product.dispatch_days) || 0) +
+                    (Number(product.out_for_delivery_days) || 0)}
+                  <span className="block text-xs text-slate-400">
+                    {Number(product.shipping_days) || 0}S · {Number(product.dispatch_days) || 0}D · {Number(product.out_for_delivery_days) || 0}O
+                  </span>
+                </td>
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => openEdit(product)}
@@ -214,7 +249,7 @@ export default function AdminProducts() {
             ))}
             {products.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
                   No products yet. Click "Add Product" to create one.
                 </td>
               </tr>
@@ -301,6 +336,51 @@ export default function AdminProducts() {
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
                   placeholder="0.00"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Shipping timeline (days)</label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-500">Shipping</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={form.shipping_days}
+                      onChange={(e) => setForm({ ...form, shipping_days: e.target.value })}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
+                      placeholder="5"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-500">Dispatch</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={form.dispatch_days}
+                      onChange={(e) => setForm({ ...form, dispatch_days: e.target.value })}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
+                      placeholder="5"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-500">Out for delivery</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={form.out_for_delivery_days}
+                      onChange={(e) => setForm({ ...form, out_for_delivery_days: e.target.value })}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
+                      placeholder="5"
+                    />
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-slate-400">
+                  Per-stage durations used to compute the customer-facing delivery timeline when an order is placed (e.g. 5 + 5 + 5 = 15-day delivery).
+                </p>
               </div>
 
               <div>

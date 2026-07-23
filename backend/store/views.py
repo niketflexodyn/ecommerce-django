@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 import logging
 import uuid
@@ -50,10 +51,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-# -------------------------
-# Password reset
-# -------------------------
-
 @api_view(["POST"])
 def forgot_password(request):
     serializer = ForgotPasswordSerializer(data=request.data)
@@ -76,11 +73,8 @@ def forgot_password(request):
                 fail_silently=False,
             )
         except Exception:
-            # Don't leak the failure to the client (avoids user enumeration and
-            # hides SMTP internals). Log it server-side so it can be debugged.
             logger.exception("Failed to send password-reset email to %s", email)
 
-    # Same response whether or not the email exists — prevents user enumeration.
     return Response(
         {"message": "If an account exists for that email, a reset link has been sent."},
         status=status.HTTP_200_OK,
@@ -108,14 +102,10 @@ def reset_password(request):
         )
 
     user.set_password(serializer.validated_data["password"])
-    user.save()  # token auto-invalidates: the password hash it was bound to has changed
+    user.save()
 
     return Response({"message": "Password has been reset successfully."})
 
-
-# -------------------------
-# Products (Public)
-# -------------------------
 
 @api_view(["GET"])
 def get_products(request):
@@ -129,18 +119,12 @@ def get_products(request):
 
     category_slug = request.query_params.get('category', '').strip()
     if category_slug and category_slug != 'all':
-        # Match the selected category AND any siblings that share the same
-        # name. Multiple admins can create categories with the same name
-        # (different slugs); they should appear as one filter on the storefront
-        # and surface all of their products together.
         selected = Category.objects.filter(slug=category_slug).first()
         if selected is not None:
             products = products.filter(category__name__iexact=selected.name)
         else:
             products = products.filter(category__slug=category_slug)
 
-    # Server-side sort. Sorting must happen on the server now that the list is
-    # paginated — otherwise each page would only be sorted within itself.
     sort = request.query_params.get('sort', '').strip()
     sort_map = {
         'price-asc': 'price',
@@ -149,8 +133,6 @@ def get_products(request):
     }
     products = products.order_by(sort_map.get(sort, '-created_at'))
 
-    # Server-side pagination. Returns {count, next, previous, results} instead
-    # of a bare array; page_size is overridable via ?page_size= (capped at 50).
     paginator = ProductPagination()
     page = paginator.paginate_queryset(products, request)
     serializer = ProductSerializer(page, many=True, context={'request': request})
@@ -167,17 +149,12 @@ def get_product(request, pk):
         return Response({'error': 'Product Not Found'}, status=404)
 
 
-# -------------------------
-# Products (Admin)
-# -------------------------
-
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def create_product(request):
     serializer = ProductWriteSerializer(data=request.data)
     if serializer.is_valid():
         product = serializer.save(created_by=request.user)
-        # Optional gallery images (the cover is saved above as product.image)
         for f in request.data.getlist('images'):
             ProductImage.objects.create(product=product, image=f)
         return Response(
@@ -198,7 +175,6 @@ def update_product(request, pk):
     serializer = ProductWriteSerializer(product, data=request.data, partial=True)
     if serializer.is_valid():
         product = serializer.save()
-        # Append any new gallery images (cover is replaced only if a new image was sent)
         for f in request.data.getlist('images'):
             ProductImage.objects.create(product=product, image=f)
         return Response(ProductSerializer(product, context={'request': request}).data)
@@ -236,18 +212,11 @@ def admin_products(request):
     return Response(serializer.data)
 
 
-# -------------------------
-# Categories (Public)
-# -------------------------
-
 @api_view(["GET"])
 def get_categories(request):
     categories = Category.objects.all()
     serializer = CategorySerializer(categories, many=True)
     data = serializer.data
-    # De-duplicate by name (case-insensitive). Multiple admins can each create
-    # a "Fashion" category (with distinct slugs); the storefront filter should
-    # list each name only once. Keep the first occurrence (lowest id).
     seen = set()
     unique = []
     for cat in data:
@@ -258,10 +227,6 @@ def get_categories(request):
         unique.append(cat)
     return Response(unique)
 
-
-# -------------------------
-# Categories (Admin)
-# -------------------------
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
@@ -307,10 +272,6 @@ def admin_categories(request):
     serializer = CategorySerializer(categories, many=True)
     return Response(serializer.data)
 
-
-# -------------------------
-# Cart
-# -------------------------
 
 @api_view(["GET"])
 def get_cart(request):
@@ -362,9 +323,36 @@ def remove_from_cart(request, pk):
     return Response({'message': 'Item removed from cart'}, status=200)
 
 
-# -------------------------
-# Checkout (Customer)
-# -------------------------
+def assign_timeline(order):
+    """Snapshot the shipping/delivery ETA dates onto an order.
+
+    Takes the worst-case (max) per-stage duration across all order items and
+    computes the planned milestone dates from the order's creation date:
+        shipping_eta         = created + shipping_days
+        dispatch_eta         = shipping_eta + dispatch_days
+        out_for_delivery_eta = dispatch_eta + out_for_delivery_days
+        estimated_delivery   = out_for_delivery_eta   (final delivery date)
+
+    Durations are copied onto the order at purchase time so later admin edits
+    to a product's shipping days don't change the timeline of past orders.
+    """
+    items = order.items.select_related("product").all()
+    if not items.exists():
+        return
+
+    shipping_days = max(it.product.shipping_days for it in items)
+    dispatch_days = max(it.product.dispatch_days for it in items)
+    ofd_days = max(it.product.out_for_delivery_days for it in items)
+
+    base = order.created_at.date()
+    order.shipping_eta = base + timedelta(days=shipping_days)
+    order.dispatch_eta = order.shipping_eta + timedelta(days=dispatch_days)
+    order.out_for_delivery_eta = order.dispatch_eta + timedelta(days=ofd_days)
+    order.estimated_delivery = order.out_for_delivery_eta
+    order.save(update_fields=[
+        "shipping_eta", "dispatch_eta", "out_for_delivery_eta", "estimated_delivery",
+    ])
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -383,14 +371,11 @@ def checkout(request):
     if not cart_items.exists():
         return Response({'error': 'Cart is empty'}, status=400)
 
-    # Compute total
     total = sum(item.product.price * item.quantity for item in cart_items)
 
-    # Override address/phone if provided
     address = request.data.get('address', '').strip() or user.address
     phone = request.data.get('phone', '').strip() or user.phone
 
-    # Update user profile if new info provided
     updated = False
     if request.data.get('address', '').strip() and request.data.get('address').strip() != user.address:
         user.address = request.data.get('address').strip()
@@ -401,8 +386,6 @@ def checkout(request):
     if updated:
         user.save()
 
-    # Create order — assign the next per-customer order_number (1, 2, 3, ...)
-    # Retry on the off chance of a unique-together collision under concurrent checkouts.
     for _ in range(5):
         last_number = (
             Order.objects.filter(user=user).aggregate(
@@ -423,7 +406,6 @@ def checkout(request):
     else:
         return Response({'error': 'Could not create order, please try again.'}, status=500)
 
-    # Create order items
     for item in cart_items:
         OrderItem.objects.create(
             order=order,
@@ -432,28 +414,13 @@ def checkout(request):
             price=item.product.price,
         )
 
-    # Clear the cart
     cart_items.delete()
+
+    assign_timeline(order)
 
     serializer = OrderDetailSerializer(order)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-
-# -------------------------
-# Checkout — Razorpay (Customer, TEST mode)
-# -------------------------
-#
-# Razorpay has two key pairs: "test" (rzp_test_...) and "live" (rzp_live_...).
-# Whichever pair is set in .env as RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET is the
-# pair this flow uses. For local/dev, put the TEST keys in .env and pay with the
-# Razorpay test card (4111 1111 1111 1111, any future expiry, any CVV) — no real
-# money moves. No code change is needed to switch to live: just swap the keys.
-#
-# Order status vs. payment status:
-#   - Order.status        = fulfillment lifecycle (pending/confirmed/dispatched/...)
-#   - Order.payment_status = payment lifecycle  (pending/paid/failed)
-# On a verified payment we set payment_status='paid' and status='confirmed'
-# (the order is paid + accepted, ready for the admin to dispatch).
 
 def _is_razorpay_test_mode():
     """True when the configured key is a test key (rzp_test_*). Used only to
@@ -538,7 +505,6 @@ def checkout_razorpay(request):
     if grand_total is None:
         return Response({'error': 'Cart is empty'}, status=400)
 
-    # Save shipping info to the profile (same behavior as regular checkout).
     address = request.data.get('address', '').strip() or user.address
     phone = request.data.get('phone', '').strip() or user.phone
     updated = False
@@ -551,12 +517,8 @@ def checkout_razorpay(request):
     if updated:
         user.save()
 
-    # Amount in paise (Razorpay's smallest currency unit). Round to avoid
-    # float drift from Decimal -> int conversion.
     amount_paise = int((grand_total * 100).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
 
-    # Create the Razorpay order first (no DB side effect yet), so a Razorpay
-    # failure leaves no dangling Django order behind.
     try:
         client = _razorpay_client()
         rzp_order = client.order.create({
@@ -570,10 +532,6 @@ def checkout_razorpay(request):
         return Response({'error': str(exc)}, status=500)
     except razorpay.errors.BadRequestError as exc:
         msg = str(exc)
-        # The most common cause of a BadRequestError here is "Authentication
-        # failed" — i.e. the RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in .env are
-        # invalid, mismatched, or revoked. Surface that clearly (and log it)
-        # so it isn't mistaken for a code bug.
         if "authentication failed" in msg.lower():
             logger.error(
                 "Razorpay authentication failed — invalid/expired keys in .env "
@@ -591,7 +549,6 @@ def checkout_razorpay(request):
         logger.exception("Failed to create Razorpay order for user %s", user.username)
         return Response({'error': 'Could not initiate payment. Please try again.'}, status=500)
 
-    # Create the pending Django order + its items, linked to the Razorpay order.
     order = _allocate_order_number(user)
     if order is None:
         return Response({'error': 'Could not create order, please try again.'}, status=500)
@@ -614,8 +571,6 @@ def checkout_razorpay(request):
         'razorpay_order_id': rzp_order['id'],
         'amount': amount_paise,
         'currency': 'INR',
-        # Public key — safe to expose to the browser; it only authorizes
-        # opening the checkout modal, not server-side actions.
         'key_id': settings.RAZORPAY_KEY_ID,
         'name': 'MyStore',
         'test_mode': _is_razorpay_test_mode(),
@@ -659,8 +614,6 @@ def checkout_razorpay_verify(request):
     if order.razorpay_order_id != rzp_order_id:
         return Response({'error': 'Order mismatch'}, status=400)
 
-    # Idempotent: a second verify for the same paid order returns success
-    # without re-hitting Razorpay or clearing the cart again.
     if order.payment_status == 'paid' and order.payment_id:
         return Response(OrderDetailSerializer(order).data)
 
@@ -687,17 +640,14 @@ def checkout_razorpay_verify(request):
     order.status = 'confirmed'
     order.save(update_fields=['payment_status', 'payment_id', 'status'])
 
-    # Clear the cart now that payment is confirmed.
+    assign_timeline(order)
+
     cart = Cart.objects.filter(user=request.user).first()
     if cart:
         cart.items.all().delete()
 
     return Response(OrderDetailSerializer(order).data)
 
-
-# -------------------------
-# Order History (Customer)
-# -------------------------
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -724,15 +674,10 @@ def my_order_detail(request, pk):
     return Response(serializer.data)
 
 
-# -------------------------
-# Orders (Admin)
-# -------------------------
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def get_orders(request):
     """List orders that contain products created by this admin."""
-    # Only show orders that contain at least one product created by this admin
     orders = (
         Order.objects.filter(items__product__created_by=request.user)
         .select_related('user')
@@ -758,12 +703,10 @@ def get_orders(request):
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def get_order_detail(request, pk):
     try:
-        # Only allow admin to see orders containing their products
         order = Order.objects.select_related('user').prefetch_related('items__product').get(id=pk)
     except Order.DoesNotExist:
         return Response({'error': 'Order not found'}, status=404)
 
-    # Verify the admin has at least one product in this order
     if not order.items.filter(product__created_by=request.user).exists():
         return Response({'error': 'Order not found'}, status=404)
 
@@ -771,18 +714,12 @@ def get_order_detail(request, pk):
     return Response(serializer.data)
 
 
-# -------------------------
-# Dashboard (Admin)
-# -------------------------
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def get_dashboard_stats(request):
     user = request.user
-    # Only count products/categories created by this admin
     total_products = Product.objects.filter(created_by=user).count()
     total_categories = Category.objects.filter(created_by=user).count()
-    # Orders that contain this admin's products
     admin_orders = Order.objects.filter(items__product__created_by=user).distinct()
     total_orders = admin_orders.count()
     total_revenue = admin_orders.aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
@@ -798,10 +735,6 @@ def get_dashboard_stats(request):
     return Response(data)
 
 
-# -------------------------
-# Ratings (Customer)
-# -------------------------
-
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_rating(request):
@@ -810,7 +743,6 @@ def create_rating(request):
     if serializer.is_valid():
         product = serializer.validated_data['product']
         score = serializer.validated_data['score']
-        # Upsert: create or update the rating
         rating, created = Rating.objects.update_or_create(
             user=request.user,
             product=product,
@@ -841,10 +773,6 @@ def product_ratings(request, pk):
     return Response(serializer.data)
 
 
-# -------------------------
-# Ratings (Admin — scoped to their products)
-# -------------------------
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def admin_product_ratings(request):
@@ -855,10 +783,6 @@ def admin_product_ratings(request):
     serializer = RatingSerializer(ratings, many=True)
     return Response(serializer.data)
 
-
-# -------------------------
-# Auth
-# -------------------------
 
 @api_view(["POST"])
 def register(request):

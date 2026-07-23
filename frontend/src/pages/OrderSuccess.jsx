@@ -1,10 +1,12 @@
 import { useLocation, Link } from 'react-router-dom';
+import DeliveryTimeline from '../components/DeliveryTimeline';
 
 export default function OrderSuccess() {
   const location = useLocation();
   const orderId = location.state?.orderId;
   const orderNumber = location.state?.orderNumber;
   const total = location.state?.total;
+  const eta = location.state?.eta;
 
   return (
     <div className="page-container font-body py-12">
@@ -34,6 +36,15 @@ export default function OrderSuccess() {
           <p className="mt-1 text-lg font-semibold text-plum-950">
             ₹{Number(total).toLocaleString()}
           </p>
+        )}
+
+        {eta && (
+          <div className="mt-8 w-full rounded-2xl bg-white p-5 text-left shadow-sm ring-1 ring-slate-200/80">
+            <h2 className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Delivery timeline
+            </h2>
+            <DeliveryTimeline order={eta} />
+          </div>
         )}
 
         <div className="mt-8 flex flex-col gap-3">
