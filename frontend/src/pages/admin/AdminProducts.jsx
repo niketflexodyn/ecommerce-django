@@ -378,9 +378,7 @@ export default function AdminProducts() {
                     />
                   </div>
                 </div>
-                <p className="mt-1 text-xs text-slate-400">
-                  Per-stage durations used to compute the customer-facing delivery timeline when an order is placed (e.g. 5 + 5 + 5 = 15-day delivery).
-                </p>
+                
               </div>
 
               <div>
