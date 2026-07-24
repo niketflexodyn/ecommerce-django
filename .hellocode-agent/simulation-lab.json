@@ -1,0 +1,10 @@
+{
+  "scenarios": [
+    {
+      "id": "sim:network-partition",
+      "title": "Network partition during deploy",
+      "failureMode": "network",
+      "command": "curl --max-time 2 https://example.invalid || true"
+    }
+  ]
+}

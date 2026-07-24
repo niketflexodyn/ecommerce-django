@@ -1,0 +1,7 @@
+{
+  "default": "confirm",
+  "tools": {
+    "terminal": { "default": "confirm" },
+    "browser": { "default": "confirm" }
+  }
+}

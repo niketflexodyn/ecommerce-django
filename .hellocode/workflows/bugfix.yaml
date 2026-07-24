@@ -1,0 +1,14 @@
+name: bugfix
+description: Triage, fix, and verify a bug with tests.
+version: "1.0"
+steps:
+  - kind: analyze_repo
+    prompt: Locate likely root cause areas for the reported bug.
+  - kind: spawn_agent
+    name: fixer
+    wait_for_agent: true
+    prompt: Fix the bug with minimal changes. Add or update tests that reproduce the issue.
+  - kind: run_tests
+    max_retries: 2
+  - kind: generate_pr
+    title: "fix: automated bugfix workflow"

@@ -1,0 +1,28 @@
+{
+  "packages": [
+    {
+      "id": "feature-delivery",
+      "kind": "workflow",
+      "version": "1.0.0",
+      "path": ".hellocode/workflows/feature-delivery.yaml"
+    },
+    {
+      "id": "bugfix",
+      "kind": "workflow",
+      "version": "1.0.0",
+      "path": ".hellocode/workflows/bugfix.yaml"
+    },
+    {
+      "id": "design-to-code",
+      "kind": "workflow",
+      "version": "1.0.0",
+      "path": ".hellocode/workflows/design-to-code.yaml"
+    },
+    {
+      "id": "supervisor",
+      "kind": "agent",
+      "version": "1.0.0",
+      "path": ".hellocode/agents/supervisor.yaml"
+    }
+  ]
+}

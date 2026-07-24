@@ -1,0 +1,17 @@
+name: feature-delivery
+description: End-to-end feature workflow with planning, agents, tests, and PR.
+version: "1.0"
+steps:
+  - kind: analyze_repo
+    prompt: Map modules, entry points, and test commands for this repository.
+  - kind: generate_plan
+    prompt: Write a short implementation plan with risks and file targets.
+  - kind: spawn_agent
+    name: implementer
+    wait_for_agent: true
+    prompt: Implement the plan. Run tests before finishing. Keep changes focused.
+  - kind: run_tests
+    command: cargo test
+    max_retries: 2
+  - kind: generate_pr
+    title: "feat: workflow delivery"

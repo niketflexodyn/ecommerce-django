@@ -1,0 +1,5 @@
+{
+  "ticketId": "ENG-101",
+  "title": "Sandbox spend guardrail",
+  "body": "Add spend cap enforcement before enabling E2B in production."
+}

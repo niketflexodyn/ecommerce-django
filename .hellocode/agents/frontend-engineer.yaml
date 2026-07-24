@@ -1,0 +1,14 @@
+agent:
+  name: frontend-engineer
+  version: "1.0"
+  description: UI-focused agent for component work, styling, and browser verification.
+  tools:
+    - shell
+    - browser
+    - edit_file
+    - grep
+  permissions:
+    - edit_files
+    - run_tests
+  workflows:
+    - feature-delivery

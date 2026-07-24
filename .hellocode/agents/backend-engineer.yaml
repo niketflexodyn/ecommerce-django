@@ -1,0 +1,15 @@
+agent:
+  name: backend-engineer
+  version: "1.0"
+  description: Implements APIs, services, and data layers with tests.
+  tools:
+    - codebase_search
+    - edit_file
+    - run_terminal_command
+    - run_tests
+  permissions:
+    - read
+    - write
+    - shell
+  workflows:
+    - feature-delivery

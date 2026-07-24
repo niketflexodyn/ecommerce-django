@@ -1,0 +1,61 @@
+{
+  "decisions": [
+    {
+      "id": "decision:agent-sandbox",
+      "title": "Use E2B for agent execution",
+      "decision": "Route terminal and workflow shell steps through sandbox.json when enabled.",
+      "alternatives": [
+        "Local PTY only"
+      ],
+      "owner": "platform",
+      "impactedSystems": [
+        "agent",
+        "workflow_engine"
+      ],
+      "evidenceRefs": [
+        "sandbox-runs.jsonl"
+      ]
+    }
+  ],
+  "incidents": [
+    {
+      "id": "incident:runaway-agent-spend",
+      "title": "Runaway agent spend",
+      "summary": "Unbounded sandbox sessions increased cloud cost.",
+      "guardrails": [
+        "Enable SandboxQuota spend_cap_usd_cents",
+        "Limit max_concurrent_sessions"
+      ],
+      "regressionTests": [
+        "./script/playbook-eval-gate"
+      ]
+    }
+  ],
+  "ownership": [
+    {
+      "serviceId": "agent-runtime",
+      "serviceName": "hellocode Agent Runtime",
+      "ownerTeam": "engineering",
+      "reviewers": [
+        "platform"
+      ],
+      "dependencies": [
+        "e2b_gateway",
+        "workflow_engine"
+      ]
+    }
+  ],
+  "chunks": [
+    {
+      "id": "chunk:jira:ENG-101",
+      "nodeId": "jira:ENG-101",
+      "text": "Sandbox spend guardrail\n\nAdd spend cap enforcement before enabling E2B in production.",
+      "source": "jira_ticket",
+      "permissions": [
+        "engineering"
+      ],
+      "citation": "Jira ENG-101",
+      "ingestedAt": "2026-07-24T07:18:49.931477+00:00"
+    }
+  ]
+}

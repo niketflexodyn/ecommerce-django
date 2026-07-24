@@ -1,0 +1,13 @@
+agent:
+  name: security-reviewer
+  version: "1.0"
+  description: Reviews changes for security issues, secrets, and unsafe patterns.
+  tools:
+    - codebase_search
+    - read_file
+    - run_terminal_command
+  permissions:
+    - read
+    - shell
+  workflows:
+    - feature-delivery

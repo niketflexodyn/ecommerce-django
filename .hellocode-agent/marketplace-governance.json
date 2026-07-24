@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {
+      "agentId": "security-reviewer",
+      "version": "1.0.0",
+      "requiresReview": false,
+      "allowedTeams": [
+        "engineering",
+        "security"
+      ]
+    },
+    {
+      "agentId": "supervisor",
+      "version": "1.0.0",
+      "requiresReview": true,
+      "allowedTeams": [
+        "engineering"
+      ]
+    }
+  ],
+  "approved_agents": []
+}

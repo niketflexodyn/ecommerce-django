@@ -1,0 +1,16 @@
+name: design-to-code
+description: Turn a design reference (Figma MCP, screenshot, or spec) into UI code with review.
+version: "1.0"
+steps:
+  - kind: analyze_repo
+    prompt: Identify the UI stack, component patterns, and styling conventions in this project.
+  - kind: generate_plan
+    prompt: Plan components, layout, and file targets from the design reference. List assumptions.
+  - kind: spawn_agent
+    name: implementer
+    prompt: Implement the design using existing project patterns. Match spacing, typography, and states. Run relevant tests.
+  - kind: run_tests
+    command: cargo test
+    max_retries: 1
+  - kind: generate_pr
+    title: "feat: design-to-code implementation"

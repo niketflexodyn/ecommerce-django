@@ -1,0 +1,23 @@
+{
+  "enabled": false,
+  "mode": "auto",
+  "templateId": "rust",
+  "security": {
+    "blockNetwork": false,
+    "allowedCommandPrefixes": [
+      "cargo ",
+      "npm ",
+      "pnpm ",
+      "yarn ",
+      "git ",
+      "gh ",
+      "python ",
+      "pytest",
+      "sh "
+    ]
+  },
+  "quota": {
+    "maxConcurrentSessions": 3,
+    "spendCapUsdCents": 500
+  }
+}

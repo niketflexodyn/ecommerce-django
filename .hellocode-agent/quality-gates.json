@@ -1,0 +1,16 @@
+{
+  "rules": [
+    {
+      "id": "playbook-eval",
+      "description": "Run playbook eval gate before release",
+      "command": "./script/playbook-eval-gate",
+      "required": true
+    },
+    {
+      "id": "dagger-eval",
+      "description": "Run Dagger CI pipeline when available",
+      "command": "./script/dagger-eval-gate",
+      "required": false
+    }
+  ]
+}

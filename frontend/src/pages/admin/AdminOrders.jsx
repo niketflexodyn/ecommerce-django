@@ -143,7 +143,7 @@ export default function AdminOrders() {
                   ) : (
                     <>
                       {/* Customer info */}
-                      <div className="mb-4 grid gap-4 sm:grid-cols-3">
+                      <div className="mb-4 grid gap-4 sm:grid-cols-4">
                         <div>
                           <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Customer</p>
                           <p className="mt-1 text-sm font-medium text-plum-950">
@@ -159,7 +159,7 @@ export default function AdminOrders() {
                           <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Phone / Address</p>
                           <p className="mt-1 text-sm text-slate-700">{detail.phone || '—'}</p>
                           <p className="text-sm text-slate-600">{detail.address || '—'}</p>
-                          {detail.location && (
+                          {/* {detail.location && (
                             <p className="mt-1 flex items-center gap-1 text-sm text-slate-600">
                               <svg className="size-4 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
@@ -167,22 +167,25 @@ export default function AdminOrders() {
                               </svg>
                               {detail.location}
                             </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Status */}
-                      <div className="mb-4">
+                          )} */}
+                          </div>
+                          <div className="mb-4">
                         <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Payment Status</p>
                         <span className={`mt-1 inline-block rounded-full border px-3 py-1 text-xs font-semibold ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}>
                           {statusStyle.label}
                         </span>
                       </div>
+                        
+                      </div>
+
+                      {/* Status */}
+                      
 
                       {/* Items */}
                       <table className="w-full text-left text-sm">
                         <thead className="border-b border-slate-100">
                           <tr>
+                            <th className='pb'></th>
                             <th className="pb-2 font-medium text-slate-500">Product</th>
                             <th className="pb-2 font-medium text-slate-500 text-right">Price</th>
                             <th className="pb-2 font-medium text-slate-500 text-right">Qty</th>

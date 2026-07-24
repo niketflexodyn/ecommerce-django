@@ -1,0 +1,283 @@
+{
+  "version": 1,
+  "project": {
+    "name": "Pyhtonmyproject",
+    "root": ".",
+    "scan_summary": "13 modules · 7 dependencies · 217 source files scanned",
+    "source_files_scanned": 217,
+    "workflow_path": ".hellocode/workflows/project-map.yaml"
+  },
+  "nodes": [
+    {
+      "id": "dir:frontend",
+      "kind": "component",
+      "label": "frontend",
+      "summary": "47 source files · js, jsx",
+      "paths": [
+        "frontend/"
+      ],
+      "position": {
+        "x": -177.16266,
+        "y": -5.9373956
+      },
+      "updated_at": "2026-07-24T09:29:31.089448Z"
+    },
+    {
+      "id": "dir:frontend/src",
+      "kind": "component",
+      "label": "src",
+      "summary": "46 source files · jsx, js",
+      "paths": [
+        "frontend/src/"
+      ],
+      "position": {
+        "x": -147.52718,
+        "y": -300.19186
+      },
+      "updated_at": "2026-07-24T09:29:31.090107Z"
+    },
+    {
+      "id": "dir:frontend/src/context",
+      "kind": "module",
+      "label": "context",
+      "summary": "2 source files · jsx",
+      "paths": [
+        "frontend/src/context/"
+      ],
+      "position": {
+        "x": 35.426155,
+        "y": -482.6252
+      },
+      "updated_at": "2026-07-24T09:29:31.090198Z"
+    },
+    {
+      "id": "dir:frontend/src/utils",
+      "kind": "component",
+      "label": "utils",
+      "summary": "2 source files · js",
+      "paths": [
+        "frontend/src/utils/"
+      ],
+      "position": {
+        "x": 1240.8833,
+        "y": -300.66138
+      },
+      "updated_at": "2026-07-24T09:29:31.090278Z"
+    },
+    {
+      "id": "dir:frontend/src/components",
+      "kind": "module",
+      "label": "components",
+      "summary": "20 source files · jsx",
+      "paths": [
+        "frontend/src/components/"
+      ],
+      "position": {
+        "x": -307.71545,
+        "y": -420.54166
+      },
+      "updated_at": "2026-07-24T09:29:31.090425Z"
+    },
+    {
+      "id": "dir:frontend/src/components/admin",
+      "kind": "module",
+      "label": "admin",
+      "summary": "5 source files · jsx",
+      "paths": [
+        "frontend/src/components/admin/"
+      ],
+      "position": {
+        "x": -304.43433,
+        "y": -215.44574
+      },
+      "updated_at": "2026-07-24T09:29:31.090528Z"
+    },
+    {
+      "id": "dir:frontend/src/hooks",
+      "kind": "component",
+      "label": "hooks",
+      "summary": "2 source files · js",
+      "paths": [
+        "frontend/src/hooks/"
+      ],
+      "position": {
+        "x": 1123.9067,
+        "y": 198.1502
+      },
+      "updated_at": "2026-07-24T09:29:31.090574Z"
+    },
+    {
+      "id": "dir:frontend/src/pages",
+      "kind": "module",
+      "label": "pages",
+      "summary": "18 source files · jsx",
+      "paths": [
+        "frontend/src/pages/"
+      ],
+      "position": {
+        "x": 6.3926687,
+        "y": 133.16463
+      },
+      "updated_at": "2026-07-24T09:29:31.090803Z"
+    },
+    {
+      "id": "dir:frontend/src/pages/admin",
+      "kind": "module",
+      "label": "admin",
+      "summary": "5 source files · jsx",
+      "paths": [
+        "frontend/src/pages/admin/"
+      ],
+      "position": {
+        "x": -373.38013,
+        "y": 146.04178
+      },
+      "updated_at": "2026-07-24T09:29:31.090899Z"
+    },
+    {
+      "id": "dir:backend",
+      "kind": "service",
+      "label": "backend",
+      "summary": "29 source files · py",
+      "paths": [
+        "backend/"
+      ],
+      "position": {
+        "x": 749.4206,
+        "y": 776.64136
+      },
+      "updated_at": "2026-07-24T09:29:31.091319Z"
+    },
+    {
+      "id": "dir:backend/backend",
+      "kind": "service",
+      "label": "backend",
+      "summary": "5 source files · py",
+      "paths": [
+        "backend/backend/"
+      ],
+      "position": {
+        "x": 667.8558,
+        "y": 959.5515
+      },
+      "updated_at": "2026-07-24T09:29:31.091482Z"
+    },
+    {
+      "id": "dir:backend/store",
+      "kind": "module",
+      "label": "store",
+      "summary": "23 source files · py",
+      "paths": [
+        "backend/store/"
+      ],
+      "position": {
+        "x": 946.1778,
+        "y": 903.1393
+      },
+      "updated_at": "2026-07-24T09:29:31.091640Z"
+    },
+    {
+      "id": "dir:backend/store/migrations",
+      "kind": "module",
+      "label": "migrations",
+      "summary": "13 source files · py",
+      "paths": [
+        "backend/store/migrations/"
+      ],
+      "position": {
+        "x": -332.2637,
+        "y": 982.1294
+      },
+      "updated_at": "2026-07-24T09:29:31.091747Z"
+    }
+  ],
+  "edges": [
+    {
+      "id": "imports:dir:frontend/src->dir:frontend",
+      "from": "dir:frontend/src",
+      "to": "dir:frontend",
+      "kind": "imports",
+      "label": "imports"
+    },
+    {
+      "id": "imports:dir:frontend/src->dir:frontend/src/context",
+      "from": "dir:frontend/src",
+      "to": "dir:frontend/src/context",
+      "kind": "imports",
+      "label": "imports"
+    },
+    {
+      "id": "imports:dir:frontend/src->dir:frontend/src/components",
+      "from": "dir:frontend/src",
+      "to": "dir:frontend/src/components",
+      "kind": "imports",
+      "label": "imports"
+    },
+    {
+      "id": "imports:dir:frontend/src->dir:frontend/src/components/admin",
+      "from": "dir:frontend/src",
+      "to": "dir:frontend/src/components/admin",
+      "kind": "imports",
+      "label": "imports"
+    },
+    {
+      "id": "imports:dir:frontend/src->dir:frontend/src/pages/admin",
+      "from": "dir:frontend/src",
+      "to": "dir:frontend/src/pages/admin",
+      "kind": "imports",
+      "label": "imports"
+    },
+    {
+      "id": "imports:dir:frontend/src/pages->dir:frontend",
+      "from": "dir:frontend/src/pages",
+      "to": "dir:frontend",
+      "kind": "imports",
+      "label": "imports"
+    },
+    {
+      "id": "imports:dir:backend/store->dir:backend",
+      "from": "dir:backend/store",
+      "to": "dir:backend",
+      "kind": "imports",
+      "label": "imports"
+    }
+  ],
+  "clusters": [
+    {
+      "id": "cluster:crates",
+      "label": "Rust crates",
+      "node_ids": []
+    },
+    {
+      "id": "cluster:vault",
+      "label": "Vault",
+      "node_ids": []
+    },
+    {
+      "id": "cluster:packages",
+      "label": "Packages & apps",
+      "node_ids": [
+        "dir:frontend",
+        "dir:frontend/src",
+        "dir:frontend/src/utils",
+        "dir:frontend/src/hooks",
+        "dir:backend",
+        "dir:backend/backend"
+      ]
+    },
+    {
+      "id": "cluster:modules",
+      "label": "Source modules",
+      "node_ids": [
+        "dir:frontend/src/context",
+        "dir:frontend/src/components",
+        "dir:frontend/src/components/admin",
+        "dir:frontend/src/pages",
+        "dir:frontend/src/pages/admin",
+        "dir:backend/store",
+        "dir:backend/store/migrations"
+      ]
+    }
+  ],
+  "updated_at": "2026-07-24T09:29:31.098214Z"
+}

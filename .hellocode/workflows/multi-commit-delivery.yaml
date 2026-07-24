@@ -1,0 +1,21 @@
+name: multi-commit-delivery
+description: Ship a feature as logical commits (plan → implement → test → PR).
+steps:
+  - id: plan
+    label: Plan
+    prompt: |
+      Create an execution plan with `update_plan`. Wait for user approval before editing files.
+  - id: implement
+    label: Implement by step
+    prompt: |
+      For each approved plan step, make focused edits then commit with a message that references the step label.
+      Use one commit per logical step (do not squash unless asked).
+  - id: test
+    label: Test loop
+    prompt: |
+      Run `run_tests` with auto-retries. Fix failures before continuing.
+  - id: pr
+    label: Open PR
+    prompt: |
+      Run `parallel_conflicts` if parallel worktrees exist, then `create_pull_request`.
+      Link Jira/Linear issue keys from the branch name in the PR body.

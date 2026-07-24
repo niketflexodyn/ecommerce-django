@@ -93,19 +93,19 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    # Local dev defaults to SQLite so the project runs without a configured
-    # PostgreSQL server. Set USE_POSTGRES=true in backend/.env (and fill in the
-    # DB_* vars) to switch back to PostgreSQL.
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    } if os.getenv('USE_POSTGRES', 'false').lower() != 'true' else {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME'),
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
+    },  
+    # Temporary alias to the old SQLite file, used only for data migration.
+    # Safe to delete this block once data has been migrated to Postgres.
+    'sqlite': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     },
 }
 

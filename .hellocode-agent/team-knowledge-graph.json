@@ -1,0 +1,36 @@
+{
+  "organizationId": null,
+  "updatedAt": null,
+  "nodes": [
+    {
+      "id": "decision:agent-sandbox",
+      "kind": "decision",
+      "label": "Use E2B for agent execution",
+      "content": "Route terminal and workflow shell steps through sandbox.json when enabled."
+    },
+    {
+      "id": "incident:runaway-agent-spend",
+      "kind": "incident",
+      "label": "Runaway agent spend",
+      "content": "Unbounded sandbox sessions increased cloud cost."
+    },
+    {
+      "id": "service:agent-runtime",
+      "kind": "service",
+      "label": "hellocode Agent Runtime",
+      "content": "Owner: engineering"
+    }
+  ],
+  "edges": [
+    {
+      "from": "decision:agent-sandbox",
+      "to": "sandbox-runs.jsonl",
+      "relation": "evidence"
+    },
+    {
+      "from": "service:agent-runtime",
+      "to": "team:engineering",
+      "relation": "owned_by"
+    }
+  ]
+}
