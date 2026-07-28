@@ -12,3 +12,17 @@ class IsAdminOrSuperAdmin(BasePermission):
             and request.user.is_authenticated
             and request.user.role in ("admin", "super_admin")
         )
+
+
+class IsSuperAdmin(BasePermission):
+    """
+    Allows access only to super admins — the users who can approve, reject,
+    or suspend admin accounts.
+    """
+
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.role == "super_admin"
+        )

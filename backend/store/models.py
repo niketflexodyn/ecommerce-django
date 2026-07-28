@@ -12,10 +12,26 @@ class User(AbstractUser):
         ("super_admin", "Super Admin"),
     )
 
+    # Approval lifecycle for admin accounts. Customers and super admins are
+    # active by default; an admin who registers is put in "pending" until a
+    # super admin activates/rejects/suspends the account.
+    ACCOUNT_STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("active", "Active"),
+        ("rejected", "Rejected"),
+        ("suspended", "Suspended"),
+    )
+
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
         default="customer",
+    )
+
+    account_status = models.CharField(
+        max_length=20,
+        choices=ACCOUNT_STATUS_CHOICES,
+        default="active",
     )
 
     phone = models.CharField(
@@ -47,13 +63,28 @@ class User(AbstractUser):
 class Category(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="children",
         null=True,
         blank=True,
-        related_name="created_categories",
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    class Meta:
+        verbose_name_plural = "Categories"
+        ordering = ["name"]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_parent(self):
+        return self.parent is None
 
     def __str__(self):
         return self.name

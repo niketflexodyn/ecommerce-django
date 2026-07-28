@@ -8,11 +8,25 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 class CategorySerializer(serializers.ModelSerializer):
     product_count = serializers.IntegerField(source='products.count', read_only=True)
 
+    children = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
-        fields = ['id', 'name', 'slug', 'product_count']
+        fields = ['id', 'name', 'slug', 'product_count','children']
 
+    def get_children(self, obj):
+        children = obj.children.all()
+        return CategorySerializer(children, many=True).data
 
+class CategoryMenuSerializer(serializers.ModelSerializer):
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "children"]
+
+    def get_children(self, obj):
+        return CategoryMenuSerializer(obj.children.all(), many=True).data
 class CategoryWriteSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(required=False)
 
@@ -147,6 +161,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         if role in ("admin", "super_admin"):
             user.is_staff = True
 
+        # Admins must be approved by a super admin before they can log in.
+        # Keep them inactive + pending until the super admin activates the account.
+        if role == "admin":
+            user.account_status = "pending"
+            user.is_active = False
+
         user.save()
 
         return user
@@ -160,8 +180,27 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = (
             "id", "username", "email", "first_name", "last_name",
             "role", "phone", "address", "location", "is_staff",
+            "account_status",
         )
-        read_only_fields = ("id", "username", "role", "is_staff")
+        read_only_fields = ("id", "username", "role", "is_staff", "account_status")
+
+
+class AdminAccountSerializer(serializers.ModelSerializer):
+    """Serializer used by super admins to review admin accounts.
+
+    Exposes the approval lifecycle (account_status / is_active) alongside the
+    registration details the super admin needs to decide whether to activate,
+    reject, or suspend an admin.
+    """
+
+    class Meta:
+        model = User
+        fields = (
+            "id", "username", "email", "first_name", "last_name",
+            "phone", "address", "location", "role", "is_staff",
+            "is_active", "account_status", "date_joined",
+        )
+        read_only_fields = fields
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):

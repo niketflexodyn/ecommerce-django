@@ -39,4 +39,10 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view()),
     path('profile/', views.get_profile),
     path('profile/update/', views.update_profile),
+    # Super admin → admin account approval workflow
+    path('superadmin/admins/', views.superadmin_admins),
+    path('superadmin/admins/pending/', views.superadmin_pending_admins),
+    path('superadmin/admins/<int:pk>/activate/', views.superadmin_activate_admin),
+    path('superadmin/admins/<int:pk>/reject/', views.superadmin_reject_admin),
+    path('superadmin/admins/<int:pk>/suspend/', views.superadmin_suspend_admin),
 ]

@@ -23,7 +23,7 @@ logger = logging.getLogger("store")
 
 from .models import Product, Category, Cart, CartItem, Order, OrderItem, Rating, ProductImage
 from .pagination import ProductPagination
-from .permissions import IsAdminOrSuperAdmin
+from .permissions import IsAdminOrSuperAdmin, IsSuperAdmin
 from .serializers import (
     ProductSerializer,
     CategorySerializer,
@@ -41,6 +41,7 @@ from .serializers import (
     DashboardStatsSerializer,
     RatingSerializer,
     RatingWriteSerializer,
+    AdminAccountSerializer,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -784,16 +785,144 @@ def admin_product_ratings(request):
     return Response(serializer.data)
 
 
+def _notify_superadmins_of_registration(admin_user):
+    """Best-effort: email every super admin that a new admin is awaiting approval.
+
+    Failures are logged but never bubble up — registration must succeed even if
+    the notification can't be sent (mirrors the password-reset email behaviour).
+    """
+    superadmins = User.objects.filter(is_superuser=True)
+    emails = [u.email for u in superadmins if u.email]
+    if not emails:
+        return
+
+    full_name = f"{admin_user.first_name} {admin_user.last_name}".strip() or admin_user.username
+    try:
+        send_mail(
+            subject="New admin registration pending approval",
+            message=(
+                "A new admin has registered and is awaiting your approval.\n\n"
+                f"Name: {full_name}\n"
+                f"Username: {admin_user.username}\n"
+                f"Email: {admin_user.email}\n"
+                f"Phone: {admin_user.phone or '-'}\n"
+                f"Address: {admin_user.address or '-'}\n\n"
+                "Log in to the admin panel to activate, reject, or suspend the account."
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=emails,
+            fail_silently=True,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to notify super admins of new admin registration (%s)",
+            admin_user.username,
+        )
+
+
 @api_view(["POST"])
 def register(request):
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
+
+        # Admins are created as 'pending' — flag the registration so the
+        # frontend can show the awaiting-approval state, and let the super
+        # admins know there is a new account to review.
+        if user.role == "admin":
+            _notify_superadmins_of_registration(user)
+            return Response(
+                {
+                    "message": "Registration successful. Your account is pending approval by a super admin.",
+                    "user": UserProfileSerializer(user).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
         return Response(
             {"message": "Registration successful.", "user": UserProfileSerializer(user).data},
             status=status.HTTP_201_CREATED,
         )
     return Response(serializer.errors, status=400)
+
+
+# ---------------------------------------------------------------------------
+# Super admin → admin account approval workflow
+# ---------------------------------------------------------------------------
+
+def _set_admin_account_status(admin_user, new_status, make_active):
+    """Apply an approval decision to an admin account and persist it.
+
+    `make_active` controls is_active so the user can/cannot log in:
+        activate  -> active,  is_active=True
+        reject    -> rejected, is_active=False
+        suspend   -> suspended, is_active=False
+    """
+    admin_user.account_status = new_status
+    admin_user.is_active = make_active
+    admin_user.save(update_fields=["account_status", "is_active"])
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsSuperAdmin])
+def superadmin_admins(request):
+    """List admin accounts for super admin review.
+
+    Optional `?status=pending|active|rejected|suspended` filter. Without a
+    filter, all admins are returned newest-first.
+    """
+    qs = User.objects.filter(role="admin").order_by("-date_joined")
+
+    status_filter = request.query_params.get("status", "").strip()
+    if status_filter:
+        qs = qs.filter(account_status=status_filter)
+
+    serializer = AdminAccountSerializer(qs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsSuperAdmin])
+def superadmin_pending_admins(request):
+    """Convenience list of admins awaiting approval (account_status=pending)."""
+    qs = User.objects.filter(role="admin", account_status="pending").order_by("-date_joined")
+    serializer = AdminAccountSerializer(qs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsSuperAdmin])
+def superadmin_activate_admin(request, pk):
+    """Activate a pending/rejected/suspended admin so they can log in."""
+    try:
+        admin_user = User.objects.get(pk=pk, role="admin")
+    except User.DoesNotExist:
+        return Response({"error": "Admin not found"}, status=404)
+    _set_admin_account_status(admin_user, "active", True)
+    return Response(AdminAccountSerializer(admin_user).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsSuperAdmin])
+def superadmin_reject_admin(request, pk):
+    """Reject an admin's registration; the account stays inactive."""
+    try:
+        admin_user = User.objects.get(pk=pk, role="admin")
+    except User.DoesNotExist:
+        return Response({"error": "Admin not found"}, status=404)
+    _set_admin_account_status(admin_user, "rejected", False)
+    return Response(AdminAccountSerializer(admin_user).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsSuperAdmin])
+def superadmin_suspend_admin(request, pk):
+    """Suspend an active admin; they cannot log in until re-activated."""
+    try:
+        admin_user = User.objects.get(pk=pk, role="admin")
+    except User.DoesNotExist:
+        return Response({"error": "Admin not found"}, status=404)
+    _set_admin_account_status(admin_user, "suspended", False)
+    return Response(AdminAccountSerializer(admin_user).data)
 
 
 @api_view(["GET"])
