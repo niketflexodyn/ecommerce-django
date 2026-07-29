@@ -1,7 +1,9 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
-export default function AdminRoute({ children }) {
+// Guards routes that only a super_admin may access (e.g. the admin-account
+// approval workflow). Admins and customers are redirected away.
+export default function SuperAdminRoute({ children, to = '/dashboard' }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -12,13 +14,8 @@ export default function AdminRoute({ children }) {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (user.role !== 'admin' && user.role !== 'super_admin') {
-    return <Navigate to="/" replace />;
-  }
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== 'super_admin') return <Navigate to={to} replace />;
 
   return children;
 }

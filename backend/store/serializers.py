@@ -7,7 +7,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class CategorySerializer(serializers.ModelSerializer):
     product_count = serializers.IntegerField(source='products.count', read_only=True)
-
+    
     children = serializers.SerializerMethodField()
 
     class Meta:

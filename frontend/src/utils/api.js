@@ -278,6 +278,31 @@ export const dashboardApi = {
 };
 
 // -------------------------
+// Super Admin → admin account approval workflow
+// Only the super_admin role can reach these endpoints (backend enforces it).
+// -------------------------
+
+export const superadminApi = {
+  // List admin accounts; optional ?status=pending|active|rejected|suspended
+  listAdmins(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return request(`/superadmin/admins/${query ? '?' + query : ''}`);
+  },
+  pendingAdmins() {
+    return request('/superadmin/admins/pending/');
+  },
+  activateAdmin(id) {
+    return request(`/superadmin/admins/${id}/activate/`, { method: 'POST' });
+  },
+  rejectAdmin(id) {
+    return request(`/superadmin/admins/${id}/reject/`, { method: 'POST' });
+  },
+  suspendAdmin(id) {
+    return request(`/superadmin/admins/${id}/suspend/`, { method: 'POST' });
+  },
+};
+
+// -------------------------
 // Ratings
 // -------------------------
 

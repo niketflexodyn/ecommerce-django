@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-
+import { useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
+import { loginUser } from "../features/auth/authThunk";
 export default function Login() {
-  const { login } = useAuth();
+  const { user, loading } = useSelector(
+    (state) => state.auth
+  );
   const navigate = useNavigate();
   const location = useLocation();
-
+  const dispatch = useDispatch();
   const registered = location.state?.registered
   const passwordReset = location.state?.passwordReset
 
@@ -18,7 +21,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+  
 
   const validate = () => {
     const next = {};
@@ -37,29 +40,36 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
     setError("");
-
+  
     const fieldErrors = validate();
+  
     if (Object.keys(fieldErrors).length) {
       setErrors(fieldErrors);
       return;
     }
+  
     setErrors({});
-
-    setLoading(true);
-
-    try {
-      const user = await login(formData.username, formData.password);
-      // Navigate based on role
-      if (user?.role === "admin" || user?.role === "super_admin") {
+  
+    const result = await dispatch(loginUser(formData));
+    if (loginUser.fulfilled.match(result)) {
+  
+      const loggedInUser = result.payload.user;
+  
+      if (
+        loggedInUser.role === "admin" ||
+        loggedInUser.role === "super_admin"
+      ) {
         navigate("/dashboard");
       } else {
         navigate("/");
       }
-    } catch (err) {
-      setError(err.message || "Login failed. Please try again.");
-    } finally {
-      setLoading(false);
+  
+    } else {
+  
+      setError(result.payload || "Login failed");
+  
     }
   };
 

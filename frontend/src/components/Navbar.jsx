@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import SearchDropdown from './SearchDropdown'
 import { useCart } from '../context/CartContext'
-import { useAuth } from '../context/AuthContext'
+import { useSelector, useDispatch } from "react-redux";
 
 /* ─── SVG Icons ──────────────────────────────────────────────────── */
 
@@ -88,8 +88,10 @@ const NAV_LINKS = [
 /* ─── Component ─────────────────────────────────────────────────── */
 
 export default function Navbar() {
-  const { cartItems } = useCart()
-  const { user, logout } = useAuth()
+  const { cartItems } = useCart();
+  const dispatch = useDispatch();
+
+  const user = useSelector((state) => state.auth.user);
   const navigate = useNavigate()
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0)
 
@@ -118,7 +120,10 @@ export default function Navbar() {
   }
 
   const handleLogout = () => {
-    logout()
+    dispatch(
+      
+      
+    );
     navigate('/')
     closeMobile()
   }

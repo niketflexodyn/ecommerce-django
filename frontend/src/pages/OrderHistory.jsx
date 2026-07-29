@@ -1,26 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { orderApi, ratingApi } from '../utils/api';
 import StarRating from '../components/StarRating';
 import DeliveryTimeline from '../components/DeliveryTimeline';
-
+import { useSelector } from "react-redux";
 const STATUS_STYLES = {
-  pending:          { bg: 'bg-slate-100',    text: 'text-slate-600',    label: 'Pending' },
-  confirmed:        { bg: 'bg-gold-500/10',   text: 'text-gold-700',     label: 'Confirmed' },
-  successful:       { bg: 'bg-emerald-50',    text: 'text-emerald-700',  label: 'Successful' },
-  dispatched:       { bg: 'bg-emerald-50',    text: 'text-emerald-700',  label: 'Dispatched' },
-  out_for_delivery: { bg: 'bg-gold-500/10',   text: 'text-gold-700',     label: 'Out for Delivery' },
-  delivered:        { bg: 'bg-emerald-50',    text: 'text-emerald-700',  label: 'Delivered' },
-  cancelled:        { bg: 'bg-red-50',        text: 'text-red-700',      label: 'Cancelled' },
-  unsuccessful:     { bg: 'bg-red-50',        text: 'text-red-700',      label: 'Unsuccessful' },
+  pending: { bg: 'bg-slate-100', text: 'text-slate-600', label: 'Pending' },
+  confirmed: { bg: 'bg-gold-500/10', text: 'text-gold-700', label: 'Confirmed' },
+  successful: { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Successful' },
+  dispatched: { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Dispatched' },
+  out_for_delivery: { bg: 'bg-gold-500/10', text: 'text-gold-700', label: 'Out for Delivery' },
+  delivered: { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Delivered' },
+  cancelled: { bg: 'bg-red-50', text: 'text-red-700', label: 'Cancelled' },
+  unsuccessful: { bg: 'bg-red-50', text: 'text-red-700', label: 'Unsuccessful' },
 };
 
 export default function OrderHistory() {
-  const { user } = useAuth();
+
+  const user = useSelector((state) => state.auth.user);
+  const tokens = useSelector((state) => state.auth.tokens);
+  const loading = useSelector((state) => state.auth.loading);
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
   const [detailCache, setDetailCache] = useState({});
   const [myRatings, setMyRatings] = useState({});
@@ -35,7 +37,7 @@ export default function OrderHistory() {
         const sorted = [...data].sort((a, b) => b.id - a.id);
         setOrders(sorted);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [user]);
 
@@ -51,7 +53,7 @@ export default function OrderHistory() {
         });
         setMyRatings(map);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [user]);
 
   const toggleExpand = async (orderId) => {
@@ -191,70 +193,70 @@ export default function OrderHistory() {
                           </h3>
                           <DeliveryTimeline order={detail} cancelled={order.status === 'cancelled'} />
                         </div>
-                      <table className="w-full text-left text-sm">
-                        <thead className="border-b border-slate-100">
-                          <tr>
-                            <th className="pb-2 font-medium text-slate-500">Product</th>
-                            <th className="pb-2 font-medium text-slate-500 text-right">Price</th>
-                            <th className="pb-2 font-medium text-slate-500 text-right">Qty</th>
-                            <th className="pb-2 font-medium text-slate-500 text-right">Subtotal</th>
-                            <th className="pb-2 font-medium text-slate-500 text-right">Address</th>
-                            <th className="pb-2 font-medium text-slate-500 text-right">Rating</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                          {detail.items?.map((item) => {
-                            const productId = item.product;
-                            const existingRating = myRatings[productId];
-                            const currentScore = ratingScores[productId] ?? existingRating ?? 0;
-                            const msg = ratingMessages[productId];
+                        <table className="w-full text-left text-sm">
+                          <thead className="border-b border-slate-100">
+                            <tr>
+                              <th className="pb-2 font-medium text-slate-500">Product</th>
+                              <th className="pb-2 font-medium text-slate-500 text-right">Price</th>
+                              <th className="pb-2 font-medium text-slate-500 text-right">Qty</th>
+                              <th className="pb-2 font-medium text-slate-500 text-right">Subtotal</th>
+                              <th className="pb-2 font-medium text-slate-500 text-right">Address</th>
+                              <th className="pb-2 font-medium text-slate-500 text-right">Rating</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50">
+                            {detail.items?.map((item) => {
+                              const productId = item.product;
+                              const existingRating = myRatings[productId];
+                              const currentScore = ratingScores[productId] ?? existingRating ?? 0;
+                              const msg = ratingMessages[productId];
 
-                            return (
-                              <tr key={item.id}>
-                                <td className="py-3 text-slate-800">{item.product_name}</td>
-                                <td className="py-3 text-right text-slate-600">₹{Number(item.product_price).toLocaleString()}</td>
-                                <td className="py-3 text-right text-slate-600">{item.quantity}</td>
-                                <td className="py-3 text-right font-medium text-plum-950">
-                                  ₹{(Number(item.product_price) * item.quantity).toLocaleString()}
-                                </td>
-                                <td className="py-3 text-right align-top">
-                                  <p className="text-sm text-slate-600">{detail.address || '—'}</p>
-                                  {detail.location && (
-                                    <p className="mt-1 flex items-center justify-end gap-1 text-sm text-slate-600">
+                              return (
+                                <tr key={item.id}>
+                                  <td className="py-3 text-slate-800">{item.product_name}</td>
+                                  <td className="py-3 text-right text-slate-600">₹{Number(item.product_price).toLocaleString()}</td>
+                                  <td className="py-3 text-right text-slate-600">{item.quantity}</td>
+                                  <td className="py-3 text-right font-medium text-plum-950">
+                                    ₹{(Number(item.product_price) * item.quantity).toLocaleString()}
+                                  </td>
+                                  <td className="py-3 text-right align-top">
+                                    <p className="text-sm text-slate-600">{detail.address || '—'}</p>
+                                    {detail.location && (
+                                      <p className="mt-1 flex items-center justify-end gap-1 text-sm text-slate-600">
 
-                                      {detail.location}
-                                    </p>
-                                  )}
-                                </td>
-                                <td className="py-3 text-right">
-                                  <div className="flex items-center justify-end gap-2">
-                                    {order.status === 'successful' ? (
-                                      <>
-                                        <StarRating
-                                          value={currentScore}
-                                          onChange={(score) => handleRate(productId, score)}
-                                          size="sm"
-                                        />
-                                        {existingRating && !msg && (
-                                          <span className="text-xs font-medium text-gold-700">✓</span>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <span className="text-xs text-slate-400">—</span>
+                                        {detail.location}
+                                      </p>
                                     )}
-                                  </div>
-                                  {msg && (
-                                    <p className={`mt-1 text-xs ${msg === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>
-                                      {msg === 'success' ? 'Rated!' : msg}
-                                    </p>
-                                  )}
+                                  </td>
+                                  <td className="py-3 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                      {order.status === 'successful' ? (
+                                        <>
+                                          <StarRating
+                                            value={currentScore}
+                                            onChange={(score) => handleRate(productId, score)}
+                                            size="sm"
+                                          />
+                                          {existingRating && !msg && (
+                                            <span className="text-xs font-medium text-gold-700">✓</span>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <span className="text-xs text-slate-400">—</span>
+                                      )}
+                                    </div>
+                                    {msg && (
+                                      <p className={`mt-1 text-xs ${msg === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                        {msg === 'success' ? 'Rated!' : msg}
+                                      </p>
+                                    )}
 
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </>
                     )}
                   </div>

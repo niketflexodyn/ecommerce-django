@@ -1,11 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
-import { useAuth } from '../context/AuthContext'
 import { formatPrice, getProductImageUrl } from '../utils/product'
+import { useSelector } from "react-redux";
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity } = useCart()
-  const { user } = useAuth()
+  const user = useSelector((state) => state.auth.user);
+  const tokens = useSelector((state) => state.auth.tokens);
+  const loading = useSelector((state) => state.auth.loading);
   const navigate = useNavigate()
 
   const total = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)

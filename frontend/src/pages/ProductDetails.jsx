@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
-import { useAuth } from '../context/AuthContext'
 import { formatPrice, getProductImageUrl } from '../utils/product'
 import { ratingApi } from '../utils/api'
 import StarRating from '../components/StarRating'
+import { useSelector } from "react-redux";
 
 export default function ProductDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToCart, cartItems } = useCart()
-  const { user } = useAuth()
+  const user = useSelector((state) => state.auth.user);
+  const tokens = useSelector((state) => state.auth.tokens);
+  const loading = useSelector((state) => state.auth.loading);
   const [product, setProduct] = useState(null)
-  const [loading, setLoading] = useState(true)
+  // const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [adding, setAdding] = useState(false)
 
@@ -48,7 +50,7 @@ export default function ProductDetails() {
 
   // Fetch product ratings
   useEffect(() => {
-    ratingApi.forProduct(id).then(setProductRatings).catch(() => {})
+    ratingApi.forProduct(id).then(setProductRatings).catch(() => { })
   }, [id])
 
   // Fetch user's own rating for this product
@@ -60,7 +62,7 @@ export default function ProductDetails() {
         setMyRatingScore(found.score)
         setUserRating(found.score)
       }
-    }).catch(() => {})
+    }).catch(() => { })
   }, [user, id])
 
   // Build the image gallery: cover first, then any additional images.

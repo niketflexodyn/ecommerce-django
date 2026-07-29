@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { checkoutApi } from '../utils/api';
 
 // Lazily inject the Razorpay checkout.js script (once). The backend returns
@@ -53,7 +53,6 @@ function friendlyPaymentError(err) {
 }
 
 export default function Checkout() {
-  const { cartItems, user } = useAuth() ? useAuth() : { user: null };
   const { cartItems: items, clearCart } = useCart();
   const auth = useAuth();
   const navigate = useNavigate();

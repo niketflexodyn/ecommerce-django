@@ -1,4 +1,7 @@
+import { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchProfile } from './features/auth/authThunk'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ProductList from './pages/ProductList'
@@ -24,12 +27,23 @@ import AdminProducts from './pages/admin/AdminProducts'
 import AdminCategories from './pages/admin/AdminCategories'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminRatings from './pages/admin/AdminRatings'
+import AdminAdmins from './pages/admin/AdminAdmins'
+import SuperAdminRoute from './components/SuperAdminRoute'
 import EditAdminDetails from './components/admin/EditAdminDetails'
 import ForgotPassword from './pages/ForgetPassword'
 import ResetPassword from './pages/ResetPassword'
 import CartDrawer from './components/CartDrawer'
 // import ScrollToTop from './pages/ScrollToTop'
 export default function App() {
+  const dispatch = useDispatch()
+  const access = useSelector((s) => s.auth.tokens.access)
+
+  // Bootstrap the logged-in user on load (and after login) by resolving the
+  // stored access token into a profile. Re-runs if the token changes.
+  useEffect(() => {
+    if (access) dispatch(fetchProfile())
+  }, [dispatch, access])
+
   return (
     <div className="flex min-h-screen flex-col">
       <Routes>
@@ -47,6 +61,14 @@ export default function App() {
           <Route path="categories" element={<AdminCategories />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="ratings" element={<AdminRatings />} />
+          <Route
+            path="admins"
+            element={
+              <SuperAdminRoute>
+                <AdminAdmins />
+              </SuperAdminRoute>
+            }
+          />
           <Route path="edit-details" element={<EditAdminDetails />} />
         </Route>
 

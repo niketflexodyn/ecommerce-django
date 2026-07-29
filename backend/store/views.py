@@ -234,7 +234,7 @@ def get_categories(request):
 def create_category(request):
     serializer = CategoryWriteSerializer(data=request.data)
     if serializer.is_valid():
-        category = serializer.save(created_by=request.user)
+        category = serializer.save()
         return Response(CategorySerializer(category).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=400)
 
@@ -243,9 +243,9 @@ def create_category(request):
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def update_category(request, pk):
     try:
-        category = Category.objects.get(id=pk, created_by=request.user)
+        category = Category.objects.get(id=pk)
     except Category.DoesNotExist:
-        return Response({'error': 'Category not found or not yours'}, status=404)
+        return Response({'error': 'Category not found'}, status=404)
 
     serializer = CategoryWriteSerializer(category, data=request.data)
     if serializer.is_valid():
@@ -258,9 +258,9 @@ def update_category(request, pk):
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def delete_category(request, pk):
     try:
-        category = Category.objects.get(id=pk, created_by=request.user)
+        category = Category.objects.get(id=pk)
     except Category.DoesNotExist:
-        return Response({'error': 'Category not found or not yours'}, status=404)
+        return Response({'error': 'Category not found'}, status=404)
     category.delete()
     return Response({'message': 'Category deleted'}, status=200)
 
@@ -268,8 +268,8 @@ def delete_category(request, pk):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def admin_categories(request):
-    """List only the categories created by this admin."""
-    categories = Category.objects.filter(created_by=request.user)
+    """List all categories (categories are shared, not per-admin)."""
+    categories = Category.objects.all()
     serializer = CategorySerializer(categories, many=True)
     return Response(serializer.data)
 
@@ -720,7 +720,7 @@ def get_order_detail(request, pk):
 def get_dashboard_stats(request):
     user = request.user
     total_products = Product.objects.filter(created_by=user).count()
-    total_categories = Category.objects.filter(created_by=user).count()
+    total_categories = Category.objects.count()
     admin_orders = Order.objects.filter(items__product__created_by=user).distinct()
     total_orders = admin_orders.count()
     total_revenue = admin_orders.aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')

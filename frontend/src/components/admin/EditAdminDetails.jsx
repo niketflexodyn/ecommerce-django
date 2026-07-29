@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { profileApi } from '../../utils/api';
 import AdminPageHeader from '../../components/admin/AdminPageHeader';
 

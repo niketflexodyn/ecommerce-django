@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 const navItems = [
   {
@@ -49,6 +49,16 @@ const navItems = [
     ),
   },
   {
+    name: 'Admins',
+    to: '/dashboard/admins',
+    superAdminOnly: true,
+    icon: (
+      <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3.75m0-3.75h-3.75m3.75 0 3.75 3.75M3.75 6.75h7.5M3.75 12h7.5m-7.5 5.25h7.5M15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" />
+      </svg>
+    ),
+  },
+  {
     name: 'Edit Details',
     to: '/dashboard/edit-details',
     icon: (
@@ -91,7 +101,9 @@ export default function AdminLayout() {
 
         {/* Nav */}
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {navItems.map((item) => (
+          {navItems
+            .filter((item) => !item.superAdminOnly || user?.role === 'super_admin')
+            .map((item) => (
             <NavLink
               key={item.name}
               to={item.to}
