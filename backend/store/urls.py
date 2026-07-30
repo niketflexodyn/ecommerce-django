@@ -1,11 +1,13 @@
 from django.urls import path
+# pyrefly: ignore [missing-import]
 from . import views
+# pyrefly: ignore [missing-import]
 from .views import CustomTokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('products/', views.get_products),
-    path('products/<int:pk>/', views.get_product),
+    # path('products/<int:pk>/', views.get_product),
     path('products/<int:pk>', views.get_product),
     path('admin/products/', views.admin_products),
     path('products/create/', views.create_product),
@@ -16,6 +18,7 @@ urlpatterns = [
     path('categories/create/', views.create_category),
     path('categories/<int:pk>/update/', views.update_category),
     path('categories/<int:pk>/delete/', views.delete_category),
+    path("subcategories/<slug:slug>/attributes/", views.get_subcategory_attributes),
     path('cart/', views.get_cart),
     path('cart/add/', views.add_to_cart),
     path('cart/remove/<int:pk>/', views.remove_from_cart),
@@ -39,7 +42,7 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view()),
     path('profile/', views.get_profile),
     path('profile/update/', views.update_profile),
-    # Super admin → admin account approval workflow
+    # Super admin 
     path('superadmin/admins/', views.superadmin_admins),
     path('superadmin/admins/pending/', views.superadmin_pending_admins),
     path('superadmin/admins/<int:pk>/activate/', views.superadmin_activate_admin),

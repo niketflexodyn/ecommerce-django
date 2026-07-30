@@ -79,7 +79,7 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = (self.name)
         super().save(*args, **kwargs)
 
     @property
@@ -89,12 +89,11 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-class SubCategory(models.Model):
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.CASCADE,
-        related_name="subcategories"
-    )
+class SubCategory(Category):
+    class Meta:
+        proxy = True
+        verbose_name = "Sub Category"
+        verbose_name_plural = "Sub Categories"
 
 
 class Product(models.Model):
@@ -150,6 +149,48 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+class Attribute(models.Model):
+    subcategory = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name="attributes",  # Added quotes here
+    )
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.subcategory.name} - {self.name}"  # Fixed f-string syntax
+    
+class AttributeValue(models.Model):
+    attribute = models.ForeignKey(
+        Attribute,
+        on_delete=models.CASCADE,
+        related_name="values"
+    )
+    value = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.value
+
+class ProductAttribute(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="attributes"
+    )
+    attribute = models.ForeignKey(
+        Attribute,
+        on_delete=models.CASCADE,
+    )
+    value = models.ForeignKey(
+        AttributeValue,
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        unique_together = ('product', 'attribute', 'value')
+
+    def __str__(self):
+        return f"{self.attribute.name}: {self.value.value}"
 
 class ProductImage(models.Model):
     product = models.ForeignKey(

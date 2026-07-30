@@ -12,6 +12,7 @@ const SORT_OPTIONS = [
 const PAGE_SIZE = 8
 
 export default function ProductList({ hideBanner = false }) {
+  
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [searchParams, setSearchParams] = useSearchParams()

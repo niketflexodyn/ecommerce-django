@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 import logging
@@ -21,10 +22,15 @@ User = get_user_model()
 
 logger = logging.getLogger("store")
 
+# pyrefly: ignore [missing-import]
 from .models import Product, Category, Cart, CartItem, Order, OrderItem, Rating, ProductImage
+# pyrefly: ignore [missing-import]
 from .pagination import ProductPagination
+# pyrefly: ignore [missing-import]
 from .permissions import IsAdminOrSuperAdmin, IsSuperAdmin
+# pyrefly: ignore [missing-import]
 from .serializers import (
+    SubCategorySerializer,
     ProductSerializer,
     CategorySerializer,
     ForgotPasswordSerializer,
@@ -81,6 +87,17 @@ def forgot_password(request):
         status=status.HTTP_200_OK,
     )
 
+@api_view(["GET"])
+def get_subcategory_attributes(request, slug):
+    subcategory = get_object_or_404(
+        Category,
+        slug=slug,
+        parent__isnull=False
+    )
+
+    serializer = SubCategorySerializer(subcategory)
+
+    return Response(serializer.data)
 
 @api_view(["POST"])
 def reset_password(request):
@@ -150,6 +167,7 @@ def get_product(request, pk):
         return Response({'error': 'Product Not Found'}, status=404)
 
 
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def create_product(request):
@@ -215,7 +233,7 @@ def admin_products(request):
 
 @api_view(["GET"])
 def get_categories(request):
-    categories = Category.objects.all()
+    categories = Category.objects.filter(parent__isnull=True)
     serializer = CategorySerializer(categories, many=True)
     data = serializer.data
     seen = set()

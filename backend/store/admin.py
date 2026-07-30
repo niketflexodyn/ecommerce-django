@@ -1,13 +1,18 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+# pyrefly: ignore [missing-import]
 from .models import (
     User,
     Category,
+    SubCategory,
     Product,
     Cart,
     CartItem,
     Order,
     OrderItem,
+    Attribute,
+    AttributeValue,
+    ProductAttribute
 )
 
 
@@ -34,9 +39,14 @@ class CustomUserAdmin(UserAdmin):
     list_filter = ("role", "is_staff", "is_active")
 
 
+class ProductAttributeInline(admin.TabularInline):
+    model = ProductAttribute
+    extra = 1
+
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("name", "category", "price", "shipping_days", "dispatch_days",
                     "out_for_delivery_days", "estimated_delivery_days_display")
+    inlines = [ProductAttributeInline]
     list_filter = ("category",)
     search_fields = ("name", "description")
     fieldsets = (
@@ -73,6 +83,28 @@ class OrderAdmin(admin.ModelAdmin):
 
 
 admin.site.register(User, CustomUserAdmin)
-admin.site.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    exclude = ('parent',)
+    
+    def get_queryset(self, request):
+        # Only show parent categories
+        qs = super().get_queryset(request)
+        return qs.filter(parent__isnull=True)
+
+class SubCategoryAdmin(admin.ModelAdmin):
+    def get_queryset(self, request):
+        # Only show subcategories
+        qs = super().get_queryset(request)
+        return qs.filter(parent__isnull=False)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "parent":
+            kwargs["queryset"] = Category.objects.filter(parent__isnull=True)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+admin.site.register(Category, CategoryAdmin)
+admin.site.register(SubCategory, SubCategoryAdmin)
+admin.site.register(Attribute)
+admin.site.register(AttributeValue)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Order, OrderAdmin)

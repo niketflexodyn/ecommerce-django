@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Category, Product, Cart, CartItem, Order, OrderItem, Rating, User
+# pyrefly: ignore [missing-import]
+from .models import Category, Product, Cart, CartItem, Order, OrderItem, Rating, User, Attribute, AttributeValue
 from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -114,7 +115,28 @@ class CartSerializer(serializers.ModelSerializer):
     def get_total(self, obj):
         return obj.total
 
+class SubCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug","attributes" ]
 
+class AttributeValueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AttributeValue
+        fields = [
+            "id",
+            "value",
+        ]
+class AttributeSerializer(serializers.ModelSerializer):
+    values = AttributeValueSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Attribute
+        fields = [
+            "id",
+            "name",
+            "values",
+        ]
 class RegisterSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(write_only=True)
