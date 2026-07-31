@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { useWishlist } from '../context/WishlistContext'
 import { formatPrice, getProductImageUrl } from '../utils/product'
 import StarRating from './StarRating'
 
 export default function ProductCard({ product }) {
   const { cartItems, addToCart, updateQuantity, removeFromCart } = useCart()
+  const { toggleWishlist, isInWishlist } = useWishlist()
+  
   const cartItem = cartItems.find((item) => item.id === product.id)
+  const isWishlisted = isInWishlist(product.id)
   const imageUrl = getProductImageUrl(product.image)
 
   return (
@@ -28,6 +32,33 @@ export default function ProductCard({ product }) {
           </span>
         )}
       </Link>
+      
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          toggleWishlist(product.id);
+        }}
+        className={`absolute right-3 top-3 z-10 rounded-full p-2 backdrop-blur-sm transition-all duration-300 ${
+          isWishlisted
+            ? 'bg-rose-50 text-rose-500 hover:bg-rose-100'
+            : 'bg-white/70 text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-md'
+        }`}
+        aria-label="Toggle Wishlist"
+      >
+        <svg
+          className="size-5"
+          fill={isWishlisted ? 'currentColor' : 'none'}
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+          />
+        </svg>
+      </button>
 
       <div className="flex flex-1 flex-col p-4">
         <Link to={`/product/${product.id}`}>

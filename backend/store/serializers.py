@@ -1,6 +1,6 @@
 from rest_framework import serializers
 # pyrefly: ignore [missing-import]
-from .models import Category, Product, Cart, CartItem, Order, OrderItem, Rating, User, Attribute, AttributeValue
+from .models import Category, Product, Cart, CartItem, Order, OrderItem, Rating, Wishlist, User, Attribute, AttributeValue, ProductAttribute
 from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -13,7 +13,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ['id', 'name', 'slug', 'product_count','children']
+        fields = ['id', 'name', 'slug', 'product_count', 'children', 'parent']
 
     def get_children(self, obj):
         children = obj.children.all()
@@ -33,7 +33,7 @@ class CategoryWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ['name', 'slug']
+        fields = ['name', 'slug', 'parent']
 
     def validate(self, attrs):
         if not attrs.get('slug'):
@@ -50,9 +50,49 @@ class CategoryWriteSerializer(serializers.ModelSerializer):
             attrs['slug'] = slug
         return attrs
 
+# serializers.py
+
+
+
+class SubCategoryCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "parent"]
+        extra_kwargs = {
+            "slug": {"required": False},
+        }
+
+    def validate_parent(self, value):
+        if value.parent is not None:
+            raise serializers.ValidationError(
+                "Subcategories can only be created under parent categories."
+            )
+        return value
+
+    def validate(self, attrs):
+        if not attrs.get("slug"):
+            base_slug = slugify(attrs["name"])
+            slug = base_slug
+            counter = 1
+
+            while Category.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            attrs["slug"] = slug
+
+        return attrs
+class ProductAttributeSerializer(serializers.ModelSerializer):
+    attribute_name = serializers.CharField(source='attribute.name', read_only=True)
+    value_name = serializers.CharField(source='value.value', read_only=True)
+
+    class Meta:
+        model = ProductAttribute
+        fields = ['id', 'attribute', 'attribute_name', 'value', 'value_name']
 
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
+    attributes = ProductAttributeSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
     rating_count = serializers.SerializerMethodField()
     seller_name = serializers.SerializerMethodField()
@@ -115,11 +155,6 @@ class CartSerializer(serializers.ModelSerializer):
     def get_total(self, obj):
         return obj.total
 
-class SubCategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ["id", "name", "slug","attributes" ]
-
 class AttributeValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttributeValue
@@ -127,6 +162,7 @@ class AttributeValueSerializer(serializers.ModelSerializer):
             "id",
             "value",
         ]
+
 class AttributeSerializer(serializers.ModelSerializer):
     values = AttributeValueSerializer(many=True, read_only=True)
 
@@ -137,6 +173,25 @@ class AttributeSerializer(serializers.ModelSerializer):
             "name",
             "values",
         ]
+
+class AttributeWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attribute
+        fields = ["id", "subcategory", "name"]
+
+class AttributeValueWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AttributeValue
+        fields = ["id", "attribute", "value"]
+
+class SubCategorySerializer(serializers.ModelSerializer):
+    # Nest the full attribute + value objects so /api/subcategories/<slug>/attributes/
+    # returns everything the storefront CategoryStrip needs in one request.
+    attributes = AttributeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "attributes"]
 class RegisterSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(write_only=True)
@@ -297,6 +352,24 @@ class RatingSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'product', 'score', 'created_at', 'updated_at', 'username', 'product_name']
         read_only_fields = ['user', 'created_at', 'updated_at']
 
+# serializers.py
+
+class WishlistSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source="product",
+        write_only=True,
+    )
+
+    class Meta:
+        model = Wishlist
+        fields = [
+            "id",
+            "product",
+            "product_id",
+            "created_at",
+        ]
 
 class RatingWriteSerializer(serializers.ModelSerializer):
     class Meta:

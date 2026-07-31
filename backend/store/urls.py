@@ -7,18 +7,44 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('products/', views.get_products),
-    # path('products/<int:pk>/', views.get_product),
-    path('products/<int:pk>', views.get_product),
+    path('products/<int:pk>/', views.get_product),
     path('admin/products/', views.admin_products),
     path('products/create/', views.create_product),
     path('products/<int:pk>/update/', views.update_product),
     path('products/<int:pk>/delete/', views.delete_product),
     path('categories/', views.get_categories),
     path('admin/categories/', views.admin_categories),
+
     path('categories/create/', views.create_category),
     path('categories/<int:pk>/update/', views.update_category),
     path('categories/<int:pk>/delete/', views.delete_category),
+    path("categories/<int:category_id>/subcategories/",views.get_subcategories,name="get-subcategories"),
+    path("categories/<int:category_id>/subcategories/create/",views.create_subcategory,name="create-subcategory"),
+    path("subcategories/<int:pk>/",views.update_subcategory,),
+    path("subcategories/<int:pk>/delete/",views.delete_subcategory,),  
     path("subcategories/<slug:slug>/attributes/", views.get_subcategory_attributes),
+    path("subcategories/<int:subcategory_id>/attributes/create/", views.create_attribute),
+    path("attributes/<int:pk>/update/", views.update_attribute),
+    path("attributes/<int:pk>/delete/", views.delete_attribute),
+    path("attributes/<int:attribute_id>/values/create/", views.create_attribute_value),
+    path("values/<int:pk>/update/", views.update_attribute_value),
+    path("values/<int:pk>/delete/", views.delete_attribute_value),
+
+    path(
+    "wishlist/",
+    views.get_wishlist,
+    ),
+
+    path(
+    "wishlist/add/",
+    views.add_to_wishlist,
+    ),
+
+    path(
+    "wishlist/remove/<int:product_id>/",
+    views.remove_from_wishlist,
+    ),
+
     path('cart/', views.get_cart),
     path('cart/add/', views.add_to_cart),
     path('cart/remove/<int:pk>/', views.remove_from_cart),

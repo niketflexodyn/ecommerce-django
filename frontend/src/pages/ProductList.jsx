@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 
@@ -12,11 +12,22 @@ const SORT_OPTIONS = [
 const PAGE_SIZE = 8
 
 export default function ProductList({ hideBanner = false }) {
-  
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [searchParams, setSearchParams] = useSearchParams()
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all')
+  
+  // Drill state is derived from the URL (single source of truth, shared with
+  // the CategoryStrip) so external URL changes are reflected here immediately.
+  const selectedCategory = searchParams.get('category') || 'all'
+  const selectedSubcategory = searchParams.get('subcategory') || ''
+  const selectedAttrs = useMemo(() => {
+    const o = {}
+    searchParams.forEach((v, k) => {
+      if (k.startsWith('attr_')) o[k.slice(5)] = v
+    })
+    return o
+  }, [searchParams])
+
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('featured')
@@ -30,26 +41,65 @@ export default function ProductList({ hideBanner = false }) {
   const BASE_URL = import.meta.env.VITE_DJANGO_URL
   const debounceRef = useRef(null)
 
-  // Sync category to URL search params
-  useEffect(() => {
-    if (selectedCategory && selectedCategory !== 'all') {
-      setSearchParams({ category: selectedCategory }, { replace: true })
-    } else {
-      setSearchParams({}, { replace: true })
-    }
-  }, [selectedCategory, setSearchParams])
+  // URL mutators — use the functional form so we merge with existing params
+  // instead of overwriting (the old object form erased subcategory/attr_*).
+  const updateCategory = (slug) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (!slug || slug === 'all') next.delete('category')
+        else next.set('category', slug)
+        next.delete('subcategory')
+        for (const k of [...next.keys()]) {
+          if (k.startsWith('attr_')) next.delete(k)
+        }
+        return next
+      },
+      { replace: true }
+    )
+  }
 
-  // Scroll to #products when arriving with a category param
+  const updateSubcategory = (slug) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (!slug) next.delete('subcategory')
+        else next.set('subcategory', slug)
+        for (const k of [...next.keys()]) {
+          if (k.startsWith('attr_')) next.delete(k)
+        }
+        return next
+      },
+      { replace: true }
+    )
+  }
+
+  const updateAttr = (key, value) => {
+    const param = `attr_${key}`
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (!value || next.get(param) === value) next.delete(param)
+        else next.set(param, value)
+        return next
+      },
+      { replace: true }
+    )
+  }
+
+  // Scroll to #products whenever a drill-down param is active — fires on mount
+  // (deep links) AND on same-page URL changes from the CategoryStrip.
   useEffect(() => {
-    const cat = searchParams.get('category')
-    if (cat) {
-      // Small delay to let products load first
-      const timer = setTimeout(() => {
-        document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })
-      }, 300)
-      return () => clearTimeout(timer)
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    const hasDrill =
+      selectedCategory !== 'all' ||
+      Boolean(selectedSubcategory) ||
+      Object.keys(selectedAttrs).length > 0
+    if (!hasDrill) return
+    const timer = setTimeout(() => {
+      document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [selectedCategory, selectedSubcategory, selectedAttrs])
 
   // Debounce the search input -> searchTerm
   useEffect(() => {
@@ -86,13 +136,17 @@ export default function ProductList({ hideBanner = false }) {
       })
   }, [BASE_URL])
 
-  // Re-fetch products whenever category, search, sort, or page changes.
-  // Pagination and sorting are handled server-side now, so each request asks
-  // for exactly one page of already-sorted results.
+  // Re-fetch products whenever category, subcategory, attributes, search, sort,
+  // or page changes. Pagination and sorting are handled server-side now, so
+  // each request asks for exactly one page of already-sorted results.
   useEffect(() => {
     setLoading(true)
     const params = new URLSearchParams()
     if (selectedCategory !== 'all') params.set('category', selectedCategory)
+    if (selectedSubcategory) params.set('subcategory', selectedSubcategory)
+    Object.entries(selectedAttrs).forEach(([k, v]) =>
+      params.set(`attr_${k}`, v)
+    )
     if (searchTerm) params.set('search', searchTerm)
     if (sortBy !== 'featured') params.set('sort', sortBy)
     params.set('page', page)
@@ -115,15 +169,26 @@ export default function ProductList({ hideBanner = false }) {
         setError(err.message)
         setLoading(false)
       })
-  }, [BASE_URL, selectedCategory, searchTerm, sortBy, page])
+  }, [
+    BASE_URL,
+    selectedCategory,
+    selectedSubcategory,
+    selectedAttrs,
+    searchTerm,
+    sortBy,
+    page,
+  ])
 
   const activeCategory = categories.find((c) => c.slug === selectedCategory)
+  const activeSubcategory =
+    activeCategory?.children?.find((s) => s.slug === selectedSubcategory) ||
+    null
 
   // Reset to the first page whenever the filtered/sorted set changes so the
   // user never lands on a page that no longer exists.
   useEffect(() => {
     setPage(1)
-  }, [selectedCategory, searchTerm, sortBy])
+  }, [selectedCategory, selectedSubcategory, selectedAttrs, searchTerm, sortBy])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
@@ -142,10 +207,14 @@ export default function ProductList({ hideBanner = false }) {
     return pages
   })()
 
-  const hasActiveFilters = selectedCategory !== 'all' || searchTerm
+  const hasActiveFilters =
+    selectedCategory !== 'all' ||
+    Boolean(selectedSubcategory) ||
+    Object.keys(selectedAttrs).length > 0 ||
+    Boolean(searchTerm)
 
   const clearFilters = () => {
-    setSelectedCategory('all')
+    updateCategory('all')
     setSearchInput('')
     setSearchTerm('')
   }
@@ -222,7 +291,7 @@ export default function ProductList({ hideBanner = false }) {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            
+
              <a href="#products"
               className="rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-plum-950 transition hover:bg-gold-400"
             >
@@ -241,7 +310,7 @@ export default function ProductList({ hideBanner = false }) {
         {/* Mobile category strip (sidebar is desktop-only) */}
         <div className="mb-6 flex gap-2 overflow-x-auto pb-1 lg:hidden">
           <button
-            onClick={() => setSelectedCategory('all')}
+            onClick={() => updateCategory('all')}
             className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${
               selectedCategory === 'all'
                 ? 'bg-plum-950 text-white'
@@ -257,7 +326,7 @@ export default function ProductList({ hideBanner = false }) {
             : categories.map((category) => (
                 <button
                   key={category.id}
-                  onClick={() => setSelectedCategory(category.slug)}
+                  onClick={() => updateCategory(category.slug)}
                   className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${
                     selectedCategory === category.slug
                       ? 'bg-plum-950 text-white'
@@ -278,7 +347,7 @@ export default function ProductList({ hideBanner = false }) {
               </h3>
               <div className="space-y-1">
                 <button
-                  onClick={() => setSelectedCategory('all')}
+                  onClick={() => updateCategory('all')}
                   className={`flex w-full items-center rounded-lg px-4 py-2.5 text-sm font-medium transition ${
                     selectedCategory === 'all'
                       ? 'bg-plum-950 text-white'
@@ -294,7 +363,7 @@ export default function ProductList({ hideBanner = false }) {
                   : categories.map((category) => (
                       <button
                         key={category.id}
-                        onClick={() => setSelectedCategory(category.slug)}
+                        onClick={() => updateCategory(category.slug)}
                         className={`flex w-full items-center rounded-lg px-4 py-2.5 text-sm font-medium transition ${
                           selectedCategory === category.slug
                             ? 'bg-plum-950 text-white'
@@ -310,17 +379,72 @@ export default function ProductList({ hideBanner = false }) {
 
           {/* Main column */}
           <div className="min-w-0 flex-1">
+            {/* Drill-down breadcrumb (from the CategoryStrip / URL) */}
+            {(selectedCategory !== 'all' ||
+              Boolean(selectedSubcategory) ||
+              Object.keys(selectedAttrs).length > 0) && (
+              <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                <button
+                  onClick={() => updateCategory('all')}
+                  className="hover:text-plum-950"
+                >
+                  All
+                </button>
+                {activeCategory && (
+                  <>
+                    <span className="text-slate-300">›</span>
+                    <button
+                      onClick={() => updateCategory(activeCategory.slug)}
+                      className="font-semibold text-plum-950 hover:underline"
+                    >
+                      {activeCategory.name}
+                    </button>
+                  </>
+                )}
+                {activeSubcategory && (
+                  <>
+                    <span className="text-slate-300">›</span>
+                    <button
+                      onClick={() => updateSubcategory('')}
+                      className="font-semibold text-plum-950 hover:underline"
+                    >
+                      {activeSubcategory.name}
+                    </button>
+                  </>
+                )}
+                {Object.entries(selectedAttrs).map(([k, v]) => (
+                  <span key={k} className="inline-flex items-center gap-1.5">
+                    <span className="text-slate-300">›</span>
+                    <button
+                      onClick={() => updateAttr(k, '')}
+                      className="font-semibold text-plum-950 hover:underline"
+                    >
+                      {k}: {v}
+                    </button>
+                  </span>
+                ))}
+              </nav>
+            )}
+
             <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h2 className="font-display text-2xl font-bold text-slate-900">
-                  {activeCategory ? activeCategory.name : 'All Products'}
+                  {activeSubcategory
+                    ? activeSubcategory.name
+                    : activeCategory
+                    ? activeCategory.name
+                    : 'All Products'}
                 </h2>
                 <div className="mt-2 h-1 w-12 rounded-full bg-gold-500" />
                 <p className="mt-1 text-sm text-slate-500">
                   {loading
                     ? 'Loading...'
                     : `${totalCount} item${totalCount !== 1 ? 's' : ''}${
-                        activeCategory ? ` in ${activeCategory.name}` : ' in our catalog'
+                        activeSubcategory
+                          ? ` in ${activeSubcategory.name}`
+                          : activeCategory
+                          ? ` in ${activeCategory.name}`
+                          : ' in our catalog'
                       }`}
                 </p>
               </div>
@@ -350,7 +474,7 @@ export default function ProductList({ hideBanner = false }) {
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700">
                 {activeCategory.name}
                 <button
-                  onClick={() => setSelectedCategory('all')}
+                  onClick={() => updateCategory('all')}
                   aria-label="Remove category filter"
                   className="text-slate-400 hover:text-slate-700"
                 >
@@ -358,6 +482,33 @@ export default function ProductList({ hideBanner = false }) {
                 </button>
               </span>
             )}
+            {activeSubcategory && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700">
+                {activeSubcategory.name}
+                <button
+                  onClick={() => updateSubcategory('')}
+                  aria-label="Remove subcategory filter"
+                  className="text-slate-400 hover:text-slate-700"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {Object.entries(selectedAttrs).map(([k, v]) => (
+              <span
+                key={k}
+                className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700"
+              >
+                {k}: {v}
+                <button
+                  onClick={() => updateAttr(k, '')}
+                  aria-label={`Remove ${k} filter`}
+                  className="text-slate-400 hover:text-slate-700"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
             {searchTerm && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700">
                 "{searchTerm}"

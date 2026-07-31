@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { useWishlist } from '../context/WishlistContext'
 import { formatPrice, getProductImageUrl } from '../utils/product'
 import { ratingApi } from '../utils/api'
 import StarRating from '../components/StarRating'
@@ -10,11 +11,13 @@ export default function ProductDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToCart, cartItems } = useCart()
+  const { toggleWishlist, isInWishlist } = useWishlist()
+  
   const user = useSelector((state) => state.auth.user);
   const tokens = useSelector((state) => state.auth.tokens);
-  const loading = useSelector((state) => state.auth.loading);
+  const authLoading = useSelector((state) => state.auth.loading);
   const [product, setProduct] = useState(null)
-  // const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [adding, setAdding] = useState(false)
 
@@ -180,7 +183,7 @@ export default function ProductDetails() {
                         src={src}
                         loading='lazy'
                         alt={product.name}
-                        className="h-72 w-full shrink-0 object-cover sm:h-[28rem]"
+                        className="h-72 w-full shrink-0 object-cover sm:h-[38rem]"
                         draggable={false}
                       />
                     ))}
@@ -352,6 +355,31 @@ export default function ProductDetails() {
                   View Cart
                 </Link>
               )}
+              
+              <button
+                type="button"
+                onClick={() => toggleWishlist(product.id)}
+                className={`btn-secondary flex items-center justify-center gap-2 ${
+                  isInWishlist(product.id)
+                    ? 'border-rose-500 text-rose-500 hover:bg-rose-50'
+                    : 'text-slate-500 hover:text-rose-500 hover:border-rose-300'
+                }`}
+              >
+                <svg
+                  className="size-5"
+                  fill={isInWishlist(product.id) ? 'currentColor' : 'none'}
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                  />
+                </svg>
+                {isInWishlist(product.id) ? 'Saved' : 'Wishlist'}
+              </button>
             </div>
 
             {/* Rate this product section */}

@@ -1,3 +1,4 @@
+# from backend.store.serializers import WishlistSerializer
 from django.shortcuts import get_object_or_404
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -23,7 +24,7 @@ User = get_user_model()
 logger = logging.getLogger("store")
 
 # pyrefly: ignore [missing-import]
-from .models import Product, Category, Cart, CartItem, Order, OrderItem, Rating, ProductImage
+from .models import Product, Category, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute
 # pyrefly: ignore [missing-import]
 from .pagination import ProductPagination
 # pyrefly: ignore [missing-import]
@@ -38,6 +39,7 @@ from .serializers import (
     CategoryWriteSerializer,
     ProductWriteSerializer,
     CartSerializer,
+    SubCategoryCreateSerializer,
     CartItemSerializer,
     RegisterSerializer,
     UserProfileSerializer,
@@ -48,6 +50,11 @@ from .serializers import (
     RatingSerializer,
     RatingWriteSerializer,
     AdminAccountSerializer,
+    AttributeWriteSerializer,
+    AttributeValueWriteSerializer,
+    AttributeSerializer,
+    AttributeValueSerializer,
+    WishlistSerializer,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -99,6 +106,140 @@ def get_subcategory_attributes(request, slug):
 
     return Response(serializer.data)
 
+# views.py
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def add_to_wishlist(request):
+    product_id = request.data.get("product_id")
+
+    try:
+        product = Product.objects.get(pk=product_id)
+    except Product.DoesNotExist:
+        return Response(
+            {"error": "Product not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    wishlist_item, created = Wishlist.objects.get_or_create(
+        user=request.user,
+        product=product,
+    )
+
+    if not created:
+        return Response(
+            {"message": "Already in wishlist"},
+            status=status.HTTP_200_OK,
+        )
+
+    return Response(
+        WishlistSerializer(wishlist_item).data,
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def update_subcategory(request, pk):
+    try:
+        subcategory = Category.objects.get(pk=pk, parent__isnull=False)
+    except Category.DoesNotExist:
+        return Response(
+            {"error": "Subcategory not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    serializer = SubCategoryCreateSerializer(
+        subcategory,
+        data=request.data,
+        partial=True,
+    )
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(CategorySerializer(subcategory).data)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_wishlist(request):
+    wishlist = Wishlist.objects.filter(user=request.user)
+
+    serializer = WishlistSerializer(
+        wishlist,
+        many=True,
+    )
+
+    return Response(serializer.data)
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def remove_from_wishlist(request, product_id):
+    try:
+        wishlist = Wishlist.objects.get(
+            user=request.user,
+            product_id=product_id,
+        )
+    except Wishlist.DoesNotExist:
+        return Response(
+            {"error": "Item not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    wishlist.delete()
+
+    return Response(
+        {"message": "Removed from wishlist"},
+        status=status.HTTP_200_OK,
+    )
+    
+@api_view(["GET"])
+def get_subcategories(request, category_id):
+    subcategories = Category.objects.filter(parent_id=category_id)
+    serializer = CategorySerializer(subcategories, many=True)
+    return Response(serializer.data)
+# views.py
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def create_subcategory(request, category_id):
+    try:
+        parent = Category.objects.get(id=category_id, parent__isnull=True)
+    except Category.DoesNotExist:
+        return Response(
+            {"error": "Category not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    data = request.data.copy()
+    data["parent"] = parent.id
+
+    serializer = SubCategoryCreateSerializer(data=data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def delete_subcategory(request, pk):
+    try:
+        subcategory = Category.objects.get(pk=pk, parent__isnull=False)
+    except Category.DoesNotExist:
+        return Response(
+            {"error": "Subcategory not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    subcategory.delete()
+
+    return Response(
+        {"message": "Subcategory deleted successfully"},
+        status=status.HTTP_200_OK,
+    )
 @api_view(["POST"])
 def reset_password(request):
     serializer = ResetPasswordSerializer(data=request.data)
@@ -137,11 +278,40 @@ def get_products(request):
 
     category_slug = request.query_params.get('category', '').strip()
     if category_slug and category_slug != 'all':
-        selected = Category.objects.filter(slug=category_slug).first()
+        selected = Category.objects.filter(slug__iexact=category_slug).first()
         if selected is not None:
-            products = products.filter(category__name__iexact=selected.name)
+            # Include the selected category and all of its descendant
+            # subcategories, so products assigned to a subcategory still show
+            # up when their parent category is selected.
+            descendant_ids = list(selected.children.values_list('id', flat=True))
+            descendant_ids.append(selected.id)
+            products = products.filter(category_id__in=descendant_ids)
         else:
-            products = products.filter(category__slug=category_slug)
+            products = products.filter(category__slug__iexact=category_slug)
+
+    # Subcategory drill-down: match the product's category (a child Category)
+    # by slug or name, case-insensitively.
+    subcategory = request.query_params.get('subcategory', '').strip()
+    if subcategory:
+        sub = Category.objects.filter(
+            Q(slug__iexact=subcategory) | Q(name__iexact=subcategory)
+        ).first()
+        if sub is not None:
+            products = products.filter(category_id=sub.id)
+        else:
+            products = products.filter(category__name__iexact=subcategory)
+
+    # Attribute drill-down: any query param starting with "attr_" is treated as
+    # attributes__<name>=<value>. The relational model stores attributes as
+    # ProductAttribute rows (attribute.name + value.value), so both conditions
+    # are applied in a single filter() to pin the same row. Each attribute is a
+    # separate filter() call so distinct attributes AND across separate joins.
+    for key, value in request.query_params.items():
+        if key.startswith('attr_') and value.strip():
+            products = products.filter(
+                attributes__attribute__name__iexact=key[5:],
+                attributes__value__value__iexact=value.strip(),
+            )
 
     sort = request.query_params.get('sort', '').strip()
     sort_map = {
@@ -176,6 +346,18 @@ def create_product(request):
         product = serializer.save(created_by=request.user)
         for f in request.data.getlist('images'):
             ProductImage.objects.create(product=product, image=f)
+            
+        attributes_data = request.data.get('attributes')
+        if attributes_data:
+            import json
+            try:
+                attrs_dict = json.loads(attributes_data)
+                for attr_id, val_id in attrs_dict.items():
+                    if val_id:
+                        ProductAttribute.objects.create(product=product, attribute_id=attr_id, value_id=val_id)
+            except Exception as e:
+                print("Error saving attributes:", e)
+                
         return Response(
             ProductSerializer(product, context={'request': request}).data,
             status=status.HTTP_201_CREATED,
@@ -196,6 +378,19 @@ def update_product(request, pk):
         product = serializer.save()
         for f in request.data.getlist('images'):
             ProductImage.objects.create(product=product, image=f)
+            
+        attributes_data = request.data.get('attributes')
+        if attributes_data:
+            import json
+            try:
+                attrs_dict = json.loads(attributes_data)
+                ProductAttribute.objects.filter(product=product).delete()
+                for attr_id, val_id in attrs_dict.items():
+                    if val_id:
+                        ProductAttribute.objects.create(product=product, attribute_id=attr_id, value_id=val_id)
+            except Exception:
+                pass
+                
         return Response(ProductSerializer(product, context={'request': request}).data)
     return Response(serializer.errors, status=400)
 
@@ -964,3 +1159,93 @@ def update_profile(request):
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=400)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def create_attribute(request, subcategory_id):
+    try:
+        subcategory = Category.objects.get(id=subcategory_id, parent__isnull=False)
+    except Category.DoesNotExist:
+        return Response({"error": "Subcategory not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    data = request.data.copy()
+    data["subcategory"] = subcategory.id
+    
+    serializer = AttributeWriteSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def update_attribute(request, pk):
+    try:
+        attribute = Attribute.objects.get(id=pk)
+    except Attribute.DoesNotExist:
+        return Response({"error": "Attribute not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    serializer = AttributeWriteSerializer(attribute, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def delete_attribute(request, pk):
+    try:
+        attribute = Attribute.objects.get(id=pk)
+    except Attribute.DoesNotExist:
+        return Response({"error": "Attribute not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    attribute.delete()
+    return Response({"message": "Attribute deleted"}, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def create_attribute_value(request, attribute_id):
+    try:
+        attribute = Attribute.objects.get(id=attribute_id)
+    except Attribute.DoesNotExist:
+        return Response({"error": "Attribute not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    data = request.data.copy()
+    data["attribute"] = attribute.id
+    
+    serializer = AttributeValueWriteSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def update_attribute_value(request, pk):
+    try:
+        value = AttributeValue.objects.get(id=pk)
+    except AttributeValue.DoesNotExist:
+        return Response({"error": "Value not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    serializer = AttributeValueWriteSerializer(value, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def delete_attribute_value(request, pk):
+    try:
+        value = AttributeValue.objects.get(id=pk)
+    except AttributeValue.DoesNotExist:
+        return Response({"error": "Value not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    value.delete()
+    return Response({"message": "Value deleted"}, status=status.HTTP_200_OK)

@@ -5,6 +5,7 @@ import SearchDropdown from './SearchDropdown'
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../features/auth/authSlice";
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 
 /* ─── SVG Icons ──────────────────────────────────────────────────── */
 
@@ -90,10 +91,12 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const { cartItems } = useCart();
+  const { wishlistItems } = useWishlist();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const navigate = useNavigate()
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0)
+  const wishlistCount = wishlistItems.length
 
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -189,6 +192,24 @@ export default function Navbar() {
               <SearchDropdown query={searchQuery} onSelect={() => setSearchQuery('')} />
             </div>
           </form>
+
+          {/* Wishlist */}
+          {user && (
+            <Link
+              to="/wishlist"
+              aria-label={`Wishlist, ${wishlistCount} item${wishlistCount === 1 ? '' : 's'}`}
+              className="relative p-2 text-slate-500 transition-colors hover:text-plum-950 hover:bg-slate-50 rounded-full"
+            >
+              <svg className="size-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+              </svg>
+              {wishlistCount > 0 && (
+                <span className="absolute right-0 top-0 flex size-[18px] items-center justify-center rounded-full bg-gold-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {/* Cart */}
           <Link
@@ -327,23 +348,36 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* ── Mobile: Cart + Hamburger ─────────── */}
-       {/* ── Mobile: Cart + Hamburger ─────────── */}
-<div className="md:hidden ml-auto flex items-center gap-1">
-  <Link
-    to="/cart"
-    aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
-    className="relative flex size-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100"
-  >
-    <CartIcon className="size-5" />
-    {cartCount > 0 && (
-      <span
-        className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold-500 px-1 text-[9px] font-bold leading-none text-plum-950 ring-2 ring-white"
-      >
-        {cartCount}
-      </span>
-    )}
-  </Link>
+       {/* ── Mobile: Wishlist + Cart + Hamburger ─────────── */}
+       <div className="md:hidden ml-auto flex items-center gap-1">
+         {user && (
+           <Link
+             to="/wishlist"
+             aria-label={`Wishlist, ${wishlistCount} item${wishlistCount === 1 ? '' : 's'}`}
+             className="relative flex size-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100"
+           >
+             <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+             </svg>
+             {wishlistCount > 0 && (
+               <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold-500 px-1 text-[9px] font-bold leading-none text-plum-950 ring-2 ring-white">
+                 {wishlistCount > 99 ? '99+' : wishlistCount}
+               </span>
+             )}
+           </Link>
+         )}
+         <Link
+           to="/cart"
+           aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
+           className="relative flex size-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100"
+         >
+           <CartIcon className="size-5" />
+           {cartCount > 0 && (
+             <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold-500 px-1 text-[9px] font-bold leading-none text-plum-950 ring-2 ring-white">
+               {cartCount > 99 ? '99+' : cartCount}
+             </span>
+           )}
+         </Link>
   <button
     type="button"
     className="rounded-md p-2 text-slate-500 transition-colors hover:bg-slate-100"

@@ -153,6 +153,33 @@ export const categoryApi = {
 };
 
 // -------------------------
+// Subcategory attributes (Public — attribute + values for a subcategory)
+// -------------------------
+
+export const subcategoryAttributesApi = {
+  get(slug) {
+    return request(`/subcategories/${encodeURIComponent(slug)}/attributes/`);
+  },
+};
+
+
+//WishList
+export const wishlistApi = {
+  list: () => request("/wishlist/"),
+
+  add: (productId) =>
+    request("/wishlist/add/", {
+      method: "POST",
+      body: JSON.stringify({ product_id: productId }),
+    }),
+
+  remove: (productId) =>
+    request(`/wishlist/remove/${productId}/`, {
+      method: "DELETE",
+    }),
+};
+
+// -------------------------
 // Admin Categories (scoped to created_by)
 // -------------------------
 
@@ -183,23 +210,23 @@ export const adminCategoryApi = {
 export const authApi = {
 
   forgotPassword(data) {
-      return request(
-          "/forgot-password/",
-          {
-              method:"POST",
-              body:JSON.stringify(data)
-          }
-      );
+    return request(
+      "/forgot-password/",
+      {
+        method: "POST",
+        body: JSON.stringify(data)
+      }
+    );
   },
 
-  resetPassword(data){
-      return request(
-          "/reset-password/",
-          {
-              method:"POST",
-              body:JSON.stringify(data)
-          }
-      );
+  resetPassword(data) {
+    return request(
+      "/reset-password/",
+      {
+        method: "POST",
+        body: JSON.stringify(data)
+      }
+    );
   }
 
 };
@@ -277,6 +304,67 @@ export const dashboardApi = {
   },
 };
 
+
+
+//SubCategory
+export const adminSubcategoryApi = {
+  list: (categoryId) =>
+    request(`/categories/${categoryId}/subcategories/`),
+
+  create: (categoryId, data) =>
+    request(`/categories/${categoryId}/subcategories/create/`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id, data) =>
+    request(`/subcategories/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id) =>
+    request(`/subcategories/${id}/delete/`, {
+      method: 'DELETE',
+    }),
+
+  attributes: (slug) =>
+    request(`/subcategories/${slug}/attributes/`),
+};
+
+export const adminAttributeApi = {
+  create: (subcategoryId, data) =>
+    request(`/subcategories/${subcategoryId}/attributes/create/`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id, data) =>
+    request(`/attributes/${id}/update/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  delete: (id) =>
+    request(`/attributes/${id}/delete/`, {
+      method: 'DELETE',
+    }),
+};
+
+export const adminAttributeValueApi = {
+  create: (attributeId, data) =>
+    request(`/attributes/${attributeId}/values/create/`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id, data) =>
+    request(`/values/${id}/update/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  delete: (id) =>
+    request(`/values/${id}/delete/`, {
+      method: 'DELETE',
+    }),
+};
 // -------------------------
 // Super Admin → admin account approval workflow
 // Only the super_admin role can reach these endpoints (backend enforces it).

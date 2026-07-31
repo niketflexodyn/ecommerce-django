@@ -9,6 +9,7 @@ import ProductDetails from './pages/ProductDetails'
 import Login from './pages/Login'
 import SearchResults from './components/SearchResults'
 import CartPage from './pages/CartPage'
+import Wishlist from './pages/Wishlist'
 import Hero from './components/Hero'
 import FeaturesStrip from './components/FeaturesStrip'
 import PromoCarousel from './components/PromoCarousel'
@@ -98,6 +99,7 @@ export default function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/search" element={<SearchResults />} />
                   <Route path="/cart" element={<CartPage />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
                   <Route path='/register' element={<Register />} />
                   <Route path='/checkout' element={<Checkout />} />
                   <Route path='/order-success' element={<OrderSuccess />} />
