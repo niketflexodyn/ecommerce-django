@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+# pyrefly: ignore [missing-import]
+from decouple import config
 from token import NAME
 from dotenv import load_dotenv
 load_dotenv()
@@ -47,10 +49,12 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'rest_framework',
     'store',
-    'rest_framework_simplejwt'
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -88,6 +92,22 @@ CORS_ALLOW_ALL_ORIGINS = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", "").strip(),
+    "API_KEY": os.getenv("CLOUDINARY_API_KEY", "").strip(),
+    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", "").strip(),
+}
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases

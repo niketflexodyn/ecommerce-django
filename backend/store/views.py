@@ -343,21 +343,28 @@ def get_product(request, pk):
 def create_product(request):
     serializer = ProductWriteSerializer(data=request.data)
     if serializer.is_valid():
-        product = serializer.save(created_by=request.user)
-        for f in request.data.getlist('images'):
-            ProductImage.objects.create(product=product, image=f)
-            
-        attributes_data = request.data.get('attributes')
-        if attributes_data:
-            import json
-            try:
-                attrs_dict = json.loads(attributes_data)
-                for attr_id, val_id in attrs_dict.items():
-                    if val_id:
-                        ProductAttribute.objects.create(product=product, attribute_id=attr_id, value_id=val_id)
-            except Exception as e:
-                print("Error saving attributes:", e)
+        with transaction.atomic():
+            product = serializer.save(created_by=request.user)
+            for f in request.data.getlist('images'):
+                if f:
+                    ProductImage.objects.create(product=product, image=f)
                 
+            attributes_data = request.data.get('attributes')
+            if attributes_data:
+                import json
+                try:
+                    attrs_dict = json.loads(attributes_data)
+                    if isinstance(attrs_dict, dict):
+                        for attr_id, val_id in attrs_dict.items():
+                            if val_id and attr_id:
+                                ProductAttribute.objects.update_or_create(
+                                    product=product,
+                                    attribute_id=attr_id,
+                                    defaults={'value_id': val_id}
+                                )
+                except Exception as e:
+                    print("Error saving attributes:", e)
+                    
         return Response(
             ProductSerializer(product, context={'request': request}).data,
             status=status.HTTP_201_CREATED,
@@ -375,22 +382,29 @@ def update_product(request, pk):
 
     serializer = ProductWriteSerializer(product, data=request.data, partial=True)
     if serializer.is_valid():
-        product = serializer.save()
-        for f in request.data.getlist('images'):
-            ProductImage.objects.create(product=product, image=f)
-            
-        attributes_data = request.data.get('attributes')
-        if attributes_data:
-            import json
-            try:
-                attrs_dict = json.loads(attributes_data)
-                ProductAttribute.objects.filter(product=product).delete()
-                for attr_id, val_id in attrs_dict.items():
-                    if val_id:
-                        ProductAttribute.objects.create(product=product, attribute_id=attr_id, value_id=val_id)
-            except Exception:
-                pass
+        with transaction.atomic():
+            product = serializer.save()
+            for f in request.data.getlist('images'):
+                if f:
+                    ProductImage.objects.create(product=product, image=f)
                 
+            attributes_data = request.data.get('attributes')
+            if attributes_data:
+                import json
+                try:
+                    attrs_dict = json.loads(attributes_data)
+                    if isinstance(attrs_dict, dict):
+                        ProductAttribute.objects.filter(product=product).delete()
+                        for attr_id, val_id in attrs_dict.items():
+                            if val_id and attr_id:
+                                ProductAttribute.objects.update_or_create(
+                                    product=product,
+                                    attribute_id=attr_id,
+                                    defaults={'value_id': val_id}
+                                )
+                except Exception:
+                    pass
+                    
         return Response(ProductSerializer(product, context={'request': request}).data)
     return Response(serializer.errors, status=400)
 
