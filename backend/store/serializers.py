@@ -1,6 +1,6 @@
 from rest_framework import serializers
 # pyrefly: ignore [missing-import]
-from .models import Category, Product, Cart, CartItem, Order, OrderItem, Rating, Wishlist, User, Attribute, AttributeValue, ProductAttribute
+from .models import Category, Product, Cart, CartItem, Order, OrderItem, Rating, VariantAttribute, ProductVariant, Wishlist, User, Attribute, AttributeValue, ProductAttribute
 from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -90,9 +90,42 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
         model = ProductAttribute
         fields = ['id', 'attribute', 'attribute_name', 'value', 'value_name']
 
+
+class VariantAttributeSerializer(serializers.ModelSerializer):
+    attribute_name = serializers.CharField(source="attribute.name", read_only=True)
+    value_name = serializers.CharField(source="value.value", read_only=True)
+
+    class Meta:
+        model = VariantAttribute
+        fields = [
+            "id",
+            "attribute",
+            "attribute_name",
+            "value",
+            "value_name",
+        ]
+
+
+class ProductVariantSerializer(serializers.ModelSerializer):
+    attributes = VariantAttributeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ProductVariant
+        fields = [
+            "id",
+            "sku",
+            "price",
+            "stock",
+            "image",
+            "is_active",
+            "attributes",
+        ]
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     attributes = ProductAttributeSerializer(many=True, read_only=True)
+    variants = ProductVariantSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
     rating_count = serializers.SerializerMethodField()
     seller_name = serializers.SerializerMethodField()
@@ -173,6 +206,7 @@ class AttributeSerializer(serializers.ModelSerializer):
             "name",
             "values",
         ]
+
 
 class AttributeWriteSerializer(serializers.ModelSerializer):
     class Meta:

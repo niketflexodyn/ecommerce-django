@@ -12,7 +12,9 @@ from .models import (
     OrderItem,
     Attribute,
     AttributeValue,
-    ProductAttribute
+    ProductAttribute,
+    ProductVariant,
+    VariantAttribute
 )
 
 
@@ -108,3 +110,5 @@ admin.site.register(Attribute)
 admin.site.register(AttributeValue)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Order, OrderAdmin)
+admin.site.register(ProductVariant)
+admin.site.register(VariantAttribute)
