@@ -1,0 +1,11 @@
+Django==6.0.7
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+python-dotenv
+certifi
+cloudinary
+django-cloudinary-storage
+razorpay
+Pillow
+psycopg2-binary
