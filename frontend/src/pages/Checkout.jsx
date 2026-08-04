@@ -259,6 +259,8 @@ export default function Checkout() {
                     <img
                       src={item.image.startsWith('http') ? item.image : `${(import.meta.env.VITE_DJANGO_URL || 'http://localhost:8000')}${item.image}`}
                       alt={item.name}
+                      loading="lazy"
+                      decoding="async"
                       className="size-12 rounded-lg object-cover"
                     />
                   ) : (

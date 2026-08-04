@@ -1,6 +1,8 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
+
+
 const navItems = [
   {
     name: 'Overview',
@@ -73,6 +75,10 @@ export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const visibleNavItems = user?.role === 'super_admin'
+  ? navItems.filter((item) => item.to === '/dashboard/admins' || item.to === '/dashboard/edit-details')
+  : navItems.filter((item) => !item.superAdminOnly);
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -99,11 +105,8 @@ export default function AdminLayout() {
           </span>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {navItems
-            .filter((item) => !item.superAdminOnly || user?.role === 'super_admin')
-            .map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink
               key={item.name}
               to={item.to}
@@ -121,6 +124,7 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
+
 
         {/* Bottom: user + actions */}
         <div className="border-t border-white/10 px-4 py-4 space-y-2">

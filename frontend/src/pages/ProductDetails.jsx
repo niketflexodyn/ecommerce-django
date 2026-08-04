@@ -181,7 +181,8 @@ export default function ProductDetails() {
                       <img
                         key={i}
                         src={src}
-                        loading='lazy'
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
                         alt={product.name}
                         className="h-72 w-full shrink-0 object-cover sm:h-[38rem]"
                         draggable={false}
@@ -236,7 +237,7 @@ export default function ProductDetails() {
                           onClick={() => setCurrent(i)}
                           className={`overflow-hidden rounded-lg ring-2 transition ${i === current ? 'ring-gold-600' : 'ring-transparent hover:ring-slate-300'}`}
                         >
-                          <img src={src} alt="" className="h-14 w-14 object-cover" />
+                          <img src={src} alt="" loading="lazy" decoding="async" className="h-14 w-14 object-cover" />
                         </button>
                       ))}
                     </div>

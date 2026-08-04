@@ -136,6 +136,8 @@ export default function PromoCarousel() {
           <img
             src={deal.image}
             alt={deal.title}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className={`absolute inset-0 bg-linear-to-r ${deal.gradient}`} />
@@ -198,6 +200,8 @@ export default function PromoCarousel() {
           <img
             src={cat.image}
             alt={cat.name}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-plum-950/80 via-plum-950/20 to-transparent" />

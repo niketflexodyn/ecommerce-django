@@ -225,6 +225,8 @@ class VariantAttribute(models.Model):
         AttributeValue,
         on_delete=models.CASCADE
     )
+    class Meta:
+        unique_together = ("variant", "attribute")
 
 class ProductAttribute(models.Model):
     product = models.ForeignKey(

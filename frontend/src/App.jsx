@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchProfile } from './features/auth/authThunk'
 import Navbar from './components/Navbar'
@@ -40,6 +40,7 @@ import CategoryStrip from './components/CategoryStrip'
 export default function App() {
   const dispatch = useDispatch()
   const access = useSelector((s) => s.auth.tokens.access)
+  const user = useSelector((s) => s.auth.user)
 
   // Bootstrap the logged-in user on load (and after login) by resolving the
   // stored access token into a profile. Re-runs if the token changes.
@@ -59,7 +60,17 @@ export default function App() {
             </AdminRoute>
           }
         >
-          <Route index element={<AdminDashboard />} />
+        <Route
+  index
+  element={
+    user?.role === 'super_admin' ? (
+      <Navigate to="/dashboard/admins" replace />
+    ) : (
+      <AdminDashboard />
+    )
+  }
+/>
+
           <Route path="products" element={<AdminProducts />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="orders" element={<AdminOrders />} />

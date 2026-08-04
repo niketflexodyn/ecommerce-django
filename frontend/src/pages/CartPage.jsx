@@ -83,6 +83,8 @@ export default function CartPage() {
                       <img
                         src={imageUrl}
                         alt={item.name}
+                        loading="lazy"
+                        decoding="async"
                         className="size-24 rounded-xl object-cover transition group-hover:shadow-md sm:size-28"
                       />
                     ) : (

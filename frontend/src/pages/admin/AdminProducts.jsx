@@ -368,6 +368,8 @@ export default function AdminProducts() {
                     <img
                       src={product.image.startsWith('http') ? product.image : `${API_BASE.replace('/api', '')}${product.image}`}
                       alt={product.name}
+                      loading="lazy"
+                      decoding="async"
                       className="size-10 rounded-lg object-cover"
                     />
                   ) : (
@@ -703,7 +705,7 @@ export default function AdminProducts() {
                         <button
                           type="button"
                           onClick={() => {
-                            if (!g.existing) URL.revokeObjectURL(g.url);
+                            if (!g.existing) URL.revokeObjectURL(g.url);  
                             setGallery((prev) => prev.filter((_, i) => i !== idx));
                           }}
                           className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-plum-950 text-xs text-white shadow ring-2 ring-white hover:bg-plum-900"

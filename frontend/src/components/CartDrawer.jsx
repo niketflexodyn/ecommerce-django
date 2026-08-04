@@ -80,6 +80,8 @@ export default function CartDrawer() {
                     <img
                       src={imageUrl}
                       alt={item.name}
+                      loading="lazy"
+                      decoding="async"
                       className="size-16 shrink-0 rounded-lg object-cover bg-slate-100"
                     />
                   ) : (

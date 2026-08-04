@@ -47,13 +47,13 @@ export default function EditAdminDetails() {
     'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600';
 
   return (
-    <div className="p-8">
+    <div className="p-8 mx-auto">
       <AdminPageHeader
         title="Edit Details"
         subtitle="Update your admin profile information"
       />
 
-      <div className="mt-6 max-w-2xl rounded-xl bg-white shadow-sm ring-1 ring-slate-200/80">
+      <div className="mt-6  max-w-2xl rounded-xl bg-white shadow-sm ring-1 ring-slate-200/80">
         {/* Read-only account info */}
         <div className="border-b border-slate-100 px-6 py-4">
           <div className="flex flex-wrap items-center gap-3 text-sm">

@@ -24,7 +24,7 @@ User = get_user_model()
 logger = logging.getLogger("store")
 
 # pyrefly: ignore [missing-import]
-from .models import Product, Category, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute
+from .models import Product, Category, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute, ProductVariant, VariantAttribute
 # pyrefly: ignore [missing-import]
 from .pagination import ProductPagination
 # pyrefly: ignore [missing-import]
@@ -43,6 +43,7 @@ from .serializers import (
     CartItemSerializer,
     RegisterSerializer,
     UserProfileSerializer,
+    ProductVariantSerializer,
     CustomTokenObtainPairSerializer,
     OrderListSerializer,
     OrderDetailSerializer,
@@ -136,6 +137,144 @@ def add_to_wishlist(request):
         WishlistSerializer(wishlist_item).data,
         status=status.HTTP_201_CREATED,
     )
+
+
+@api_view(["GET"])
+def get_product_variants(request, pk):
+    """
+    Get all active variants for a specific product.
+    """
+    try:
+        product = Product.objects.get(pk=pk)
+    except Product.DoesNotExist:
+        return Response(
+            {"error": "Product not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    variants = product.variants.filter(is_active=True)
+    serializer = ProductVariantSerializer(variants, many=True, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def find_product_variant(request, pk):
+    """
+    Find the matching variant based on selected attribute values.
+
+    Example:
+    GET /api/products/26/find-variant/?values=18,20
+    """
+
+    values = request.GET.get("values")
+
+    if not values:
+        return Response(
+            {"error": "No attribute values selected."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        value_ids = [int(v) for v in values.split(",")]
+    except ValueError:
+        return Response(
+            {"error": "Invalid value ids."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        product = Product.objects.get(pk=pk)
+    except Product.DoesNotExist:
+        return Response(
+            {"error": "Product not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    variants = product.variants.filter(is_active=True)
+
+    print("Selected Value IDs:", value_ids)
+
+    for variant in variants:
+        variant_value_ids = list(
+        variant.attributes.values_list("value_id", flat=True)
+    )
+
+    print("SKU:", variant.sku)
+    print("Variant Values:", variant_value_ids)
+
+    if sorted(variant_value_ids) == sorted(value_ids):
+        serializer = ProductVariantSerializer(
+            variant,
+            context={"request": request},
+        )
+        return Response(serializer.data)
+
+    return Response(
+    {"error": "Variant not found."},
+    status=status.HTTP_404_NOT_FOUND,
+    )
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def create_product_variant(request, pk):
+    """
+    Create a new variant for a product (Admin only).
+    """
+    try:
+        product = Product.objects.get(pk=pk)
+    except Product.DoesNotExist:
+        return Response(
+            {"error": "Product not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    serializer = ProductVariantSerializer(data=request.data, context={"request": request})
+    if serializer.is_valid():
+        variant = serializer.save(product=product)
+        return Response(ProductVariantSerializer(variant, context={"request": request}).data, status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["PUT", "PATCH"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def update_product_variant(request, pk):
+    """
+    Update an existing variant (Admin only).
+    """
+    try:
+        variant = ProductVariant.objects.get(pk=pk)
+    except ProductVariant.DoesNotExist:
+        return Response(
+            {"error": "Variant not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    partial = request.method == "PATCH"
+    serializer = ProductVariantSerializer(variant, data=request.data, partial=partial, context={"request": request})
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def delete_product_variant(request, pk):
+    """
+    Delete a variant (Admin only).
+    """
+    try:
+        variant = ProductVariant.objects.get(pk=pk)
+    except ProductVariant.DoesNotExist:
+        return Response(
+            {"error": "Variant not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    variant.delete()
+    return Response({"message": "Variant deleted successfully"}, status=status.HTTP_200_OK)
+
 
 
 @api_view(["PUT"])

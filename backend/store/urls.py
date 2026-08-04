@@ -1,13 +1,20 @@
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
 # pyrefly: ignore [missing-import]
 from . import views
-# pyrefly: ignore [missing-import]
-from .views import CustomTokenObtainPairView
-from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('products/', views.get_products),
     path('products/<int:pk>/', views.get_product),
+    path(
+    "products/<int:pk>/find-variant/",
+    views.find_product_variant,
+    name="find-product-variant",
+),
+    path('products/<int:pk>/variants/', views.get_product_variants, name='product-variants'),
+    path('products/<int:pk>/variants/create/', views.create_product_variant, name='create-product-variant'),
+    path('variants/<int:pk>/update/', views.update_product_variant, name='update-product-variant'),
+    path('variants/<int:pk>/delete/', views.delete_product_variant, name='delete-product-variant'),
     path('admin/products/', views.admin_products),
     path('products/create/', views.create_product),
     path('products/<int:pk>/update/', views.update_product),
@@ -61,7 +68,7 @@ urlpatterns = [
     path('admin/ratings/', views.admin_product_ratings),
     path('dashboard/stats/', views.get_dashboard_stats),
     path('register/', views.register),
-    path('login/', CustomTokenObtainPairView.as_view()),
+    path('login/', views.CustomTokenObtainPairView.as_view()),
     path('forgot-password/', views.forgot_password),
     path('reset-password/', views.reset_password),
     path('refresh/', TokenRefreshView.as_view()),

@@ -34,6 +34,8 @@ export default function SearchDropdown({ query, onSelect }) {
                   <img
                     src={getProductImageUrl(product.image)}
                     alt={product.name}
+                    loading="lazy"
+                    decoding="async"
                     className="size-10 rounded-md object-cover shrink-0"
                   />
                 ) : (
