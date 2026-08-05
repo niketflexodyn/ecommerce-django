@@ -3,6 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { profileApi } from '../utils/api';
 
+const NAME_RE = /^[a-zA-Z\s'-]+$/;
+const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 export default function Profile() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -20,13 +23,91 @@ export default function Profile() {
   const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'phone') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 13);
+      setForm({ ...form, phone: digitsOnly });
+      setError('');
+      setSuccess(false);
+      return;
+    }
+    setForm({ ...form, [name]: value });
     setError('');
     setSuccess(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (form.first_name && form.first_name.trim()) {
+      if (form.first_name.trim().length < 2 || form.first_name.trim().length > 50) {
+        setError('First name must be between 2 and 50 characters.');
+        return;
+      }
+      if (!NAME_RE.test(form.first_name.trim())) {
+        setError('First name can only contain letters, spaces, and hyphens.');
+        return;
+      }
+    }
+
+    if (form.last_name && form.last_name.trim()) {
+      if (form.last_name.trim().length < 2 || form.last_name.trim().length > 50) {
+        setError('Last name must be between 2 and 50 characters.');
+        return;
+      }
+      if (!NAME_RE.test(form.last_name.trim())) {
+        setError('Last name can only contain letters, spaces, and hyphens.');
+        return;
+      }
+    }
+
+    if (!form.email || !form.email.trim()) {
+      setError('Email is required.');
+      return;
+    }
+    const emailVal = form.email.trim();
+    if (emailVal.length > 100) {
+      setError('Email must not exceed 100 characters.');
+      return;
+    }
+    if (!emailVal.includes('@')) {
+      setError("Email must include '@' (e.g. name@example.com).");
+      return;
+    }
+    const emailParts = emailVal.split('@');
+    if (!emailParts[0] || emailParts.length > 2 || !emailParts[1] || !emailParts[1].includes('.')) {
+      setError('Email must include a domain with a dot (e.g. .com).');
+      return;
+    }
+    if (!EMAIL_RE.test(emailVal)) {
+      setError('Please enter a valid email address (e.g. name@example.com).');
+      return;
+    }
+
+    if (form.phone) {
+      const digits = form.phone.replace(/\D/g, '');
+      if (digits.length > 0 && (digits.length < 10 || digits.length > 13)) {
+        setError('Phone number must be between 10 and 13 digits.');
+        return;
+      }
+    }
+
+    if (form.address && form.address.trim()) {
+      if (form.address.trim().length < 5 || form.address.trim().length > 500) {
+        setError('Address must be between 5 and 500 characters.');
+        return;
+      }
+      if (!/[a-zA-Z0-9]/.test(form.address.trim())) {
+        setError('Please enter a valid street address.');
+        return;
+      }
+    }
+
+    if (form.location && form.location.trim().length > 200) {
+      setError('Location must not exceed 200 characters.');
+      return;
+    }
+
     setSaving(true);
     setError('');
     setSuccess(false);
@@ -111,6 +192,7 @@ export default function Profile() {
               <input
                 type="text"
                 name="first_name"
+                maxLength={50}
                 value={form.first_name}
                 onChange={handleChange}
                 className={inputClass}
@@ -122,6 +204,7 @@ export default function Profile() {
               <input
                 type="text"
                 name="last_name"
+                maxLength={50}
                 value={form.last_name}
                 onChange={handleChange}
                 className={inputClass}
@@ -131,10 +214,13 @@ export default function Profile() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Email <span className="text-red-500">*</span>
+            </label>
             <input
               type="email"
               name="email"
+              maxLength={100}
               required
               value={form.email}
               onChange={handleChange}
@@ -146,12 +232,25 @@ export default function Profile() {
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Phone</label>
             <input
-              type="text"
+              type="tel"
               name="phone"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={13}
               value={form.phone}
               onChange={handleChange}
+              onKeyDown={(e) => {
+                if (
+                  !/[0-9]/.test(e.key) &&
+                  !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) &&
+                  !e.ctrlKey &&
+                  !e.metaKey
+                ) {
+                  e.preventDefault();
+                }
+              }}
               className={inputClass}
-              placeholder="Phone number"
+              placeholder="Phone number (max 13 digits)"
             />
           </div>
 
@@ -159,11 +258,12 @@ export default function Profile() {
             <label className="mb-1 block text-sm font-medium text-slate-700">Address</label>
             <textarea
               name="address"
+              maxLength={500}
               rows={3}
               value={form.address}
               onChange={handleChange}
               className={inputClass}
-              placeholder="Delivery address"
+              placeholder="Delivery address (max 500 characters)"
             />
           </div>
 
@@ -172,10 +272,11 @@ export default function Profile() {
             <input
               type="text"
               name="location"
+              maxLength={200}
               value={form.location}
               onChange={handleChange}
               className={inputClass}
-              placeholder="e.g. Ahmedabad, India"
+              placeholder="e.g. London, UK"
             />
             <p className="mt-1 text-xs text-slate-400">Shown to sellers with your orders.</p>
           </div>

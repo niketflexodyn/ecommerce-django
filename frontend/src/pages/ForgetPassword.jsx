@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { authApi } from "../utils/api";
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -11,8 +11,15 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
 
   function validate(value) {
-    if (!value.trim()) return "Email is required.";
-    if (!EMAIL_RE.test(value.trim())) return "Enter a valid email address.";
+    const val = value.trim();
+    if (!val) return "Email is required.";
+    if (val.length > 100) return "Email must not exceed 100 characters.";
+    if (!val.includes("@")) return "Email must include '@' (e.g. name@example.com).";
+    const parts = val.split("@");
+    if (!parts[0] || parts.length > 2 || !parts[1] || !parts[1].includes(".")) {
+      return "Email must include a domain with a dot (e.g. .com).";
+    }
+    if (!EMAIL_RE.test(val)) return "Enter a valid email address (e.g. name@example.com).";
     return "";
   }
 
@@ -67,9 +74,12 @@ export default function ForgotPassword() {
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-6">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Email <span className="text-red-500">*</span>
+              </label>
               <input
-                type="text"
+                type="email"
+                maxLength={100}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);

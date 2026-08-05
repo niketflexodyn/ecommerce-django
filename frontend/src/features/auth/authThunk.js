@@ -33,7 +33,7 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async ({ username, password }, thunkAPI) => {
     try {
-      const res = await fetch(`${BASE_URL}/api/login/`, {
+      const res = await fetch(`${BASE_URL}/api/login/`,{
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -66,7 +66,7 @@ export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async (formData, thunkAPI) => {
     try {
-      const res = await fetch(`${BASE_URL}/api/register/`, {
+      const res = await fetch(`${BASE_URL}/api/register/`,{
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

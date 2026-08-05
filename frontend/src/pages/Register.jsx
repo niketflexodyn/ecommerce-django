@@ -8,7 +8,12 @@ const ROLE_OPTIONS = [
   { value: "admin", label: "Admin", desc: "Manage products & orders" },
 ];
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const NAME_RE = /^[a-zA-Z\s'-]+$/;
+// Basic shape check (compatible across all browsers, no lookbehind needed):
+// local@domain.tld where the TLD is at least two letters.
+const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+// Stricter per-part rules enforced in validateField() below.
+const USERNAME_RE = /^[a-zA-Z0-9_]+$/;
 
 export default function Register() {
   const { register } = useAuth();
@@ -32,54 +37,134 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
+  const validateField = (name, value) => {
+    switch (name) {
+      case "first_name": {
+        const val = value.trim();
+        if (!val) return "First name is required.";
+        if (val.length < 2 || val.length > 50) return "First name must be between 2 and 50 characters.";
+        if (!NAME_RE.test(val)) return "First name can only contain letters, spaces, and hyphens.";
+        return "";
+      }
+      case "last_name": {
+        const val = value.trim();
+        if (!val) return "Last name is required.";
+        if (val.length < 2 || val.length > 50) return "Last name must be between 2 and 50 characters.";
+        if (!NAME_RE.test(val)) return "Last name can only contain letters, spaces, and hyphens.";
+        return "";
+      }
+      case "username": {
+        const val = value.trim();
+        if (!val) return "Username is required.";
+        if (val.length < 3 || val.length > 30) return "Username must be between 3 and 30 characters.";
+        if (!USERNAME_RE.test(val)) return "Username can only contain letters, numbers, and underscores.";
+        return "";
+      }
+      case "email": {
+        const val = value.trim();
+        if (!val) return "Email is required.";
+        if (val.length > 50) return "Email must not exceed 50 characters.";
+        if (val.length < 6) return "Enter a valid email address (e.g. name@example.com).";
+        if (!val.includes("@")) return "Email must include '@' (e.g. name@example.com).";
+
+        const parts = val.split("@");
+        if (parts.length > 2) return "Email cannot contain multiple '@' symbols.";
+        const local = parts[0];
+        const domain = parts[1];
+
+        if (!local) return "Email must have a prefix before '@' (e.g. name@example.com).";
+        if (local.length > 64) return "Email prefix is too long (max 64 characters).";
+        if (/[._%+-]{2,}/.test(local)) return "Email prefix cannot contain consecutive special characters.";
+        if (local.startsWith(".") || local.endsWith(".")) return "Email prefix cannot start or end with a dot.";
+
+        if (!domain) return "Email must have a domain after '@' (e.g. name@example.com).";
+        if (!domain.includes(".")) return "Email must include a domain with a dot (e.g. .com).";
+        if (domain.startsWith("-") || domain.endsWith("-")) return "Email domain cannot start or end with a hyphen.";
+        if (domain.startsWith(".") || domain.endsWith(".")) return "Email domain cannot start or end with a dot.";
+        if (/\.\./.test(domain)) return "Email domain cannot contain consecutive dots.";
+
+        const domainParts = domain.split(".");
+        for (const label of domainParts) {
+          if (!label) return "Email domain contains an empty label.";
+          if (label.startsWith("-") || label.endsWith("-")) return "Email domain labels cannot start or end with a hyphen.";
+          if (!/^[a-zA-Z0-9-]+$/.test(label)) return "Email domain can only contain letters, digits, and hyphens.";
+        }
+
+        const tld = domainParts[domainParts.length - 1];
+        if (!tld || tld.length < 2) return "Email domain must end with a valid extension (e.g. .com).";
+        if (!/^[a-zA-Z]+$/.test(tld)) return "Email extension (e.g. .com) can only contain letters.";
+
+        if (!EMAIL_RE.test(val)) return "Enter a valid email address (e.g. name@example.com).";
+        return "";
+      }
+      case "phone": {
+        const digits = value.replace(/\D/g, "");
+        if (!value.trim()) return "Phone number is required.";
+        if (digits.length < 10 || digits.length > 13) return "Enter a valid phone number (10–13 digits).";
+        return "";
+      }
+      case "address": {
+        const val = value.trim();
+        if (!val) return "Address is required.";
+        if (val.length < 5 || val.length > 500) return "Address must be between 5 and 500 characters.";
+        if (!/[a-zA-Z0-9]/.test(val)) return "Please enter a valid street address.";
+        return "";
+      }
+      case "password": {
+        if (!value) return "Password is required.";
+        if (value.length < 8 || value.length > 128) return "Password must be between 8 and 128 characters.";
+        return "";
+      }
+      case "confirm_password": {
+        if (!value) return "Please confirm your password.";
+        if (formData.password && value !== formData.password) return "Passwords do not match.";
+        return "";
+      }
+      default:
+        return "";
+    }
+  };
+
   const validate = () => {
     const next = {};
-    const { first_name, last_name, username, email, phone, address, password, confirm_password } = formData;
-
-    if (!first_name.trim()) next.first_name = "First name is required.";
-    if (!last_name.trim()) next.last_name = "Last name is required.";
-    if (!username.trim()) {
-      next.username = "Username is required.";
-    } else if (username.trim().length < 3) {
-      next.username = "Username must be at least 3 characters.";
-    }
-
-    if (!email.trim()) {
-      next.email = "Email is required.";
-    } else if (!EMAIL_RE.test(email.trim())) {
-      next.email = "Enter a valid email address.";
-    }
-
-    const digits = phone.replace(/\D/g, "");
-    if (!phone.trim()) {
-      next.phone = "Phone number is required.";
-    } else if (digits.length < 10 || digits.length > 15) {
-      next.phone = "Enter a valid phone number (10–15 digits).";
-    }
-
-    if (!address.trim()) next.address = "Address is required.";
-
-    if (!password) {
-      next.password = "Password is required.";
-    } else if (password.length < 8) {
-      next.password = "Password must be at least 8 characters.";
-    }
-
-    if (!confirm_password) {
-      next.confirm_password = "Please confirm your password.";
-    } else if (password !== confirm_password) {
-      next.confirm_password = "Passwords do not match.";
-    }
-
+    Object.keys(formData).forEach((key) => {
+      if (key === "role") return;
+      const fieldError = validateField(key, formData[key]);
+      if (fieldError) {
+        next[key] = fieldError;
+      }
+    });
     return next;
   };
 
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const fieldError = validateField(name, value);
+    setErrors((prev) => ({
+      ...prev,
+      [name]: fieldError,
+    }));
+  };
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "phone") {
+      // Keep digits only, max 13 digits
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 13);
+      setFormData({
+        ...formData,
+        phone: digitsOnly,
+      });
+      if (errors.phone) setErrors({ ...errors, phone: "" });
+      return;
+    }
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
-    if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: "" });
+    if (errors[name]) setErrors({ ...errors, [name]: "" });
   };
 
   const handleSubmit = async (e) => {
@@ -99,6 +184,23 @@ export default function Register() {
       await register(formData);
       navigate("/login", { state: { registered: true } });
     } catch (err) {
+      if (err.data && typeof err.data === "object" && !Array.isArray(err.data)) {
+        const backendFieldErrors = {};
+        Object.entries(err.data).forEach(([key, val]) => {
+          if (Array.isArray(val)) {
+            backendFieldErrors[key] = val.join(" ");
+          } else if (typeof val === "string") {
+            backendFieldErrors[key] = val;
+          }
+        });
+        if (Object.keys(backendFieldErrors).length > 0) {
+          setErrors((prev) => ({ ...prev, ...backendFieldErrors }));
+          if (backendFieldErrors.detail) {
+            setError(backendFieldErrors.detail);
+          }
+          return;
+        }
+      }
       setError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
@@ -149,13 +251,14 @@ export default function Register() {
             )}
 
             <form
+              noValidate
               onSubmit={handleSubmit}
               className="mt-8 space-y-5"
             >
               {/* Role selector */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
-                  I want to register as
+                  I want to register as <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   {ROLE_OPTIONS.map((opt) => (
@@ -183,111 +286,150 @@ export default function Register() {
               <div className="grid gap-5 md:grid-cols-2">
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">First Name</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     name="first_name"
-                    className="input-field"
+                    maxLength={50}
+                    className={`input-field ${errors.first_name ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="John"
                     value={formData.first_name}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                   />
                   {errors.first_name && (
-                    <p className="mt-1 text-xs text-red-600">{errors.first_name}</p>
+                    <p className="mt-1 text-xs font-medium text-red-600">{errors.first_name}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Last Name</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     name="last_name"
-                    className="input-field"
+                    maxLength={50}
+                    className={`input-field ${errors.last_name ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="Doe"
                     value={formData.last_name}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                   />
                   {errors.last_name && (
-                    <p className="mt-1 text-xs text-red-600">{errors.last_name}</p>
+                    <p className="mt-1 text-xs font-medium text-red-600">{errors.last_name}</p>
                   )}
                 </div>
 
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Username</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Username <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   name="username"
-                  className="input-field"
+                  maxLength={30}
+                  className={`input-field ${errors.username ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="johndoe"
                   value={formData.username}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                 />
                 {errors.username && (
-                  <p className="mt-1 text-xs text-red-600">{errors.username}</p>
+                  <p className="mt-1 text-xs font-medium text-red-600">{errors.username}</p>
                 )}
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Email <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   name="email"
-                  className="input-field"
+                  maxLength={50}
+                  className={`input-field ${errors.email ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="john@example.com"
                   value={formData.email}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                 />
                 {errors.email && (
-                  <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                  <p className="mt-1 text-xs font-medium text-red-600">{errors.email}</p>
                 )}
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Phone Number</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="text"
+                  type="tel"
                   name="phone"
-                  className="input-field"
-                  placeholder="+1 234 567 8901"
+                  inputMode="numeric"
+                  maxLength={13}
+                  className={`input-field ${errors.phone ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="e.g. 9876543210 (10–13 digits)"
                   value={formData.phone}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={(e) => {
+                    if (
+                      !/[0-9]/.test(e.key) &&
+                      !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) &&
+                      !e.ctrlKey &&
+                      !e.metaKey
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
                 {errors.phone && (
-                  <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+                  <p className="mt-1 text-xs font-medium text-red-600">{errors.phone}</p>
                 )}
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Address</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Address <span className="text-red-500">*</span>
+                </label>
                 <textarea
                   rows="3"
                   name="address"
-                  className="input-field resize-none"
+                  maxLength={500}
+                  className={`input-field resize-none ${errors.address ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="Enter your full address"
                   value={formData.address}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                 />
                 {errors.address && (
-                  <p className="mt-1 text-xs text-red-600">{errors.address}</p>
+                  <p className="mt-1 text-xs font-medium text-red-600">{errors.address}</p>
                 )}
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Password <span className="text-red-500">*</span>
+                  </label>
 
                   <div className="relative">
 
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
-                      className="input-field"
+                      maxLength={128}
+                      className={`input-field ${errors.password ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                       placeholder="••••••••"
                       value={formData.password}
                       onChange={handleChange}
+                      onBlur={handleBlur}
                     />
 
                     <button
@@ -300,22 +442,26 @@ export default function Register() {
 
                   </div>
                   {errors.password && (
-                    <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+                    <p className="mt-1 text-xs font-medium text-red-600">{errors.password}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Confirm Password</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Confirm Password <span className="text-red-500">*</span>
+                  </label>
 
                   <div className="relative">
 
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       name="confirm_password"
-                      className="input-field"
+                      maxLength={128}
+                      className={`input-field ${errors.confirm_password ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                       placeholder="••••••••"
                       value={formData.confirm_password}
                       onChange={handleChange}
+                      onBlur={handleBlur}
                     />
 
                     <button
@@ -330,7 +476,7 @@ export default function Register() {
 
                   </div>
                   {errors.confirm_password && (
-                    <p className="mt-1 text-xs text-red-600">{errors.confirm_password}</p>
+                    <p className="mt-1 text-xs font-medium text-red-600">{errors.confirm_password}</p>
                   )}
                 </div>
 

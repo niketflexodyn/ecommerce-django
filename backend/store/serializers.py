@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 # pyrefly: ignore [missing-import]
 from .models import Category, Product, Cart, CartItem, Order, OrderItem, Rating, VariantAttribute, ProductVariant, Wishlist, User, Attribute, AttributeValue, ProductAttribute
@@ -248,6 +249,68 @@ class RegisterSerializer(serializers.ModelSerializer):
             "role",
         )
 
+    def validate_first_name(self, value):
+        val = value.strip()
+        if not val:
+            raise serializers.ValidationError("First name is required.")
+        if len(val) < 2 or len(val) > 50:
+            raise serializers.ValidationError("First name must be between 2 and 50 characters.")
+        if not re.match(r"^[a-zA-Z\s'-]+$", val):
+            raise serializers.ValidationError("First name can only contain letters, spaces, and hyphens.")
+        return val
+
+    def validate_last_name(self, value):
+        val = value.strip()
+        if not val:
+            raise serializers.ValidationError("Last name is required.")
+        if len(val) < 2 or len(val) > 50:
+            raise serializers.ValidationError("Last name must be between 2 and 50 characters.")
+        if not re.match(r"^[a-zA-Z\s'-]+$", val):
+            raise serializers.ValidationError("Last name can only contain letters, spaces, and hyphens.")
+        return val
+
+    def validate_username(self, value):
+        val = value.strip()
+        if not val:
+            raise serializers.ValidationError("Username is required.")
+        if len(val) < 3 or len(val) > 30:
+            raise serializers.ValidationError("Username must be between 3 and 30 characters.")
+        if not re.match(r"^[a-zA-Z0-9_]+$", val):
+            raise serializers.ValidationError("Username can only contain letters, numbers, and underscores.")
+        if User.objects.filter(username__iexact=val).exists():
+            raise serializers.ValidationError("A user with this username already exists.")
+        return val
+
+    def validate_email(self, value):
+        val = value.strip()
+        if not val:
+            raise serializers.ValidationError("Email is required.")
+        if len(val) > 100:
+            raise serializers.ValidationError("Email must not exceed 100 characters.")
+        if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", val):
+            raise serializers.ValidationError("Enter a valid email address.")
+        if User.objects.filter(email__iexact=val).exists():
+            raise serializers.ValidationError("A user with this email address already exists.")
+        return val
+
+    def validate_phone(self, value):
+        digits = re.sub(r"\D", "", value or "")
+        if not digits:
+            raise serializers.ValidationError("Phone number is required.")
+        if len(digits) < 10 or len(digits) > 13:
+            raise serializers.ValidationError("Phone number must be between 10 and 13 digits.")
+        return digits
+
+    def validate_address(self, value):
+        val = (value or "").strip()
+        if not val:
+            raise serializers.ValidationError("Address is required.")
+        if len(val) < 5 or len(val) > 500:
+            raise serializers.ValidationError("Address must be between 5 and 500 characters.")
+        if not re.search(r"[a-zA-Z0-9]", val):
+            raise serializers.ValidationError("Please enter a valid street address.")
+        return val
+
     def validate(self, attrs):
 
         if attrs["password"] != attrs["confirm_password"]:
@@ -294,6 +357,63 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "account_status",
         )
         read_only_fields = ("id", "username", "role", "is_staff", "account_status")
+
+    def validate_first_name(self, value):
+        val = (value or "").strip()
+        if val:
+            if len(val) < 2 or len(val) > 50:
+                raise serializers.ValidationError("First name must be between 2 and 50 characters.")
+            if not re.match(r"^[a-zA-Z\s'-]+$", val):
+                raise serializers.ValidationError("First name can only contain letters, spaces, and hyphens.")
+        return val
+
+    def validate_last_name(self, value):
+        val = (value or "").strip()
+        if val:
+            if len(val) < 2 or len(val) > 50:
+                raise serializers.ValidationError("Last name must be between 2 and 50 characters.")
+            if not re.match(r"^[a-zA-Z\s'-]+$", val):
+                raise serializers.ValidationError("Last name can only contain letters, spaces, and hyphens.")
+        return val
+
+    def validate_email(self, value):
+        val = (value or "").strip()
+        if not val:
+            raise serializers.ValidationError("Email is required.")
+        if len(val) > 100:
+            raise serializers.ValidationError("Email must not exceed 100 characters.")
+        if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", val):
+            raise serializers.ValidationError("Enter a valid email address.")
+        user_qs = User.objects.filter(email__iexact=val)
+        if self.instance:
+            user_qs = user_qs.exclude(pk=self.instance.pk)
+        if user_qs.exists():
+            raise serializers.ValidationError("This email address is already in use.")
+        return val
+
+    def validate_phone(self, value):
+        val = (value or "").strip()
+        if val:
+            digits = re.sub(r"\D", "", val)
+            if len(digits) < 10 or len(digits) > 13:
+                raise serializers.ValidationError("Phone number must be between 10 and 13 digits.")
+            return digits
+        return val
+
+    def validate_address(self, value):
+        val = (value or "").strip()
+        if val:
+            if len(val) < 5 or len(val) > 500:
+                raise serializers.ValidationError("Address must be between 5 and 500 characters.")
+            if not re.search(r"[a-zA-Z0-9]", val):
+                raise serializers.ValidationError("Please enter a valid street address.")
+        return val
+
+    def validate_location(self, value):
+        val = (value or "").strip()
+        if val and len(val) > 200:
+            raise serializers.ValidationError("Location must not exceed 200 characters.")
+        return val
 
 
 class AdminAccountSerializer(serializers.ModelSerializer):
@@ -350,6 +470,7 @@ class OrderListSerializer(serializers.ModelSerializer):
             'id', 'order_number', 'username', 'email', 'created_at', 'total_amount',
             'items_count', 'status',
             'estimated_delivery', 'shipping_eta', 'dispatch_eta', 'out_for_delivery_eta',
+
         ]
 
     def get_items_count(self, obj):

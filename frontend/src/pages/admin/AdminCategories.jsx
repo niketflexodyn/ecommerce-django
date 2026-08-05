@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
+import { FiEdit2, FiTrash2, FiSearch, FiX } from 'react-icons/fi';
 import { adminCategoryApi } from '../../utils/api';
 import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
@@ -8,13 +9,20 @@ export default function AdminCategories() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editCategory, setEditCategory] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [deleteInfo, setDeleteInfo] = useState(null);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [page,setPage]=useState(1);
+  const [pageSize,setPageSize]=useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+
+  
 
   const [form, setForm] = useState({ name: '', slug: '' });
 
@@ -29,6 +37,21 @@ export default function AdminCategories() {
     'Sports & Outdoors',
     'Books',
   ];
+ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const currentPage = Math.min(page, totalPages);
+
+  const pageNumbers = (() => {
+    const pages = [];
+    const span = 1;
+    const start = Math.max(1, currentPage - span);
+    const end = Math.min(totalPages, currentPage + span);
+    if (start > 1) pages.push(1);
+    if (start > 2) pages.push('…');
+    for (let p = start; p <= end; p++) pages.push(p);
+    if (end < totalPages - 1) pages.push('…');
+    if (end < totalPages) pages.push(totalPages);
+    return pages;
+  })();
 
   const fetchCategories = () => {
     adminCategoryApi
@@ -46,6 +69,7 @@ export default function AdminCategories() {
     setEditCategory(null);
     setForm({ name: '', slug: '' });
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   };
 
@@ -53,28 +77,78 @@ export default function AdminCategories() {
     setEditCategory(cat);
     setForm({ name: cat.name, slug: cat.slug });
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
+  };
+
+  const validateForm = () => {
+    const nextErrors = {};
+
+    if (!form.name || !form.name.trim()) {
+      nextErrors.name = 'Category name is required.';
+    } else if (form.name.trim().length < 2) {
+      nextErrors.name = 'Category name must be at least 2 characters.';
+    } else if (form.name.trim().length > 100) {
+      nextErrors.name = 'Category name must not exceed 100 characters.';
+    }
+
+    if (form.slug && form.slug.trim()) {
+      if (form.slug.trim().length > 100) {
+        nextErrors.slug = 'Slug must not exceed 100 characters.';
+      } else if (!/^[a-z0-9-_]+$/i.test(form.slug.trim())) {
+        nextErrors.slug = 'Slug may only contain letters, numbers, underscores, or hyphens.';
+      }
+    }
+
+    return nextErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
+
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+
     setSaving(true);
 
     try {
+      const payload = {
+        name: form.name.trim(),
+        slug: form.slug ? form.slug.trim() : undefined,
+      };
+
       if (editCategory) {
-        await adminCategoryApi.update(editCategory.id, form);
+        await adminCategoryApi.update(editCategory.id, payload);
       } else {
-        await adminCategoryApi.create(form);
+        await adminCategoryApi.create(payload);
       }
       setModalOpen(false);
       fetchCategories();
     } catch (err) {
       const data = err.data || {};
-      const msg = Object.entries(data)
-        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
-        .join(' | ');
-      setFormError(msg || 'Failed to save category');
+      if (typeof data === 'object' && !Array.isArray(data)) {
+        const backendFieldErrors = {};
+        Object.entries(data).forEach(([key, val]) => {
+          if (Array.isArray(val)) {
+            backendFieldErrors[key] = val.join(' ');
+          } else if (typeof val === 'string') {
+            backendFieldErrors[key] = val;
+          }
+        });
+        if (Object.keys(backendFieldErrors).length > 0) {
+          setFieldErrors((prev) => ({ ...prev, ...backendFieldErrors }));
+          if (backendFieldErrors.detail || backendFieldErrors.non_field_errors) {
+            setFormError(backendFieldErrors.detail || backendFieldErrors.non_field_errors);
+          }
+          return;
+        }
+      }
+      setFormError(err.message || 'Failed to save category');
     } finally {
       setSaving(false);
     }
@@ -118,6 +192,19 @@ export default function AdminCategories() {
       setSeeding(false);
     }
   };
+
+  const filteredCategories = categories.filter((cat) => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase().trim();
+    const name = (cat.name || '').toLowerCase();
+    const slug = (cat.slug || '').toLowerCase();
+    return name.includes(term) || slug.includes(term);
+  });
+  const paginatedCategories = filteredCategories.slice(
+  (currentPage - 1) * pageSize,
+  currentPage * pageSize
+);
+
 
   if (loading) {
     return (
@@ -164,8 +251,38 @@ export default function AdminCategories() {
 
       {error && <p className="mt-4 text-red-600">{error}</p>}
 
+      {/* Search Bar */}
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1 max-w-md">
+          <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search categories by name or slug..."
+            className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600 shadow-sm"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-100 transition-colors"
+              title="Clear search"
+            >
+              <FiX className="size-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Counter Badge */}
+        <div className="text-xs font-medium text-slate-500">
+          Showing <span className="font-semibold text-slate-800">{filteredCategories.length}</span> of{' '}
+          <span className="font-semibold text-slate-800">{categories.length}</span> categories
+        </div>
+      </div>
+
       {/* Table */}
-      <div className="mt-6 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/80">
+      <div className="mt-4 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/80">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-slate-100 bg-slate-50/50">
             <tr>
@@ -176,27 +293,50 @@ export default function AdminCategories() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {categories.map((cat) => (
+            {filteredCategories.map((cat) => (
               <tr key={cat.id} className="hover:bg-slate-50/50">
                 <td className="px-4 py-3 font-medium text-plum-950">{cat.name}</td>
                 <td className="px-4 py-3 text-slate-500 font-mono text-xs">{cat.slug}</td>
                 <td className="px-4 py-3 text-slate-700">{cat.product_count ?? 0}</td>
                 <td className="px-4 py-3 text-right">
-                  <button
-                    onClick={() => openEdit(cat)}
-                    className="mr-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => confirmDelete(cat)}
-                    className="rounded-md px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex items-center justify-end gap-1.5">
+                    <button
+                      onClick={() => openEdit(cat)}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                      title="Edit Category"
+                    >
+                      <FiEdit2 className="size-3.5" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => confirmDelete(cat)}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                      title="Delete Category"
+                    >
+                      <FiTrash2 className="size-3.5" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
+            {filteredCategories.length === 0 && categories.length > 0 && (
+              <tr>
+                <td colSpan={4} className="px-4 py-12 text-center text-slate-500">
+                  <FiSearch className="mx-auto size-8 text-slate-300 mb-2" />
+                  <p className="font-medium text-slate-800">No categories found matching "{searchTerm}"</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Try checking for typos or clear your search query.
+                  </p>
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+                  >
+                    Clear search
+                  </button>
+                </td>
+              </tr>
+            )}
             {categories.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-12 text-center text-slate-400">
@@ -207,6 +347,83 @@ export default function AdminCategories() {
           </tbody>
         </table>
       </div>
+      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-1">
+              {/* Showing Range & Page Size Selector */}
+              <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                <div>
+                  Showing{' '}
+                  <span className="font-semibold text-slate-900">
+                    {totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+                  </span>{' '}
+                  to{' '}
+                  <span className="font-semibold text-slate-900">
+                    {Math.min(currentPage * pageSize, totalCount)}
+                  </span>{' '}
+                  of <span className="font-semibold text-slate-900">{totalCount}</span> products
+                </div>
+      
+                
+              </div>
+      
+              {/* Page Navigation Buttons */}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  {/* <button
+                    onClick={() => setPage(1)}
+                    disabled={currentPage === 1}
+                    className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
+                    title="First Page"
+                  >
+                    <FiChevronsLeft className="size-4" />
+                  </button> */}
+                  <button
+                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
+                    title="Previous Page"
+                  >
+                    <FiChevronLeft className="size-4" />
+                  </button>
+      
+                  {pageNumbers.map((p, idx) =>
+                    p === '…' ? (
+                      <span key={`dots-${idx}`} className="px-1 text-xs text-slate-400">
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={`page-${p}`}
+                        onClick={() => setPage(p)}
+                        className={`inline-flex size-8 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
+                          p === currentPage
+                            ? 'bg-plum-950 text-white shadow-sm'
+                            : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+      
+                  <button
+                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
+                    title="Next Page"
+                  >
+                    <FiChevronRight className="size-4" />
+                  </button>
+                  {/* <button
+                    onClick={() => setPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
+                    title="Last Page"
+                  >
+                    <FiChevronsRight className="size-4" />
+                  </button> */}
+                </div>
+              )}
+            </div>
 
       {/* Create / Edit Modal */}
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)} className="relative z-50">
@@ -221,28 +438,51 @@ export default function AdminCategories() {
               <div className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{formError}</div>
             )}
 
-            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <form noValidate onSubmit={handleSubmit} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  required
+                  maxLength={100}
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
-                  placeholder="Category name"
+                  onChange={(e) => {
+                    setForm({ ...form, name: e.target.value });
+                    if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: '' }));
+                  }}
+                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                    fieldErrors.name
+                      ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                      : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                  }`}
+                  placeholder="Category name (max 100 characters)"
                 />
+                {fieldErrors.name && (
+                  <p className="mt-1 text-xs font-medium text-red-600">{fieldErrors.name}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Slug</label>
                 <input
                   type="text"
+                  maxLength={100}
                   value={form.slug}
-                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
+                  onChange={(e) => {
+                    setForm({ ...form, slug: e.target.value });
+                    if (fieldErrors.slug) setFieldErrors((prev) => ({ ...prev, slug: '' }));
+                  }}
+                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                    fieldErrors.slug
+                      ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                      : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                  }`}
                   placeholder="Auto-generated from name if left empty"
                 />
+                {fieldErrors.slug && (
+                  <p className="mt-1 text-xs font-medium text-red-600">{fieldErrors.slug}</p>
+                )}
                 <p className="mt-1 text-xs text-slate-400">Leave empty to auto-generate from the name.</p>
               </div>
 

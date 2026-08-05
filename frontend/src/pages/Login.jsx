@@ -25,8 +25,16 @@ export default function Login() {
 
   const validate = () => {
     const next = {};
-    if (!formData.username.trim()) next.username = "Username is required.";
-    if (!formData.password) next.password = "Password is required.";
+    if (!formData.username.trim()) {
+      next.username = "Username is required.";
+    } else if (formData.username.trim().length > 50) {
+      next.username = "Username must not exceed 50 characters.";
+    }
+    if (!formData.password) {
+      next.password = "Password is required.";
+    } else if (formData.password.length > 128) {
+      next.password = "Password must not exceed 128 characters.";
+    }
     return next;
   };
 
@@ -63,7 +71,8 @@ export default function Login() {
       ) {
         navigate("/dashboard");
       } else {
-        navigate("/");
+        const from = location.state?.from || "/";
+        navigate(from);
       }
   
     } else {
@@ -134,11 +143,14 @@ export default function Login() {
               className="mt-8 space-y-6"
             >
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Username</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Username <span className="text-red-500">*</span>
+                </label>
 
                 <input
                   type="text"
                   name="username"
+                  maxLength={50}
                   className="input-field"
                   placeholder="johndoe"
                   value={formData.username}
@@ -150,13 +162,16 @@ export default function Login() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Password <span className="text-red-500">*</span>
+                </label>
 
                 <div className="relative">
 
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
+                    maxLength={128}
                     className="input-field"
                     placeholder="••••••••"
                     value={formData.password}

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useCart } from "../context/CartContext";
 import axios from "axios";
 
+const NAME_RE = /^[a-zA-Z\s'-]+$/;
+
 export default function Checkout() {
   const BASE_URL = import.meta.env.VITE_DJANGO_URL;
 
@@ -15,6 +17,7 @@ export default function Checkout() {
     state: "",
     pincode: "",
   });
+  const [error, setError] = useState("");
 
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -22,13 +25,83 @@ export default function Checkout() {
   );
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    setError("");
+    if (name === "phone") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 13);
+      setShippingData({
+        ...shippingData,
+        phone: digitsOnly,
+      });
+      return;
+    }
+    if (name === "pincode") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+      setShippingData({
+        ...shippingData,
+        pincode: digitsOnly,
+      });
+      return;
+    }
     setShippingData({
       ...shippingData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
+  const validate = () => {
+    const { full_name, phone, address, city, state, pincode } = shippingData;
+    if (!full_name.trim()) {
+      return "Full name is required.";
+    }
+    if (full_name.trim().length < 2 || full_name.trim().length > 100) {
+      return "Full name must be between 2 and 100 characters.";
+    }
+    if (!NAME_RE.test(full_name.trim())) {
+      return "Full name can only contain letters, spaces, and hyphens.";
+    }
+
+    const digits = phone.replace(/\D/g, "");
+    if (!phone.trim()) {
+      return "Phone number is required.";
+    }
+    if (digits.length < 10 || digits.length > 13) {
+      return "Please enter a valid phone number (10–13 digits).";
+    }
+
+    if (!address.trim()) {
+      return "Address is required.";
+    }
+    if (address.trim().length < 5 || address.trim().length > 500) {
+      return "Address must be between 5 and 500 characters.";
+    }
+    if (!/[a-zA-Z0-9]/.test(address.trim())) {
+      return "Please enter a valid street address.";
+    }
+
+    if (city && city.trim() && !NAME_RE.test(city.trim())) {
+      return "City can only contain letters and spaces.";
+    }
+
+    if (state && state.trim() && !NAME_RE.test(state.trim())) {
+      return "State can only contain letters and spaces.";
+    }
+
+    if (pincode && pincode.trim() && (pincode.replace(/\D/g, "").length < 4 || pincode.replace(/\D/g, "").length > 10)) {
+      return "Please enter a valid pincode (4–10 digits).";
+    }
+
+    return "";
+  };
+
   const handlePayment = async () => {
+    setError("");
+    const err = validate();
+    if (err) {
+      setError(err);
+      return;
+    }
+
     try {
       const response = await axios.post(
         `${BASE_URL}/api/create-payment/`,
@@ -59,11 +132,18 @@ export default function Checkout() {
             Shipping Address
           </h2>
 
+          {error && (
+            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
           <div className="space-y-4">
 
             <input
               type="text"
               name="full_name"
+              maxLength={100}
               placeholder="Full Name"
               value={shippingData.full_name}
               onChange={handleChange}
@@ -71,17 +151,31 @@ export default function Checkout() {
             />
 
             <input
-              type="text"
+              type="tel"
               name="phone"
-              placeholder="Phone Number"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={13}
+              placeholder="Phone Number (max 13 digits)"
               value={shippingData.phone}
               onChange={handleChange}
+              onKeyDown={(e) => {
+                if (
+                  !/[0-9]/.test(e.key) &&
+                  !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) &&
+                  !e.ctrlKey &&
+                  !e.metaKey
+                ) {
+                  e.preventDefault();
+                }
+              }}
               className="w-full border rounded-lg p-3"
             />
 
             <textarea
               name="address"
-              placeholder="Address"
+              maxLength={500}
+              placeholder="Address (max 500 characters)"
               value={shippingData.address}
               onChange={handleChange}
               className="w-full border rounded-lg p-3"
@@ -90,6 +184,7 @@ export default function Checkout() {
             <input
               type="text"
               name="city"
+              maxLength={100}
               placeholder="City"
               value={shippingData.city}
               onChange={handleChange}
@@ -99,6 +194,7 @@ export default function Checkout() {
             <input
               type="text"
               name="state"
+              maxLength={100}
               placeholder="State"
               value={shippingData.state}
               onChange={handleChange}
@@ -106,11 +202,24 @@ export default function Checkout() {
             />
 
             <input
-              type="text"
+              type="tel"
               name="pincode"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={10}
               placeholder="Pincode"
               value={shippingData.pincode}
               onChange={handleChange}
+              onKeyDown={(e) => {
+                if (
+                  !/[0-9]/.test(e.key) &&
+                  !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) &&
+                  !e.ctrlKey &&
+                  !e.metaKey
+                ) {
+                  e.preventDefault();
+                }
+              }}
               className="w-full border rounded-lg p-3"
             />
 

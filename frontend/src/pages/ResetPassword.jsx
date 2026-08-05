@@ -14,7 +14,7 @@ export default function ResetPassword() {
 
   function validate(pw, cpw) {
     if (!pw) return "Password is required.";
-    if (pw.length < 8) return "Password must be at least 8 characters.";
+    if (pw.length < 8 || pw.length > 128) return "Password must be between 8 and 128 characters.";
     if (!cpw) return "Please confirm your password.";
     if (pw !== cpw) return "Passwords do not match.";
     return "";
@@ -79,11 +79,12 @@ export default function ResetPassword() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-6">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
-                New password
+                New password <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  maxLength={128}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -104,10 +105,11 @@ export default function ResetPassword() {
 
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
-                Confirm password
+                Confirm password <span className="text-red-500">*</span>
               </label>
               <input
                 type={showPassword ? "text" : "password"}
+                maxLength={128}
                 value={confirm}
                 onChange={(e) => {
                   setConfirm(e.target.value);

@@ -271,6 +271,7 @@ export default function ProductList({ hideBanner = false }) {
               </svg>
               <input
                 type="text"
+                maxLength={100}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search for anything..."

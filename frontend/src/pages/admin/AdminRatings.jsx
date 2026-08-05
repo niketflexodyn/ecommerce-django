@@ -114,6 +114,7 @@ export default function AdminRatings() {
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <input
           type="text"
+          maxLength={100}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by product, customer, or score..."

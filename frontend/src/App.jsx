@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchProfile } from './features/auth/authThunk'
 import Navbar from './components/Navbar'
@@ -21,6 +21,7 @@ import Checkout from './pages/Checkout'
 import OrderSuccess from './pages/OrderSuccess'
 import OrderHistory from './pages/OrderHistory'
 import Profile from './pages/Profile'
+import PrivacyPolicy from './pages/PrivacyPolicy'
 import BackToTop from './components/BackToTop'
 import AdminRoute from './components/AdminRoute'
 import AdminLayout from './components/admin/AdminLayout'
@@ -41,12 +42,21 @@ export default function App() {
   const dispatch = useDispatch()
   const access = useSelector((s) => s.auth.tokens.access)
   const user = useSelector((s) => s.auth.user)
+  const location = useLocation()
 
-  // Bootstrap the logged-in user on load (and after login) by resolving the
-  // stored access token into a profile. Re-runs if the token changes.
+  // Scroll to top automatically when navigating between pages
   useEffect(() => {
-    if (access) dispatch(fetchProfile())
-  }, [dispatch, access])
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [location.pathname])
+
+  // Bootstrap the logged-in user on cold load by resolving the stored access
+  // token into a profile. Skipped right after login, since loginUser already
+  // populated `user` from the login response — re-fetching would be a redundant
+  // /api/profile/ call. Re-runs only when the token changes AND we don't yet
+  // have a user (e.g. page reload with a token in localStorage).
+  useEffect(() => {
+    if (access && !user) dispatch(fetchProfile())
+  }, [dispatch, access, user])
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -121,6 +131,11 @@ export default function App() {
                     path="/reset-password/:uid/:token"
                     element={<ResetPassword />}
                   />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
+                  <Route path="/terms" element={<PrivacyPolicy />} />
+                  <Route path="/refund-policy" element={<PrivacyPolicy />} />
+                  <Route path="/shipping-policy" element={<PrivacyPolicy />} />
                 </Routes>
                 <CartDrawer />
                   {/* <ScrollToTop /> */}

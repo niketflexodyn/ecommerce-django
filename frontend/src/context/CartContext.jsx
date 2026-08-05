@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 const CartContext = createContext()
@@ -7,6 +8,7 @@ const BASE_URL = import.meta.env.VITE_DJANGO_URL
 
 export const CartProvider = ({ children }) => {
   const { user, tokens } = useAuth()
+  const navigate = useNavigate()
   const [cartItems, setCartItems] = useState([])
   const [serverCartId, setServerCartId] = useState(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -56,6 +58,11 @@ export const CartProvider = ({ children }) => {
   }, [tokens?.access])
 
   const addToCart = async (product) => {
+    if (!user || !tokens?.access) {
+      navigate('/login', { state: { from: '/checkout' } })
+      return
+    }
+
     if (user && tokens?.access) {
       try {
         const res = await fetch(`${BASE_URL}/api/cart/add/`, {

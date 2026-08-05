@@ -26,7 +26,7 @@ logger = logging.getLogger("store")
 # pyrefly: ignore [missing-import]
 from .models import Product, Category, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute, ProductVariant, VariantAttribute
 # pyrefly: ignore [missing-import]
-from .pagination import ProductPagination
+from .pagination import ProductPagination, AdminProductPagination
 # pyrefly: ignore [missing-import]
 from .permissions import IsAdminOrSuperAdmin, IsSuperAdmin
 # pyrefly: ignore [missing-import]
@@ -574,9 +574,11 @@ def admin_products(request):
     category_id = request.query_params.get('category', '').strip()
     if category_id:
         products = products.filter(category_id=category_id)
-
-    serializer = ProductSerializer(products, many=True, context={'request': request})
-    return Response(serializer.data)
+    products = products.order_by('-created_at')
+    paginator = AdminProductPagination()    
+    page = paginator.paginate_queryset(products, request)
+    serializer = ProductSerializer(page, many=True, context={'request': request})
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(["GET"])

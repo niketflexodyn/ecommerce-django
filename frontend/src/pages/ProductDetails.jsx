@@ -91,6 +91,10 @@ export default function ProductDetails() {
 
   const handleAddToCart = () => {
     if (!product || adding) return
+    if (!user) {
+      navigate('/login', { state: { from: '/checkout' } })
+      return
+    }
     setAdding(true)
     addToCart(product)
     navigate('/cart')
@@ -165,7 +169,7 @@ export default function ProductDetails() {
       <div className="card overflow-hidden">
         <div className="grid md:grid-cols-2">
           <div
-            className="bg-slate-50 p-4 sm:p-6"
+            className="bg-white p-4 sm:p-6"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
           >
@@ -184,7 +188,7 @@ export default function ProductDetails() {
                         loading={i === 0 ? 'eager' : 'lazy'}
                         decoding="async"
                         alt={product.name}
-                        className="h-72 w-full shrink-0 object-cover sm:h-[38rem]"
+                        className="h-72 w-full shrink-0 object-contain sm:h-[38rem]"
                         draggable={false}
                       />
                     ))}

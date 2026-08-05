@@ -69,6 +69,7 @@ export default function AdminOrders() {
       <form onSubmit={handleSearch} className="mt-6 flex gap-3">
         <input
           type="text"
+          maxLength={100}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by customer name or email..."

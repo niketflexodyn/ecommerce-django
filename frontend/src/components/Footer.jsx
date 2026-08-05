@@ -38,11 +38,12 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gold-500">Account</h3>
+            <h3 className="text-sm font-semibold text-gold-500">Privacy & Policies</h3>
             <ul className="mt-3 space-y-2 text-sm text-white/70">
-              <li><Link to="/login" className="transition hover:text-gold-500 hover:translate-x-1 inline-block">Login</Link></li>
-              <li><Link to="/register" className="transition hover:text-gold-500 hover:translate-x-1 inline-block">Register</Link></li>
-              <li><Link to="/orders" className="transition hover:text-gold-500 hover:translate-x-1 inline-block">My Orders</Link></li>
+              <li><Link to="/privacy-policy" className="transition hover:text-gold-500 hover:translate-x-1 inline-block">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="transition hover:text-gold-500 hover:translate-x-1 inline-block">Terms & Conditions</Link></li>
+              <li><Link to="/refund-policy" className="transition hover:text-gold-500 hover:translate-x-1 inline-block">Refund & Returns</Link></li>
+              <li><Link to="/shipping-policy" className="transition hover:text-gold-500 hover:translate-x-1 inline-block">Shipping Policy</Link></li>
             </ul>
           </div>
 

@@ -69,12 +69,34 @@ export default function Checkout() {
   const grandTotal = total + shipping;
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'phone') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 13);
+      setForm({ ...form, phone: digitsOnly });
+      return;
+    }
+    setForm({ ...form, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const digits = form.phone.replace(/\D/g, '');
+    if (digits.length < 10 || digits.length > 13) {
+      setError('Please enter a valid phone number (10–13 digits).');
+      return;
+    }
+
+    if (form.address.trim().length < 5 || form.address.trim().length > 500) {
+      setError('Delivery address must be between 5 and 500 characters.');
+      return;
+    }
+    if (!/[a-zA-Z0-9]/.test(form.address.trim())) {
+      setError('Please enter a valid street address.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -220,27 +242,45 @@ export default function Checkout() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Phone Number *</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="tel"
                     name="phone"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={13}
                     required
                     value={form.phone}
                     onChange={handleChange}
-                    placeholder="Your phone number"
+                    onKeyDown={(e) => {
+                      if (
+                        !/[0-9]/.test(e.key) &&
+                        !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) &&
+                        !e.ctrlKey &&
+                        !e.metaKey
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="Your phone number (max 13 digits)"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Delivery Address *</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Delivery Address <span className="text-red-500">*</span>
+                  </label>
                   <textarea
                     name="address"
+                    maxLength={500}
                     required
                     value={form.address}
                     onChange={handleChange}
                     rows={3}
-                    placeholder="Full delivery address"
+                    placeholder="Full delivery address (max 500 characters)"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
                   />
                 </div>

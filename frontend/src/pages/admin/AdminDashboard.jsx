@@ -102,9 +102,9 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {stats.recent_orders.map((order) => (
+                {stats.recent_orders.map((order,index) => (
                   <tr key={order.id} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3 font-medium text-plum-950">#{order.id}</td>
+                    <td className="px-4 py-3 font-medium text-plum-950">{index+1}</td>
                     <td className="px-4 py-3 text-slate-700">{order.username || order.email}</td>
                     <td className="px-4 py-3 text-slate-700">{order.items_count}</td>
                     <td className="px-4 py-3 font-medium text-plum-950">₹{Number(order.total_amount).toLocaleString()}</td>

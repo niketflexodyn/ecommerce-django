@@ -169,6 +169,7 @@ export default function AdminAdmins() {
         </div>
         <input
           type="text"
+          maxLength={100}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, username, email, phone..."
