@@ -10,7 +10,9 @@ export default function ProductCard({ product }) {
   
   const cartItem = cartItems.find((item) => item.id === product.id)
   const isWishlisted = isInWishlist(product.id)
-  const imageUrl = getProductImageUrl(product.image)
+  const fallbackImage = product.image || product.variants?.find((v) => v.image)?.image || product.images?.[0]
+  const imageUrl = getProductImageUrl(fallbackImage)
+  const displayPrice = (Number(product.price) > 0 ? product.price : product.variants?.[0]?.price) || product.price
 
   return (
     <article className="group card flex flex-col overflow-hidden border-t-2 border-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-gold-500">
@@ -78,7 +80,7 @@ export default function ProductCard({ product }) {
 
         <div className="mt-auto flex items-center justify-between pt-4">
           <p className="font-display text-lg font-bold tracking-tight text-plum-950">
-            {formatPrice(product.price)}
+            {formatPrice(displayPrice)}
           </p>
         </div>
 

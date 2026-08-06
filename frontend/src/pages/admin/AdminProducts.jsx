@@ -157,29 +157,29 @@ export default function AdminProducts() {
     ]);
   };
   // Update a variant field (e.g. price, stock, sku, image)
-const updateVariant = (index, field, value) => {
-  setVariants((prev) => {
-    const next = [...prev];
-    next[index] = { ...next[index], [field]: value };
-    return next;
-  });
-};
+  const updateVariant = (index, field, value) => {
+    setVariants((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
 
-// Update an attribute value for a variant (e.g. Size -> XL, Color -> Black)
-const updateVariantAttribute = (variantIndex, attributeId, valueId) => {
-  setVariants((prev) => {
-    const next = [...prev];
-    const attrs = { ...(next[variantIndex].attributes || {}) };
-    attrs[attributeId] = valueId;
-    next[variantIndex] = { ...next[variantIndex], attributes: attrs };
-    return next;
-  });
-};
+  // Update an attribute value for a variant (e.g. Size -> XL, Color -> Black)
+  const updateVariantAttribute = (variantIndex, attributeId, valueId) => {
+    setVariants((prev) => {
+      const next = [...prev];
+      const attrs = { ...(next[variantIndex].attributes || {}) };
+      attrs[attributeId] = valueId;
+      next[variantIndex] = { ...next[variantIndex], attributes: attrs };
+      return next;
+    });
+  };
 
-// Remove a variant from the list
-const removeVariant = (index) => {
-  setVariants((prev) => prev.filter((_, i) => i !== index));
-};
+  // Remove a variant from the list
+  const removeVariant = (index) => {
+    setVariants((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const resetGallery = () => {
     gallery.forEach((g) => {
@@ -203,7 +203,7 @@ const removeVariant = (index) => {
       out_for_delivery_days: '5',
       image: null,
     });
-        setVariants([]); // 👈 Add this so previous variants don't linger!
+    setVariants([]); // 👈 Add this so previous variants don't linger!
 
     setImagePreview(null);
     resetGallery();
@@ -240,27 +240,27 @@ const removeVariant = (index) => {
     setGallery((product.images || []).map((url) => ({ url: resolveImgUrl(url), existing: true })));
     setFormError('');
     setFieldErrors({});
-// If product has existing variants, load them:
-if (product.variants && product.variants.length > 0) {
-  setVariants(
-    product.variants.map((v) => {
-      const attrs = {};
-      v.attributes?.forEach((a) => {
-        attrs[a.attribute] = a.value;
-      });
-      return {
-        id: v.id,
-        sku: v.sku,
-        price: v.price,
-        stock: v.stock,
-        image: v.image,
-        attributes: attrs,
-      };
-    })
-  );
-} else {
-  setVariants([]);
-}
+    // If product has existing variants, load them:
+    if (product.variants && product.variants.length > 0) {
+      setVariants(
+        product.variants.map((v) => {
+          const attrs = {};
+          v.attributes?.forEach((a) => {
+            attrs[a.attribute] = a.value;
+          });
+          return {
+            id: v.id,
+            sku: v.sku,
+            price: v.price,
+            stock: v.stock,
+            image: v.image,
+            attributes: attrs,
+          };
+        })
+      );
+    } else {
+      setVariants([]);
+    }
 
     const initialAttrs = {};
     if (product.attributes) {
@@ -371,8 +371,68 @@ if (product.variants && product.variants.length > 0) {
     }
   };
 
+  // const validateForm = () => {
+  //   const nextErrors = {};
+
+  //   if (!form.name || !form.name.trim()) {
+  //     nextErrors.name = 'Product name is required.';
+  //   } else if (form.name.trim().length < 2) {
+  //     nextErrors.name = 'Product name must be at least 2 characters.';
+  //   } else if (form.name.trim().length > 200) {
+  //     nextErrors.name = 'Product name must not exceed 200 characters.';
+  //   }
+
+  //   if (!form.category) {
+  //     nextErrors.category = 'Please select a category.';
+  //   }
+
+  //   if (subCategory.length > 0 && !form.subCategory) {
+  //     nextErrors.subCategory = 'Please select a sub-category.';
+  //   }
+
+  //   if (form.price === '' || form.price === null || form.price === undefined || form.price.toString().trim() === '') {
+  //     nextErrors.price = 'Price is required.';
+  //   } else {
+  //     const p = Number(form.price);
+  //     if (isNaN(p) || p <= 0) {
+  //       nextErrors.price = 'Please enter a valid price greater than 0.';
+  //     } else if (p > 10000000) {
+  //       nextErrors.price = 'Price cannot exceed ₹10,000,000.';
+  //     }
+  //   }
+
+  //   if (form.description && form.description.trim().length > 2000) {
+  //     nextErrors.description = 'Description must not exceed 2000 characters.';
+  //   }
+
+  //   if (form.location && form.location.trim().length > 200) {
+  //     nextErrors.location = 'Location must not exceed 200 characters.';
+  //   }
+
+  //   const shipDays = Number(form.shipping_days);
+  //   if (form.shipping_days !== '' && (isNaN(shipDays) || shipDays < 0 || !Number.isInteger(shipDays) || shipDays > 100)) {
+  //     nextErrors.shipping_days = 'Shipping days must be a whole number (0–100).';
+  //   }
+
+  //   const dispDays = Number(form.dispatch_days);
+  //   if (form.dispatch_days !== '' && (isNaN(dispDays) || dispDays < 0 || !Number.isInteger(dispDays) || dispDays > 100)) {
+  //     nextErrors.dispatch_days = 'Dispatch days must be a whole number (0–100).';
+  //   }
+
+  //   const ofdDays = Number(form.out_for_delivery_days);
+  //   if (form.out_for_delivery_days !== '' && (isNaN(ofdDays) || ofdDays < 0 || !Number.isInteger(ofdDays) || ofdDays > 100)) {
+  //     nextErrors.out_for_delivery_days = 'Out for delivery days must be a whole number (0–100).';
+  //   }
+
+  //   if (!editProduct && !form.image) {
+  //     nextErrors.image = 'Cover image is required when creating a new product.';
+  //   }
+
+  //   return nextErrors;
+  // };
   const validateForm = () => {
     const nextErrors = {};
+    const hasVariants = variants.length > 0;
 
     if (!form.name || !form.name.trim()) {
       nextErrors.name = 'Product name is required.';
@@ -390,12 +450,24 @@ if (product.variants && product.variants.length > 0) {
       nextErrors.subCategory = 'Please select a sub-category.';
     }
 
-    if (form.price === '' || form.price === null || form.price === undefined || form.price.toString().trim() === '') {
-      nextErrors.price = 'Price is required.';
-    } else {
+    // Price is only mandatory at the product level if there are no variants.
+    // When variants exist, each variant supplies its own price.
+    if (!hasVariants) {
+      if (form.price === '' || form.price === null || form.price === undefined || form.price.toString().trim() === '') {
+        nextErrors.price = 'Price is required.';
+      } else {
+        const p = Number(form.price);
+        if (isNaN(p) || p <= 0) {
+          nextErrors.price = 'Please enter a valid price greater than 0.';
+        } else if (p > 10000000) {
+          nextErrors.price = 'Price cannot exceed ₹10,000,000.';
+        }
+      }
+    } else if (form.price !== '' && form.price !== null && form.price !== undefined) {
+      // If they did type a base price anyway, still validate it's sane.
       const p = Number(form.price);
-      if (isNaN(p) || p <= 0) {
-        nextErrors.price = 'Please enter a valid price greater than 0.';
+      if (isNaN(p) || p < 0) {
+        nextErrors.price = 'Please enter a valid price.';
       } else if (p > 10000000) {
         nextErrors.price = 'Price cannot exceed ₹10,000,000.';
       }
@@ -424,14 +496,19 @@ if (product.variants && product.variants.length > 0) {
       nextErrors.out_for_delivery_days = 'Out for delivery days must be a whole number (0–100).';
     }
 
-    if (!editProduct && !form.image) {
-      nextErrors.image = 'Cover image is required when creating a new product.';
+    // Extra: if variants exist, make sure each has its own price so nothing is left blank.
+    if (hasVariants) {
+      const missingVariantPrice = variants.some(
+        (v) => v.price === '' || v.price === null || v.price === undefined || isNaN(Number(v.price)) || Number(v.price) <= 0
+      );
+      if (missingVariantPrice) {
+        nextErrors.variants = 'Each variant needs a valid price.';
+      }
     }
 
     return nextErrors;
   };
-
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
 
@@ -445,10 +522,11 @@ if (product.variants && product.variants.length > 0) {
 
     try {
       const newImages = gallery.filter((g) => !g.existing).map((g) => g.file);
+      const firstVariantPrice = variants[0]?.price;
       const data = {
         name: form.name.trim(),
         description: form.description ? form.description.trim() : '',
-        price: form.price,
+        price: form.price || firstVariantPrice || '0.00',
         category: form.subCategory || form.category,
         subCategory: form.subCategory,
         location: form.location ? form.location.trim() : '',
@@ -802,8 +880,8 @@ if (product.variants && product.variants.length > 0) {
                   key={`page-${p}`}
                   onClick={() => setPage(p)}
                   className={`inline-flex size-8 items-center justify-center rounded-lg text-xs font-medium transition-colors ${p === currentPage
-                      ? 'bg-plum-950 text-white shadow-sm'
-                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                    ? 'bg-plum-950 text-white shadow-sm'
+                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                 >
                   {p}
@@ -858,8 +936,8 @@ if (product.variants && product.variants.length > 0) {
                     if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: '' }));
                   }}
                   className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.name
-                      ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
-                      : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                    ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                    : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
                     }`}
                   placeholder="Product name (max 200 characters)"
                 />
@@ -880,8 +958,8 @@ if (product.variants && product.variants.length > 0) {
                       if (fieldErrors.category) setFieldErrors((prev) => ({ ...prev, category: '' }));
                     }}
                     className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.category
-                        ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
-                        : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                      ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                      : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
                       }`}
                   >
                     <option value="">Select category</option>
@@ -907,8 +985,8 @@ if (product.variants && product.variants.length > 0) {
                       if (fieldErrors.subCategory) setFieldErrors((prev) => ({ ...prev, subCategory: '' }));
                     }}
                     className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.subCategory
-                        ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
-                        : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                      ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                      : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
                       }`}
                   >
                     <option value="">Select sub category</option>
@@ -1030,8 +1108,8 @@ if (product.variants && product.variants.length > 0) {
                   }}
                   rows={3}
                   className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.description
-                      ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
-                      : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                    ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                    : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
                     }`}
                   placeholder="Product description (max 2000 characters)"
                 />
@@ -1043,7 +1121,7 @@ if (product.variants && product.variants.length > 0) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Price (₹) <span className="text-red-500">*</span>
+                    Price (₹) {variants.length === 0 && <span className="text-red-500">*</span>}
                   </label>
                   <input
                     type="number"
@@ -1055,8 +1133,8 @@ if (product.variants && product.variants.length > 0) {
                       if (fieldErrors.price) setFieldErrors((prev) => ({ ...prev, price: '' }));
                     }}
                     className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.price
-                        ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
-                        : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                      ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                      : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
                       }`}
                     placeholder="0.00"
                   />
@@ -1076,8 +1154,8 @@ if (product.variants && product.variants.length > 0) {
                       if (fieldErrors.location) setFieldErrors((prev) => ({ ...prev, location: '' }));
                     }}
                     className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.location
-                        ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
-                        : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                      ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                      : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
                       }`}
                     placeholder="e.g. Ahmedabad, India"
                   />
@@ -1086,129 +1164,129 @@ if (product.variants && product.variants.length > 0) {
                   )}
                   <p className="mt-1 text-xs text-slate-400">Shown to customers on the product detail page.</p>
                 </div>
-               {/* Product Variants Section */}
-<div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-  <div className="flex items-center justify-between mb-3">
-    <div>
-      <h3 className="text-sm font-bold text-plum-950">Product Variants & Custom Pricing</h3>
-      <p className="text-xs text-slate-500">
-        Add custom price, stock, and photos for different sizes, colors, or options.
-      </p>
-    </div>
-    <button
-      type="button"
-      onClick={addVariant}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-plum-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-plum-900 transition-colors"
-    >
-      + Add Variant
-    </button>
-  </div>
+                {/* Product Variants Section */}
+                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-plum-950">Product Variants & Custom Pricing</h3>
+                      <p className="text-xs text-slate-500">
+                        Add custom price, stock, and photos for different sizes, colors, or options.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addVariant}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-plum-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-plum-900 transition-colors"
+                    >
+                      + Add Variant
+                    </button>
+                  </div>
 
-  {variants.length === 0 ? (
-    <p className="text-center py-4 text-xs text-slate-400 border border-dashed border-slate-300 rounded-lg">
-      No variants added yet. Click "+ Add Variant" to set custom prices and stock per option.
-    </p>
-  ) : (
-    <div className="space-y-3">
-      {variants.map((variant, index) => (
-        <div key={index} className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
-            <span className="text-xs font-bold text-slate-700">Variant #{index + 1}</span>
-            <button
-              type="button"
-              onClick={() => removeVariant(index)}
-              className="text-xs font-medium text-red-600 hover:text-red-700"
-            >
-              Remove
-            </button>
-          </div>
+                  {variants.length === 0 ? (
+                    <p className="text-center py-4 text-xs text-slate-400 border border-dashed border-slate-300 rounded-lg">
+                      No variants added yet. Click "+ Add Variant" to set custom prices and stock per option.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {variants.map((variant, index) => (
+                        <div key={index} className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs">
+                          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                            <span className="text-xs font-bold text-slate-700">Variant #{index + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(index)}
+                              className="text-xs font-medium text-red-600 hover:text-red-700"
+                            >
+                              Remove
+                            </button>
+                          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Dynamic Attribute Selectors (Size, Color, etc.) */}
-            {selectedSubcategoryDetails?.attributes?.map((attr) => (
-              <div key={attr.id}>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  {attr.name}
-                </label>
-                <select
-                  value={variant.attributes?.[attr.id] || ''}
-                  onChange={(e) => updateVariantAttribute(index, attr.id, e.target.value)}
-                  className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
-                >
-                  <option value="">Select {attr.name}</option>
-                  {attr.values?.map((val) => (
-                    <option key={val.id} value={val.id}>
-                      {val.value}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                            {/* Dynamic Attribute Selectors (Size, Color, etc.) */}
+                            {selectedSubcategoryDetails?.attributes?.map((attr) => (
+                              <div key={attr.id}>
+                                <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                                  {attr.name}
+                                </label>
+                                <select
+                                  value={variant.attributes?.[attr.id] || ''}
+                                  onChange={(e) => updateVariantAttribute(index, attr.id, e.target.value)}
+                                  className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
+                                >
+                                  <option value="">Select {attr.name}</option>
+                                  {attr.values?.map((val) => (
+                                    <option key={val.id} value={val.id}>
+                                      {val.value}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            ))}
 
-            <div>
-              <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                Variant Price (₹)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder={form.price || '0.00'}
-                value={variant.price}
-                onChange={(e) => updateVariant(index, 'price', e.target.value)}
-                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
-              />
-            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                                Variant Price (₹)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder={form.price || '0.00'}
+                                value={variant.price}
+                                onChange={(e) => updateVariant(index, 'price', e.target.value)}
+                                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
+                              />
+                            </div>
 
-            <div>
-              <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                Stock
-              </label>
-              <input
-                type="number"
-                placeholder="0"
-                value={variant.stock}
-                onChange={(e) => updateVariant(index, 'stock', e.target.value)}
-                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
-              />
-            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                                Stock
+                              </label>
+                              <input
+                                type="number"
+                                placeholder="0"
+                                value={variant.stock}
+                                onChange={(e) => updateVariant(index, 'stock', e.target.value)}
+                                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
+                              />
+                            </div>
 
-            <div>
-              <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                SKU
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. LUX-RED-XL"
-                value={variant.sku}
-                onChange={(e) => updateVariant(index, 'sku', e.target.value)}
-                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
-              />
-            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                                SKU
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="e.g. LUX-RED-XL"
+                                value={variant.sku}
+                                onChange={(e) => updateVariant(index, 'sku', e.target.value)}
+                                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
+                              />
+                            </div>
 
-            {/* Variant Image */}
-            <div className="sm:col-span-2">
-              <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                Variant Photo (Optional)
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    updateVariant(index, 'imageFile', file);
-                    updateVariant(index, 'imagePreview', URL.createObjectURL(file));
-                  }
-                }}
-                className="w-full text-xs text-slate-500 file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold hover:file:bg-slate-200"
-              />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
+                            {/* Variant Image */}
+                            <div className="sm:col-span-2">
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                                Variant Photo (Optional)
+                              </label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    updateVariant(index, 'imageFile', file);
+                                    updateVariant(index, 'imagePreview', URL.createObjectURL(file));
+                                  }
+                                }}
+                                className="w-full text-xs text-slate-500 file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold hover:file:bg-slate-200"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
               </div>
 
@@ -1227,8 +1305,8 @@ if (product.variants && product.variants.length > 0) {
                         if (fieldErrors.shipping_days) setFieldErrors((prev) => ({ ...prev, shipping_days: '' }));
                       }}
                       className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.shipping_days
-                          ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
-                          : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                        ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                        : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
                         }`}
                       placeholder="5"
                     />
@@ -1248,8 +1326,8 @@ if (product.variants && product.variants.length > 0) {
                         if (fieldErrors.dispatch_days) setFieldErrors((prev) => ({ ...prev, dispatch_days: '' }));
                       }}
                       className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.dispatch_days
-                          ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
-                          : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                        ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                        : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
                         }`}
                       placeholder="5"
                     />
@@ -1269,8 +1347,8 @@ if (product.variants && product.variants.length > 0) {
                         if (fieldErrors.out_for_delivery_days) setFieldErrors((prev) => ({ ...prev, out_for_delivery_days: '' }));
                       }}
                       className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.out_for_delivery_days
-                          ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
-                          : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
+                        ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
+                        : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
                         }`}
                       placeholder="5"
                     />
@@ -1284,7 +1362,7 @@ if (product.variants && product.variants.length > 0) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Cover image {!editProduct && <span className="text-red-500">*</span>}
+                    Cover image <span className="text-xs font-normal text-slate-400">(Optional)</span>
                   </label>
                   <input
                     ref={fileRef}

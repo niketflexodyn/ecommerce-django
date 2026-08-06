@@ -85,7 +85,7 @@ export default function App() {
           <Route path="categories" element={<AdminCategories />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="ratings" element={<AdminRatings />} />
-          <Route
+          <Route  
             path="admins"
             element={
               <SuperAdminRoute>

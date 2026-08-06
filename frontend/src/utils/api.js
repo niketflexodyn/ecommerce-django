@@ -38,11 +38,12 @@ async function refreshAccessToken() {
 
 async function request(endpoint, options = {}) {
   const { isFormData, _retry, ...rest } = options;
+  const isForm = isFormData || (typeof FormData !== 'undefined' && rest.body instanceof FormData);
   const config = {
     ...rest,
     headers: {
       ...getAuthHeaders(),
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(isForm ? {} : { 'Content-Type': 'application/json' }),
       ...rest.headers,
     },
   };
@@ -288,10 +289,12 @@ export const variantApi = {
   create: (productId, formData) => request(`/products/${productId}/variants/create/`, {
     method: 'POST',
     body: formData, // FormData with image, price, stock, sku, attributes
+    isFormData: true,
   }),
   update: (variantId, formData) => request(`/variants/${variantId}/update/`, {
     method: 'PUT',
     body: formData,
+    isFormData: true,
   }),
   delete: (variantId) => request(`/variants/${variantId}/delete/`, {
     method: 'DELETE',

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
@@ -28,6 +28,10 @@ export default function ProductDetails() {
   const [productRatings, setProductRatings] = useState([])
   const [myRatingScore, setMyRatingScore] = useState(null)
 
+  // Variant selection state
+  const [selectedAttributes, setSelectedAttributes] = useState({})
+  const [selectedVariantId, setSelectedVariantId] = useState(null)
+
   // Image carousel state
   const [current, setCurrent] = useState(0)
   const [paused, setPaused] = useState(false)
@@ -51,6 +55,75 @@ export default function ProductDetails() {
     fetchProduct()
   }, [id, BASE_URL])
 
+  // Group available attributes and their values across all active variants
+  const attributeOptions = useMemo(() => {
+    if (!product?.variants?.length) return {}
+    const options = {}
+    product.variants.forEach((variant) => {
+      if (!variant.is_active) return
+      variant.attributes?.forEach((attr) => {
+        if (!options[attr.attribute_name]) {
+          options[attr.attribute_name] = []
+        }
+        if (!options[attr.attribute_name].some((v) => v.name === attr.value_name)) {
+          options[attr.attribute_name].push({ id: attr.value, name: attr.value_name })
+        }
+      })
+    })
+    return options
+  }, [product])
+
+  // Auto-select initial variant and attributes on product load
+  useEffect(() => {
+    if (product?.variants?.length) {
+      const firstActive = product.variants.find((v) => v.is_active) || product.variants[0]
+      if (firstActive) {
+        setSelectedVariantId(firstActive.id)
+        if (firstActive.attributes?.length) {
+          const initial = {}
+          firstActive.attributes.forEach((attr) => {
+            if (attr.attribute_name && attr.value_name) {
+              initial[attr.attribute_name] = attr.value_name
+            }
+          })
+          setSelectedAttributes(initial)
+        }
+      }
+    }
+  }, [product])
+
+  // Find the matching variant based on currently selected attributes or selectedVariantId
+  const activeVariant = useMemo(() => {
+    if (!product?.variants?.length) return null
+
+    // 1. Check if an active variant matches selected attributes
+    if (Object.keys(selectedAttributes).length > 0) {
+      const match = product.variants.find((variant) => {
+        if (!variant.is_active) return false
+        return (
+          variant.attributes?.length > 0 &&
+          variant.attributes.every(
+            (attr) => selectedAttributes[attr.attribute_name] === attr.value_name
+          )
+        )
+      })
+      if (match) return match
+    }
+
+    // 2. Fallback to explicitly selectedVariantId
+    if (selectedVariantId) {
+      const match = product.variants.find((v) => v.id === selectedVariantId && v.is_active)
+      if (match) return match
+    }
+
+    // 3. Fallback to first active variant
+    return product.variants.find((v) => v.is_active) || product.variants[0] || null
+  }, [product, selectedAttributes, selectedVariantId])
+
+  // Dynamic price & stock based on active variant
+  const currentPrice = activeVariant?.price || product?.price
+  const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : false
+
   // Fetch product ratings
   useEffect(() => {
     ratingApi.forProduct(id).then(setProductRatings).catch(() => { })
@@ -68,16 +141,26 @@ export default function ProductDetails() {
     }).catch(() => { })
   }, [user, id])
 
-  // Build the image gallery: cover first, then any additional images.
-  // Guarded for the loading state (product is null then).
-  const gallery = product
-    ? [product.image, ...(product.images || [])].filter(Boolean).map(getProductImageUrl).filter(Boolean)
-    : []
+  // Build the image gallery: variant image first (if present), then product cover and extra images.
+  const gallery = useMemo(() => {
+    if (!product) return []
+    const images = []
+    if (activeVariant?.image) {
+      images.push(activeVariant.image)
+    }
+    if (product.image) {
+      images.push(product.image)
+    }
+    if (product.images?.length) {
+      images.push(...product.images)
+    }
+    return images.filter(Boolean).map(getProductImageUrl).filter(Boolean)
+  }, [product, activeVariant?.image])
 
-  // Reset to the first image when navigating to a different product.
+  // Reset to first image when variant changes or product changes
   useEffect(() => {
     setCurrent(0)
-  }, [id])
+  }, [id, activeVariant?.id])
 
   // Auto-advance the carousel every 3s when there's more than one image
   // and the customer isn't hovering over it.
@@ -90,13 +173,17 @@ export default function ProductDetails() {
   }, [gallery.length, paused])
 
   const handleAddToCart = () => {
-    if (!product || adding) return
+    if (!product || adding || isOutOfStock) return
     if (!user) {
       navigate('/login', { state: { from: '/checkout' } })
       return
     }
     setAdding(true)
-    addToCart(product)
+    addToCart({
+      ...product,
+      price: currentPrice,
+      variant: activeVariant,
+    })
     navigate('/cart')
   }
 
@@ -312,21 +399,127 @@ export default function ProductDetails() {
 
             <p className="mt-4 leading-relaxed text-slate-600">{product.description}</p>
 
-            {/* Price */}
+            {/* Price & SKU */}
             <div className="mt-6">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">Price</span>
-              <p className="font-display text-4xl font-bold tracking-tight text-plum-950">
-                {formatPrice(product.price)}
-              </p>
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <span className="text-xs font-medium uppercase tracking-wide text-slate-400">Price</span>
+                  <p className="font-display text-4xl font-bold tracking-tight text-plum-950">
+                    {formatPrice(currentPrice)}
+                  </p>
+                </div>
+                {activeVariant?.sku && (
+                  <span className="text-xs font-mono text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
+                    SKU: {activeVariant.sku}
+                  </span>
+                )}
+              </div>
+
+              {/* Stock indicator */}
+              {activeVariant && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs">
+                  {activeVariant.stock > 0 ? (
+                    <span className="inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full font-medium">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      In Stock ({activeVariant.stock} available)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full font-medium">
+                      <span className="h-2 w-2 rounded-full bg-rose-500"></span>
+                      Out of Stock
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Variant Selection */}
+            {product.variants?.length > 0 && (
+              <div className="mt-6 space-y-4 rounded-xl border border-slate-200/80 bg-slate-50/50 p-4">
+                {/* Mode 1: Attribute-based selectors (e.g. Storage, Color, RAM, Size) */}
+                {Object.keys(attributeOptions).length > 0 ? (
+                  Object.entries(attributeOptions).map(([attrName, values]) => (
+                    <div key={attrName}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                          {attrName}: <span className="font-semibold text-gold-600 normal-case">{selectedAttributes[attrName] || 'Select'}</span>
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {values.map((val) => {
+                          const isSelected = selectedAttributes[attrName] === val.name
+                          return (
+                            <button
+                              key={val.id || val.name}
+                              type="button"
+                              onClick={() => {
+                                setSelectedAttributes((prev) => {
+                                  const updated = { ...prev, [attrName]: val.name }
+                                  // Also sync selectedVariantId if matching variant found
+                                  const match = product.variants.find((v) =>
+                                    v.attributes?.every(
+                                      (a) => (a.attribute_name === attrName ? val.name : updated[a.attribute_name]) === a.value_name
+                                    )
+                                  )
+                                  if (match) setSelectedVariantId(match.id)
+                                  return updated
+                                })
+                              }}
+                              className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-all duration-150 ${
+                                isSelected
+                                  ? 'bg-plum-950 text-white border-plum-950 shadow-md ring-2 ring-gold-500/50'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:border-gold-500 hover:bg-gold-50/20'
+                              }`}
+                            >
+                              {val.name}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  /* Mode 2: Direct Variant options (e.g. S24 128GB, S24 256GB, SKU / options) */
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span  className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Select Variant / Edition:
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {product.variants.filter((v) => v.is_active).map((v, idx) => {
+                        const isSelected = activeVariant?.id === v.id
+                        return (
+                          <button
+                            key={v.id || idx}
+                            type="button"
+                            onClick={() => setSelectedVariantId(v.id)}
+                            className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-all duration-150 flex items-center gap-2 ${
+                              isSelected
+                                ? 'bg-plum-950 text-white border-plum-950 shadow-md ring-2 ring-gold-500/50'
+                                : 'bg-white text-slate-700 border-slate-200 hover:border-gold-500 hover:bg-gold-50/20'
+                            }`}
+                          >
+                            <span>{v.sku || `Option ${idx + 1}`}</span>
+                            <span className={isSelected ? 'text-gold-300 font-bold' : 'text-slate-500 font-medium'}>
+                              {formatPrice(v.price)}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Action buttons */}
             <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={adding}
-                className="btn-primary min-w-[180px] flex items-center justify-center gap-2 shadow-lg shadow-plum-950/20 disabled:opacity-50"
+                disabled={adding || isOutOfStock}
+                className="btn-primary min-w-[180px] flex items-center justify-center gap-2 shadow-lg shadow-plum-950/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {adding ? (
                   <>
@@ -336,6 +529,8 @@ export default function ProductDetails() {
                     </svg>
                     Adding...
                   </>
+                ) : isOutOfStock ? (
+                  'Out of Stock'
                 ) : inCart ? (
                   <>
                     <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

@@ -2,6 +2,7 @@
 from django.shortcuts import get_object_or_404
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
+import json
 import logging
 import uuid
 
@@ -15,7 +16,8 @@ from django.db.models import Sum, Q, Max
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
@@ -215,6 +217,7 @@ def find_product_variant(request, pk):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def create_product_variant(request, pk):
     """
     Create a new variant for a product (Admin only).
@@ -231,6 +234,22 @@ def create_product_variant(request, pk):
     if serializer.is_valid():
         variant = serializer.save(product=product)
         
+        # Save custom attributes selected for this variant
+        attributes_data = request.data.get('attributes')
+        if attributes_data:
+            try:
+                attrs_dict = json.loads(attributes_data) if isinstance(attributes_data, str) else attributes_data
+                if isinstance(attrs_dict, dict):
+                    for attr_id, val_id in attrs_dict.items():
+                        if attr_id and val_id:
+                            VariantAttribute.objects.create(
+                                variant=variant,
+                                attribute_id=attr_id,
+                                value_id=val_id,
+                            )
+            except Exception as e:
+                logger.exception("Error saving variant attributes: %s", e)
+        
         return Response(ProductVariantSerializer(variant, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -238,6 +257,7 @@ def create_product_variant(request, pk):
 
 @api_view(["PUT", "PATCH"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def update_product_variant(request, pk):
     """
     Update an existing variant (Admin only).
@@ -253,8 +273,26 @@ def update_product_variant(request, pk):
     partial = request.method == "PATCH"
     serializer = ProductVariantSerializer(variant, data=request.data, partial=partial, context={"request": request})
     if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        variant = serializer.save()
+        
+        # Update custom attributes for this variant
+        attributes_data = request.data.get('attributes')
+        if attributes_data:
+            try:
+                attrs_dict = json.loads(attributes_data) if isinstance(attributes_data, str) else attributes_data
+                if isinstance(attrs_dict, dict):
+                    VariantAttribute.objects.filter(variant=variant).delete()
+                    for attr_id, val_id in attrs_dict.items():
+                        if attr_id and val_id:
+                            VariantAttribute.objects.create(
+                                variant=variant,
+                                attribute_id=attr_id,
+                                value_id=val_id,
+                            )
+            except Exception as e:
+                logger.exception("Error saving variant attributes: %s", e)
+
+        return Response(ProductVariantSerializer(variant, context={"request": request}).data, status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -480,6 +518,7 @@ def get_product(request, pk):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def create_product(request):
     serializer = ProductWriteSerializer(data=request.data)
     if serializer.is_valid():
@@ -514,6 +553,7 @@ def create_product(request):
 
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def update_product(request, pk):
     try:
         product = Product.objects.get(id=pk, created_by=request.user)

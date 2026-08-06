@@ -45,10 +45,15 @@ class ProductAttributeInline(admin.TabularInline):
     model = ProductAttribute
     extra = 1
 
+class ProductVariantInline(admin.TabularInline):
+    model = ProductVariant
+    extra = 0
+    show_change_link = True
+
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("name", "category", "price", "shipping_days", "dispatch_days",
                     "out_for_delivery_days", "estimated_delivery_days_display")
-    inlines = [ProductAttributeInline]
+    inlines = [ProductAttributeInline, ProductVariantInline]
     list_filter = ("category",)
     search_fields = ("name", "description")
     fieldsets = (
@@ -104,11 +109,31 @@ class SubCategoryAdmin(admin.ModelAdmin):
             kwargs["queryset"] = Category.objects.filter(parent__isnull=True)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+class AttributeValueInline(admin.TabularInline):
+    model = AttributeValue
+    extra = 3
+
+class AttributeAdmin(admin.ModelAdmin):
+    list_display = ("name", "subcategory")
+    list_filter = ("subcategory",)
+    search_fields = ("name",)
+    inlines = [AttributeValueInline]
+
+class VariantAttributeInline(admin.TabularInline):
+    model = VariantAttribute
+    extra = 2
+
+class ProductVariantAdmin(admin.ModelAdmin):
+    list_display = ("product", "sku", "price", "stock", "is_active")
+    list_filter = ("is_active", "product__category")
+    search_fields = ("sku", "product__name")
+    inlines = [VariantAttributeInline]
+
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(SubCategory, SubCategoryAdmin)
-admin.site.register(Attribute)
+admin.site.register(Attribute, AttributeAdmin)
 admin.site.register(AttributeValue)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Order, OrderAdmin)
-admin.site.register(ProductVariant)
+admin.site.register(ProductVariant, ProductVariantAdmin)
 admin.site.register(VariantAttribute)

@@ -156,10 +156,44 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_images(self, obj):
         return [img.image.url for img in obj.images.all()]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+
+        # Fallback to variant image or gallery image if base image is not present
+        if not data.get("image"):
+            variant_with_img = instance.variants.filter(is_active=True).exclude(image="").first()
+            if variant_with_img and variant_with_img.image:
+                data["image"] = (
+                    request.build_absolute_uri(variant_with_img.image.url)
+                    if request
+                    else variant_with_img.image.url
+                )
+            elif instance.images.exists():
+                first_gallery = instance.images.first()
+                if first_gallery and first_gallery.image:
+                    data["image"] = (
+                        request.build_absolute_uri(first_gallery.image.url)
+                        if request
+                        else first_gallery.image.url
+                    )
+
+        # Fallback to first active variant's price if base price is zero or not set
+        try:
+            val = float(data.get("price") or 0)
+        except (ValueError, TypeError):
+            val = 0
+        if val <= 0:
+            first_variant = instance.variants.filter(is_active=True).first()
+            if first_variant:
+                data["price"] = str(first_variant.price)
+
+        return data
+
 
 class ProductWriteSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
-    image = serializers.ImageField(required=True)
+    image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Product
