@@ -123,6 +123,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         ]
 
 
+
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     attributes = ProductAttributeSerializer(many=True, read_only=True)
@@ -501,11 +502,20 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 class RatingSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
+    product_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Rating
-        fields = ['id', 'user', 'product', 'score', 'created_at', 'updated_at', 'username', 'product_name']
+        fields = ['id', 'user', 'product', 'score', 'created_at', 'updated_at', 'username', 'product_name', 'product_image']
         read_only_fields = ['user', 'created_at', 'updated_at']
+
+    def get_product_image(self, obj):
+        if obj.product and obj.product.image:
+            try:
+                return obj.product.image.url
+            except Exception:
+                return None
+        return None
 
 # serializers.py
 

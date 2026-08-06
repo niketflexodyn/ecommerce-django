@@ -184,8 +184,9 @@ export const wishlistApi = {
 // -------------------------
 
 export const adminCategoryApi = {
-  list() {
-    return request('/admin/categories/');
+  list(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return request(`/admin/categories/${query ? '?' + query : ''}`);
   },
   create(data) {
     return request('/categories/create/', {
@@ -262,8 +263,9 @@ export const checkoutApi = {
 // -------------------------
 
 export const orderApi = {
-  mine() {
-    return request('/orders/mine/');
+  mine(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return request(`/orders/mine/${query ? '?' + query : ''}`);
   },
   mineDetail(id) {
     return request(`/orders/mine/${id}/`);
@@ -276,6 +278,24 @@ export const orderApi = {
   get(id) {
     return request(`/orders/${id}/`);
   },
+};
+
+export const adminOrderApi = orderApi;
+
+
+export const variantApi = {
+  list: (productId) => request(`/products/${productId}/variants/`),
+  create: (productId, formData) => request(`/products/${productId}/variants/create/`, {
+    method: 'POST',
+    body: formData, // FormData with image, price, stock, sku, attributes
+  }),
+  update: (variantId, formData) => request(`/variants/${variantId}/update/`, {
+    method: 'PUT',
+    body: formData,
+  }),
+  delete: (variantId) => request(`/variants/${variantId}/delete/`, {
+    method: 'DELETE',
+  }),
 };
 
 // -------------------------
@@ -408,8 +428,9 @@ export const ratingApi = {
     return request(`/products/${productId}/ratings/`);
   },
   // Admin: ratings for this admin's products
-  adminList() {
-    return request('/admin/ratings/');
+  adminList(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return request(`/admin/ratings/${query ? '?' + query : ''}`);
   },
 };
 

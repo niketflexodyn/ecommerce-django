@@ -10,9 +10,10 @@ import {
   FiChevronsLeft,
   FiChevronsRight,
 } from 'react-icons/fi';
-import { adminProductApi, adminCategoryApi, adminSubcategoryApi, adminAttributeApi, adminAttributeValueApi } from '../../utils/api';
+import { adminProductApi, adminCategoryApi, adminSubcategoryApi, adminAttributeApi, adminAttributeValueApi, variantApi } from '../../utils/api';
 import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
+// import { adminProductApi, adminCategoryApi, adminSubcategoryApi, adminAttributeApi, adminAttributeValueApi } from '../../utils/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -24,6 +25,7 @@ function resolveImgUrl(image) {
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
+  const [variants, setVariants] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategory, setSubCategory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ export default function AdminProducts() {
     description: '',
     price: '',
     category: '',
-    subCategory:'',
+    subCategory: '',
     location: '',
     shipping_days: '5',
     dispatch_days: '5',
@@ -98,7 +100,13 @@ export default function AdminProducts() {
   };
 
   const fetchCategories = () => {
-    adminCategoryApi.list().then(setCategories).catch(() => {});
+    adminCategoryApi
+      .list({ all: 'true' })
+      .then((data) => {
+        if (Array.isArray(data)) setCategories(data);
+        else if (data && Array.isArray(data.results)) setCategories(data.results);
+      })
+      .catch(() => { });
   };
 
   useEffect(() => {
@@ -117,12 +125,12 @@ export default function AdminProducts() {
       setSubCategory([]);
       return;
     }
-    adminSubcategoryApi.list(categoryId).then(setSubCategory).catch(() => {});
+    adminSubcategoryApi.list(categoryId).then(setSubCategory).catch(() => { });
   };
 
   useEffect(() => {
     fetchSubCategories(form.category);
-  }, [form.category]); 
+  }, [form.category]);
 
   useEffect(() => {
     if (form.subCategory) {
@@ -136,6 +144,42 @@ export default function AdminProducts() {
       setSelectedSubcategoryDetails(null);
     }
   }, [form.subCategory, subCategory]);
+  const addVariant = () => {
+    setVariants([
+      ...variants,
+      {
+        sku: "",
+        price: "",
+        stock: "",
+        image: null,
+        attributes: [],
+      },
+    ]);
+  };
+  // Update a variant field (e.g. price, stock, sku, image)
+const updateVariant = (index, field, value) => {
+  setVariants((prev) => {
+    const next = [...prev];
+    next[index] = { ...next[index], [field]: value };
+    return next;
+  });
+};
+
+// Update an attribute value for a variant (e.g. Size -> XL, Color -> Black)
+const updateVariantAttribute = (variantIndex, attributeId, valueId) => {
+  setVariants((prev) => {
+    const next = [...prev];
+    const attrs = { ...(next[variantIndex].attributes || {}) };
+    attrs[attributeId] = valueId;
+    next[variantIndex] = { ...next[variantIndex], attributes: attrs };
+    return next;
+  });
+};
+
+// Remove a variant from the list
+const removeVariant = (index) => {
+  setVariants((prev) => prev.filter((_, i) => i !== index));
+};
 
   const resetGallery = () => {
     gallery.forEach((g) => {
@@ -159,6 +203,8 @@ export default function AdminProducts() {
       out_for_delivery_days: '5',
       image: null,
     });
+        setVariants([]); // 👈 Add this so previous variants don't linger!
+
     setImagePreview(null);
     resetGallery();
     setFormError('');
@@ -169,14 +215,14 @@ export default function AdminProducts() {
 
   const openEdit = (product) => {
     setEditProduct(product);
-    
+
     let parentCat = product.category?.id?.toString() || product.category?.toString() || '';
     let subCat = '';
     if (product.category && typeof product.category === 'object' && product.category.parent) {
-       parentCat = product.category.parent.toString();
-       subCat = product.category.id.toString();
+      parentCat = product.category.parent.toString();
+      subCat = product.category.id.toString();
     }
-    
+
     setForm({
       name: product.name,
       description: product.description || '',
@@ -194,7 +240,28 @@ export default function AdminProducts() {
     setGallery((product.images || []).map((url) => ({ url: resolveImgUrl(url), existing: true })));
     setFormError('');
     setFieldErrors({});
-    
+// If product has existing variants, load them:
+if (product.variants && product.variants.length > 0) {
+  setVariants(
+    product.variants.map((v) => {
+      const attrs = {};
+      v.attributes?.forEach((a) => {
+        attrs[a.attribute] = a.value;
+      });
+      return {
+        id: v.id,
+        sku: v.sku,
+        price: v.price,
+        stock: v.stock,
+        image: v.image,
+        attributes: attrs,
+      };
+    })
+  );
+} else {
+  setVariants([]);
+}
+
     const initialAttrs = {};
     if (product.attributes) {
       product.attributes.forEach(pa => {
@@ -202,7 +269,7 @@ export default function AdminProducts() {
       });
     }
     setProductAttributes(initialAttrs);
-    
+
     setModalOpen(true);
   };
 
@@ -364,7 +431,7 @@ export default function AdminProducts() {
     return nextErrors;
   };
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
 
@@ -374,7 +441,6 @@ export default function AdminProducts() {
       return;
     }
     setFieldErrors({});
-
     setSaving(true);
 
     try {
@@ -394,11 +460,37 @@ export default function AdminProducts() {
         ...(newImages.length ? { images: newImages } : {}),
       };
 
+      // 1. First save or update the base product:
+      let savedProduct;
       if (editProduct) {
-        await adminProductApi.update(editProduct.id, data);
+        savedProduct = await adminProductApi.update(editProduct.id, data);
       } else {
-        await adminProductApi.create(data);
+        savedProduct = await adminProductApi.create(data);
       }
+
+      const targetProductId = editProduct?.id || savedProduct?.id;
+
+      // 2. Then save the variants using the product's ID:
+      if (targetProductId && variants.length > 0) {
+        for (const variant of variants) {
+          const variantData = new FormData();
+          variantData.append('sku', variant.sku || `SKU-${targetProductId}-${Date.now()}`);
+          variantData.append('price', variant.price || form.price || '0.00');
+          variantData.append('stock', variant.stock || 0);
+          variantData.append('attributes', JSON.stringify(variant.attributes || {}));
+
+          if (variant.imageFile) {
+            variantData.append('image', variant.imageFile);
+          }
+
+          if (variant.id) {
+            await variantApi.update(variant.id, variantData);
+          } else {
+            await variantApi.create(targetProductId, variantData);
+          }
+        }
+      }
+
       setModalOpen(false);
       resetGallery();
       fetchProducts();
@@ -465,19 +557,19 @@ export default function AdminProducts() {
   })();
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8 w-full min-w-0">
       <AdminPageHeader
         title="Products"
         subtitle="Manage your product catalog"
         action={
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-plum-950 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-plum-900 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-plum-950 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium text-white shadow-sm hover:bg-plum-900 transition-colors"
           >
-            <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <svg className="size-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            Add Product
+            <span>Add Product</span>
           </button>
         }
       />
@@ -487,10 +579,10 @@ export default function AdminProducts() {
       )}
 
       {/* Search & Filter Bar */}
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between w-full">
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center w-full">
           {/* Search Input */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md w-full">
             <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
@@ -544,119 +636,121 @@ export default function AdminProducts() {
       </div>
 
       {/* Product Table */}
-      <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3">Sub Category</th>
-              <th className="px-4 py-3">Price</th>
-              <th className="px-4 py-3">Delivery Timeline</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {loading && products.length === 0 ? (
+      <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm w-full">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full min-w-[700px] text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <td colSpan={6} className="px-4 py-16 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <div className="h-7 w-7 animate-spin rounded-full border-3 border-slate-200 border-t-plum-950" />
-                    <span className="text-xs text-slate-400">Loading products...</span>
-                  </div>
-                </td>
+                <th className="px-4 py-3 whitespace-nowrap">Product</th>
+                <th className="px-4 py-3 whitespace-nowrap">Category</th>
+                <th className="px-4 py-3 whitespace-nowrap">Sub Category</th>
+                <th className="px-4 py-3 whitespace-nowrap">Price</th>
+                <th className="px-4 py-3 whitespace-nowrap">Delivery Timeline</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
               </tr>
-            ) : (
-              products.map((product) => (
-                <tr key={product.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-plum-950">
-                    <div className="flex items-center gap-3">
-                      {product.image ? (
-                        <img
-                          src={resolveImgUrl(product.image)}
-                          alt={product.name}
-                          className="size-10 rounded-lg object-cover ring-1 ring-slate-200"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="flex size-10 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">
-                          No img
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-medium text-slate-900">{product.name}</p>
-                        <p className="text-xs text-slate-400 truncate max-w-xs">{product.description}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{getCategoryName(product)}</td>
-                  <td className="px-4 py-3 text-slate-600">{getSubCategoryName(product)}</td>
-                  <td className="px-4 py-3 font-semibold text-plum-950">₹{Number(product.price).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {(Number(product.shipping_days) || 0) +
-                      (Number(product.dispatch_days) || 0) +
-                      (Number(product.out_for_delivery_days) || 0)}
-                    <span className="block text-xs text-slate-400">
-                      {Number(product.shipping_days) || 0}S · {Number(product.dispatch_days) || 0}D · {Number(product.out_for_delivery_days) || 0}O
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        onClick={() => openEdit(product)}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
-                        title="Edit Product"
-                      >
-                        <FiEdit2 className="size-3.5" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        onClick={() => setDeleteId(product.id)}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
-                        title="Delete Product"
-                      >
-                        <FiTrash2 className="size-3.5" />
-                        <span>Delete</span>
-                      </button>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading && products.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-16 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="h-7 w-7 animate-spin rounded-full border-3 border-slate-200 border-t-plum-950" />
+                      <span className="text-xs text-slate-400">Loading products...</span>
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
+              ) : (
+                products.map((product) => (
+                  <tr key={product.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-plum-950">
+                      <div className="flex items-center gap-3">
+                        {product.image ? (
+                          <img
+                            src={resolveImgUrl(product.image)}
+                            alt={product.name}
+                            className="size-10 shrink-0 rounded-lg object-cover ring-1 ring-slate-200"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">
+                            No img
+                          </div>
+                        )}
+                        <div className="min-w-0 max-w-[200px] sm:max-w-xs">
+                          <p className="font-medium text-slate-900 truncate">{product.name}</p>
+                          <p className="text-xs text-slate-400 truncate">{product.description}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{getCategoryName(product)}</td>
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{getSubCategoryName(product)}</td>
+                    <td className="px-4 py-3 font-semibold text-plum-950 whitespace-nowrap">₹{Number(product.price).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                      {(Number(product.shipping_days) || 0) +
+                        (Number(product.dispatch_days) || 0) +
+                        (Number(product.out_for_delivery_days) || 0)}
+                      <span className="block text-xs text-slate-400">
+                        {Number(product.shipping_days) || 0}S · {Number(product.dispatch_days) || 0}D · {Number(product.out_for_delivery_days) || 0}O
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => openEdit(product)}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                          title="Edit Product"
+                        >
+                          <FiEdit2 className="size-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => setDeleteId(product.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                          title="Delete Product"
+                        >
+                          <FiTrash2 className="size-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
 
-            {!loading && products.length === 0 && (searchTerm || categoryFilter !== 'all') && (
-              <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
-                  <FiSearch className="mx-auto size-8 text-slate-300 mb-2" />
-                  <p className="font-medium text-slate-800">No products found matching your search</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Try adjusting your search keywords or clearing the category filter.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setSearchTerm('');
-                      setCategoryFilter('all');
-                      setPage(1);
-                    }}
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
-                  >
-                    Clear search & filters
-                  </button>
-                </td>
-              </tr>
-            )}
+              {!loading && products.length === 0 && (searchTerm || categoryFilter !== 'all') && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
+                    <FiSearch className="mx-auto size-8 text-slate-300 mb-2" />
+                    <p className="font-medium text-slate-800">No products found matching your search</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Try adjusting your search keywords or clearing the category filter.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setSearchTerm('');
+                        setCategoryFilter('all');
+                        setPage(1);
+                      }}
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+                    >
+                      Clear search & filters
+                    </button>
+                  </td>
+                </tr>
+              )}
 
-            {!loading && products.length === 0 && !searchTerm && categoryFilter === 'all' && (
-              <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
-                  No products yet. Click "Add Product" to create one.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              {!loading && products.length === 0 && !searchTerm && categoryFilter === 'all' && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
+                    No products yet. Click "Add Product" to create one.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Pagination Footer */}
@@ -675,7 +769,7 @@ export default function AdminProducts() {
             of <span className="font-semibold text-slate-900">{totalCount}</span> products
           </div>
 
-          
+
         </div>
 
         {/* Page Navigation Buttons */}
@@ -707,11 +801,10 @@ export default function AdminProducts() {
                 <button
                   key={`page-${p}`}
                   onClick={() => setPage(p)}
-                  className={`inline-flex size-8 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
-                    p === currentPage
+                  className={`inline-flex size-8 items-center justify-center rounded-lg text-xs font-medium transition-colors ${p === currentPage
                       ? 'bg-plum-950 text-white shadow-sm'
                       : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   {p}
                 </button>
@@ -764,11 +857,10 @@ export default function AdminProducts() {
                     setForm({ ...form, name: e.target.value });
                     if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: '' }));
                   }}
-                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                    fieldErrors.name
+                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.name
                       ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
                       : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
-                  }`}
+                    }`}
                   placeholder="Product name (max 200 characters)"
                 />
                 {fieldErrors.name && (
@@ -787,11 +879,10 @@ export default function AdminProducts() {
                       setForm({ ...form, category: e.target.value, subCategory: '' });
                       if (fieldErrors.category) setFieldErrors((prev) => ({ ...prev, category: '' }));
                     }}
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                      fieldErrors.category
+                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.category
                         ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
                         : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
-                    }`}
+                      }`}
                   >
                     <option value="">Select category</option>
                     {categories.map((cat) => (
@@ -815,11 +906,10 @@ export default function AdminProducts() {
                       setForm({ ...form, subCategory: e.target.value });
                       if (fieldErrors.subCategory) setFieldErrors((prev) => ({ ...prev, subCategory: '' }));
                     }}
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                      fieldErrors.subCategory
+                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.subCategory
                         ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
                         : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
-                    }`}
+                      }`}
                   >
                     <option value="">Select sub category</option>
                     {subCategory.map((subCat) => (
@@ -857,7 +947,7 @@ export default function AdminProducts() {
                   </div>
                 </div>
               )}
-              
+
               {/* Manage Schema Attributes UI */}
               {selectedSubcategoryDetails && (
                 <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
@@ -882,28 +972,28 @@ export default function AdminProducts() {
                         ))}
                       </div>
                       <div className="flex space-x-2 mt-2">
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           maxLength={100}
-                          value={newValueText[attr.id] || ''} 
+                          value={newValueText[attr.id] || ''}
                           onChange={(e) => setNewValueText(prev => ({ ...prev, [attr.id]: e.target.value }))}
-                          placeholder="New value" 
-                          className="px-2 py-1 text-xs border border-slate-300 rounded flex-grow focus:outline-none focus:border-gold-600" 
+                          placeholder="New value"
+                          className="px-2 py-1 text-xs border border-slate-300 rounded flex-grow focus:outline-none focus:border-gold-600"
                         />
                         <button type="button" onClick={() => handleAddValue(attr.id)} className="px-3 py-1 bg-slate-800 text-white text-xs rounded hover:bg-slate-700 transition-colors">Add Value</button>
                       </div>
                     </div>
                   ))}
                   <div className="flex space-x-2 mt-4">
-                     <input 
-                       type="text" 
-                       maxLength={100}
-                       value={newAttributeName} 
-                       onChange={e => setNewAttributeName(e.target.value)} 
-                       placeholder="New attribute (e.g. Color)" 
-                       className="px-3 py-2 text-sm border border-slate-300 rounded-lg flex-grow focus:outline-none focus:border-gold-600" 
-                     />
-                     <button type="button" onClick={handleAddAttribute} className="px-4 py-2 bg-gold-600 text-white rounded-lg text-sm hover:bg-gold-700 transition-colors">Add</button>
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={newAttributeName}
+                      onChange={e => setNewAttributeName(e.target.value)}
+                      placeholder="New attribute (e.g. Color)"
+                      className="px-3 py-2 text-sm border border-slate-300 rounded-lg flex-grow focus:outline-none focus:border-gold-600"
+                    />
+                    <button type="button" onClick={handleAddAttribute} className="px-4 py-2 bg-gold-600 text-white rounded-lg text-sm hover:bg-gold-700 transition-colors">Add</button>
                   </div>
                 </div>
               )}
@@ -911,16 +1001,16 @@ export default function AdminProducts() {
               <div className="p-4 bg-gray-50 rounded-lg border border-slate-200">
                 <h2 className="font-medium mb-2 text-sm text-slate-700">Add SubCategory if not exist</h2>
                 <div className="flex space-x-2">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     maxLength={100}
-                    className="px-3 py-2 text-sm border border-slate-300 rounded-lg flex-grow focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600" 
-                    placeholder="Sub-category name" 
+                    className="px-3 py-2 text-sm border border-slate-300 rounded-lg flex-grow focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
+                    placeholder="Sub-category name"
                     value={newSubcategoryName}
                     onChange={(e) => setNewSubcategoryName(e.target.value)}
                   />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={handleAddSubcategory}
                     className="px-4 py-2 text-sm font-medium bg-plum-950 text-white rounded-lg hover:bg-plum-900 transition-colors"
                   >
@@ -939,11 +1029,10 @@ export default function AdminProducts() {
                     if (fieldErrors.description) setFieldErrors((prev) => ({ ...prev, description: '' }));
                   }}
                   rows={3}
-                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                    fieldErrors.description
+                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.description
                       ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
                       : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
-                  }`}
+                    }`}
                   placeholder="Product description (max 2000 characters)"
                 />
                 {fieldErrors.description && (
@@ -965,11 +1054,10 @@ export default function AdminProducts() {
                       setForm({ ...form, price: e.target.value });
                       if (fieldErrors.price) setFieldErrors((prev) => ({ ...prev, price: '' }));
                     }}
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                      fieldErrors.price
+                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.price
                         ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
                         : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
-                    }`}
+                      }`}
                     placeholder="0.00"
                   />
                   {fieldErrors.price && (
@@ -987,11 +1075,10 @@ export default function AdminProducts() {
                       setForm({ ...form, location: e.target.value });
                       if (fieldErrors.location) setFieldErrors((prev) => ({ ...prev, location: '' }));
                     }}
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                      fieldErrors.location
+                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.location
                         ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
                         : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
-                    }`}
+                      }`}
                     placeholder="e.g. Ahmedabad, India"
                   />
                   {fieldErrors.location && (
@@ -999,6 +1086,130 @@ export default function AdminProducts() {
                   )}
                   <p className="mt-1 text-xs text-slate-400">Shown to customers on the product detail page.</p>
                 </div>
+               {/* Product Variants Section */}
+<div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+  <div className="flex items-center justify-between mb-3">
+    <div>
+      <h3 className="text-sm font-bold text-plum-950">Product Variants & Custom Pricing</h3>
+      <p className="text-xs text-slate-500">
+        Add custom price, stock, and photos for different sizes, colors, or options.
+      </p>
+    </div>
+    <button
+      type="button"
+      onClick={addVariant}
+      className="inline-flex items-center gap-1.5 rounded-lg bg-plum-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-plum-900 transition-colors"
+    >
+      + Add Variant
+    </button>
+  </div>
+
+  {variants.length === 0 ? (
+    <p className="text-center py-4 text-xs text-slate-400 border border-dashed border-slate-300 rounded-lg">
+      No variants added yet. Click "+ Add Variant" to set custom prices and stock per option.
+    </p>
+  ) : (
+    <div className="space-y-3">
+      {variants.map((variant, index) => (
+        <div key={index} className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+            <span className="text-xs font-bold text-slate-700">Variant #{index + 1}</span>
+            <button
+              type="button"
+              onClick={() => removeVariant(index)}
+              className="text-xs font-medium text-red-600 hover:text-red-700"
+            >
+              Remove
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Dynamic Attribute Selectors (Size, Color, etc.) */}
+            {selectedSubcategoryDetails?.attributes?.map((attr) => (
+              <div key={attr.id}>
+                <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                  {attr.name}
+                </label>
+                <select
+                  value={variant.attributes?.[attr.id] || ''}
+                  onChange={(e) => updateVariantAttribute(index, attr.id, e.target.value)}
+                  className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
+                >
+                  <option value="">Select {attr.name}</option>
+                  {attr.values?.map((val) => (
+                    <option key={val.id} value={val.id}>
+                      {val.value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                Variant Price (₹)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                placeholder={form.price || '0.00'}
+                value={variant.price}
+                onChange={(e) => updateVariant(index, 'price', e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                Stock
+              </label>
+              <input
+                type="number"
+                placeholder="0"
+                value={variant.stock}
+                onChange={(e) => updateVariant(index, 'stock', e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                SKU
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. LUX-RED-XL"
+                value={variant.sku}
+                onChange={(e) => updateVariant(index, 'sku', e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Variant Image */}
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                Variant Photo (Optional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    updateVariant(index, 'imageFile', file);
+                    updateVariant(index, 'imagePreview', URL.createObjectURL(file));
+                  }
+                }}
+                className="w-full text-xs text-slate-500 file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold hover:file:bg-slate-200"
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
               </div>
 
               <div>
@@ -1015,11 +1226,10 @@ export default function AdminProducts() {
                         setForm({ ...form, shipping_days: e.target.value });
                         if (fieldErrors.shipping_days) setFieldErrors((prev) => ({ ...prev, shipping_days: '' }));
                       }}
-                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                        fieldErrors.shipping_days
+                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.shipping_days
                           ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
                           : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
-                      }`}
+                        }`}
                       placeholder="5"
                     />
                     {fieldErrors.shipping_days && (
@@ -1037,11 +1247,10 @@ export default function AdminProducts() {
                         setForm({ ...form, dispatch_days: e.target.value });
                         if (fieldErrors.dispatch_days) setFieldErrors((prev) => ({ ...prev, dispatch_days: '' }));
                       }}
-                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                        fieldErrors.dispatch_days
+                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.dispatch_days
                           ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
                           : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
-                      }`}
+                        }`}
                       placeholder="5"
                     />
                     {fieldErrors.dispatch_days && (
@@ -1059,11 +1268,10 @@ export default function AdminProducts() {
                         setForm({ ...form, out_for_delivery_days: e.target.value });
                         if (fieldErrors.out_for_delivery_days) setFieldErrors((prev) => ({ ...prev, out_for_delivery_days: '' }));
                       }}
-                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                        fieldErrors.out_for_delivery_days
+                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${fieldErrors.out_for_delivery_days
                           ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500'
                           : 'border-slate-300 focus:ring-gold-500/50 focus:border-gold-600'
-                      }`}
+                        }`}
                       placeholder="5"
                     />
                     {fieldErrors.out_for_delivery_days && (
@@ -1092,9 +1300,8 @@ export default function AdminProducts() {
                         setImagePreview(editProduct?.image ? resolveImgUrl(editProduct.image) : null);
                       }
                     }}
-                    className={`w-full text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-plum-950 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-plum-900 file:transition-colors ${
-                      fieldErrors.image ? 'border border-red-500 rounded-lg p-1' : ''
-                    }`}
+                    className={`w-full text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-plum-950 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-plum-900 file:transition-colors ${fieldErrors.image ? 'border border-red-500 rounded-lg p-1' : ''
+                      }`}
                   />
                   {fieldErrors.image && (
                     <p className="mt-1 text-xs font-medium text-red-600">{fieldErrors.image}</p>
@@ -1137,7 +1344,7 @@ export default function AdminProducts() {
                           <button
                             type="button"
                             onClick={() => {
-                              if (!g.existing) URL.revokeObjectURL(g.url);  
+                              if (!g.existing) URL.revokeObjectURL(g.url);
                               setGallery((prev) => prev.filter((_, i) => i !== idx));
                             }}
                             className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-plum-950 text-xs text-white shadow ring-2 ring-white hover:bg-plum-900"

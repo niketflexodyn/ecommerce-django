@@ -26,7 +26,7 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8 w-full min-w-0">
         <AdminPageHeader title="Dashboard" />
         <p className="mt-4 text-red-600">{error}</p>
       </div>
@@ -34,11 +34,11 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8 w-full min-w-0">
       <AdminPageHeader title="Dashboard" subtitle="Store overview at a glance" />
 
       {/* Stat cards */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
         <StatCard
           label="Total Products"
           value={stats?.total_products ?? 0}
@@ -87,35 +87,37 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent orders */}
-      <div className="mt-8">
+      <div className="mt-8 w-full">
         <h2 className="text-lg font-semibold text-plum-950">Recent Orders</h2>
         <div className="mt-3 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/80">
-          {stats?.recent_orders?.length > 0 ? (
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-100 bg-slate-50/50">
-                <tr>
-                  <th className="px-4 py-3 font-medium text-slate-500">Order</th>
-                  <th className="px-4 py-3 font-medium text-slate-500">Customer</th>
-                  <th className="px-4 py-3 font-medium text-slate-500">Items</th>
-                  <th className="px-4 py-3 font-medium text-slate-500">Total</th>
-                  <th className="px-4 py-3 font-medium text-slate-500">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {stats.recent_orders.map((order,index) => (
-                  <tr key={order.id} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3 font-medium text-plum-950">{index+1}</td>
-                    <td className="px-4 py-3 text-slate-700">{order.username || order.email}</td>
-                    <td className="px-4 py-3 text-slate-700">{order.items_count}</td>
-                    <td className="px-4 py-3 font-medium text-plum-950">₹{Number(order.total_amount).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-slate-500">{new Date(order.created_at).toLocaleDateString()}</td>
+          <div className="overflow-x-auto w-full">
+            {stats?.recent_orders?.length > 0 ? (
+              <table className="w-full min-w-[540px] text-left text-sm">
+                <thead className="border-b border-slate-100 bg-slate-50/50">
+                  <tr>
+                    <th className="px-4 py-3 font-medium text-slate-500 whitespace-nowrap">Order</th>
+                    <th className="px-4 py-3 font-medium text-slate-500 whitespace-nowrap">Customer</th>
+                    <th className="px-4 py-3 font-medium text-slate-500 whitespace-nowrap">Items</th>
+                    <th className="px-4 py-3 font-medium text-slate-500 whitespace-nowrap">Total</th>
+                    <th className="px-4 py-3 font-medium text-slate-500 whitespace-nowrap">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="px-4 py-8 text-center text-slate-400">No orders yet.</p>
-          )}
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {stats.recent_orders.map((order,index) => (
+                    <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-plum-950 whitespace-nowrap">{index+1}</td>
+                      <td className="px-4 py-3 text-slate-700 whitespace-nowrap">{order.username || order.email}</td>
+                      <td className="px-4 py-3 text-slate-700 whitespace-nowrap">{order.items_count}</td>
+                      <td className="px-4 py-3 font-medium text-plum-950 whitespace-nowrap">₹{Number(order.total_amount).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(order.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="px-4 py-8 text-center text-slate-400">No orders yet.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

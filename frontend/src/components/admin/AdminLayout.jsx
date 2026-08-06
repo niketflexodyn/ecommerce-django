@@ -1,5 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useState } from 'react';
+
 
 
 
@@ -74,7 +76,7 @@ const navItems = [
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const visibleNavItems = user?.role === 'super_admin'
   ? navItems.filter((item) => item.to === '/dashboard/admins' || item.to === '/dashboard/edit-details')
   : navItems.filter((item) => !item.superAdminOnly);
@@ -85,32 +87,52 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="flex min-h-screen font-body">
+    <div className="flex min-h-screen w-full font-body bg-slate-50">
+      {/* Mobile overlay backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col bg-plum-950 text-white">
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col bg-plum-950 text-white transition-transform duration-300 ease-in-out
+          lg:sticky lg:top-0 lg:translate-x-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
         {/* Logo */}
         <div className="flex items-center gap-2 border-b border-white/10 px-6 py-5">
-          <span
-            className="flex size-8 items-center justify-center rounded-lg bg-gold-500 text-sm font-black text-plum-950"
-          >
-             <svg className="size-5 text-plum-950" viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-gold-500 text-sm font-black text-plum-950">
+            <svg className="size-5 text-plum-950" viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21V7.5m0 0 6.75-3.75v13.5M13.5 7.5l-6.75-3.75v13.5M6.75 17.25l6.75 3.75 6.75-3.75" />
             </svg>
           </span>
-          <span className="text-lg font-bold font-display">
-            Luxora
-          </span>
+          <span className="text-lg font-bold font-display">Luxora</span>
           <span className="ml-auto rounded bg-gold-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-500">
             Admin
           </span>
+
+          {/* Close button - mobile only */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="ml-2 rounded-lg p-1 text-slate-300 hover:bg-white/5 hover:text-white lg:hidden"
+            aria-label="Close sidebar"
+          >
+            <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
           {visibleNavItems.map((item) => (
             <NavLink
               key={item.name}
               to={item.to}
               end={item.to === '/dashboard'}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive
@@ -124,7 +146,6 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
-
 
         {/* Bottom: user + actions */}
         <div className="border-t border-white/10 px-4 py-4 space-y-2">
@@ -156,8 +177,24 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 bg-slate-50">
-        <Outlet />
+      <main className="flex-1 min-w-0 w-full bg-slate-50">
+        {/* Mobile top bar with hamburger */}
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:hidden shadow-xs">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-lg p-2 text-plum-950 hover:bg-slate-100 transition-colors"
+            aria-label="Open sidebar menu"
+          >
+            <svg className="size-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+          <span className="text-sm font-semibold text-plum-950">Luxora Admin</span>
+        </div>
+
+        <div className="w-full min-w-0">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

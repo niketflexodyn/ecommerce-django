@@ -122,39 +122,20 @@ export default function AdminAdmins() {
   ]
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8 w-full min-w-0">
       <AdminPageHeader
         title="Admin Accounts"
         subtitle="Review registration requests — activate, reject, or suspend admins"
       />
 
-      {/* Stats */}
-      {/* <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((s) => (
-          <button
-            key={s.key}
-            onClick={() => setTab(s.key)}
-            className={`rounded-xl bg-white p-5 text-left shadow-sm ring-1 transition ${
-              tab === s.key ? 'ring-2 ring-gold-500' : 'ring-slate-200/80 hover:ring-slate-300'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className={`size-2.5 rounded-full ${s.dot}`} />
-              <p className="text-sm font-medium text-slate-500">{s.label}</p>
-            </div>
-            <p className="mt-2 text-2xl font-bold text-plum-950">{s.value}</p>
-          </button>
-        ))}
-      </div> */}
-
       {/* Filter tabs + search */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-1 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200/80">
+      <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+        <div className="flex flex-wrap gap-1 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200/80 max-w-full">
           {STATUS_TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+              className={`rounded-md px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium transition ${
                 tab === t.key
                   ? 'bg-plum-950 text-white'
                   : 'text-slate-600 hover:bg-slate-100'
@@ -173,7 +154,7 @@ export default function AdminAdmins() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, username, email, phone..."
-          className="w-full max-w-sm rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
+          className="w-full sm:max-w-sm rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600 shadow-sm"
         />
       </div>
 
@@ -185,7 +166,7 @@ export default function AdminAdmins() {
       )}
 
       {/* List */}
-      <div className="mt-6 space-y-3">
+      <div className="mt-6 space-y-3 w-full">
         {loading && (
           <div className="flex h-40 items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-plum-950" />
@@ -193,7 +174,7 @@ export default function AdminAdmins() {
         )}
 
         {!loading && filtered.length === 0 && (
-          <div className="rounded-xl bg-white p-12 text-center text-slate-400 shadow-sm ring-1 ring-slate-200/80">
+          <div className="rounded-xl bg-white p-8 sm:p-12 text-center text-slate-400 shadow-sm ring-1 ring-slate-200/80">
             {tab === 'pending'
               ? 'No admin registrations awaiting approval. New admin sign-ups will appear here for your review.'
               : 'No admin accounts match this filter.'}
@@ -204,14 +185,14 @@ export default function AdminAdmins() {
           filtered.map((a) => (
             <div
               key={a.id}
-              className="flex flex-col gap-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200/80 sm:flex-row sm:items-center"
+              className="flex flex-col gap-4 rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-slate-200/80 sm:flex-row sm:items-center justify-between w-full"
             >
               {/* Identity */}
-              <div className="flex min-w-0 flex-1 items-center gap-4">
+              <div className="flex min-w-0 flex-1 items-center gap-3.5 sm:gap-4">
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-plum-950 text-sm font-bold text-white">
                   {initials(a)}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-slate-900">{fullName(a)}</span>
                     <StatusBadge status={a.account_status} />
@@ -228,18 +209,18 @@ export default function AdminAdmins() {
               </div>
 
               {/* Joined */}
-              <div className="shrink-0 text-right text-xs text-slate-400 sm:w-32">
+              <div className="shrink-0 text-left sm:text-right text-xs text-slate-400 sm:w-32">
                 <p className="font-medium text-slate-500">Joined</p>
                 <p>{new Date(a.date_joined).toLocaleDateString()}</p>
               </div>
 
               {/* Actions */}
-              <div className="flex shrink-0 flex-wrap gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2 border-t border-slate-100 pt-2 sm:border-t-0 sm:pt-0">
                 {a.account_status !== 'active' && (
                   <button
                     disabled={busyId === a.id}
                     onClick={() => runAction('activate', a)}
-                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                    className="rounded-lg bg-emerald-600 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
                   >
                     {busyId === a.id ? '…' : 'Activate'}
                   </button>
@@ -248,16 +229,16 @@ export default function AdminAdmins() {
                   <button
                     disabled={busyId === a.id}
                     onClick={() => prompt('reject', a)}
-                    className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
+                    className="rounded-lg bg-red-600 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
                   >
-                    Reject
+                    {busyId === a.id ? '…' : 'Reject'}
                   </button>
                 )}
                 {a.account_status === 'active' && (
                   <button
                     disabled={busyId === a.id}
                     onClick={() => prompt('suspend', a)}
-                    className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
+                    className="rounded-lg bg-orange-500 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
                   >
                     {busyId === a.id ? '…' : 'Suspend'}
                   </button>

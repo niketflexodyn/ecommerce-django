@@ -26,7 +26,7 @@ logger = logging.getLogger("store")
 # pyrefly: ignore [missing-import]
 from .models import Product, Category, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute, ProductVariant, VariantAttribute
 # pyrefly: ignore [missing-import]
-from .pagination import ProductPagination, AdminProductPagination
+from .pagination import ProductPagination, AdminProductPagination, CategoryPagination, OrderPagination
 # pyrefly: ignore [missing-import]
 from .permissions import IsAdminOrSuperAdmin, IsSuperAdmin
 # pyrefly: ignore [missing-import]
@@ -230,6 +230,7 @@ def create_product_variant(request, pk):
     serializer = ProductVariantSerializer(data=request.data, context={"request": request})
     if serializer.is_valid():
         variant = serializer.save(product=product)
+        
         return Response(ProductVariantSerializer(variant, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -562,8 +563,11 @@ def delete_product(request, pk):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def admin_products(request):
-    """List only the products created by this admin."""
-    products = Product.objects.filter(created_by=request.user)
+    """List products created by this admin (or all for superadmin)."""
+    if getattr(request.user, 'role', '') == 'superadmin' or request.user.is_superuser:
+        products = Product.objects.all()
+    else:
+        products = Product.objects.filter(created_by=request.user)
 
     search = request.query_params.get('search', '').strip()
     if search:
@@ -575,6 +579,11 @@ def admin_products(request):
     if category_id:
         products = products.filter(category_id=category_id)
     products = products.order_by('-created_at')
+
+    if request.query_params.get('all') == 'true':
+        serializer = ProductSerializer(products, many=True, context={'request': request})
+        return Response(serializer.data)
+
     paginator = AdminProductPagination()    
     page = paginator.paginate_queryset(products, request)
     serializer = ProductSerializer(page, many=True, context={'request': request})
@@ -636,10 +645,27 @@ def delete_category(request, pk):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def admin_categories(request):
-    """List all categories (categories are shared, not per-admin)."""
+    """List all categories with server-side search and pagination."""
     categories = Category.objects.all()
-    serializer = CategorySerializer(categories, many=True)
-    return Response(serializer.data)
+
+    search = request.query_params.get('search', '').strip()
+    if search:
+        categories = categories.filter(
+            Q(name__icontains=search) | Q(slug__icontains=search)
+        )
+
+    categories = categories.order_by('-id')
+
+    # If 'all=true' is requested (e.g. for product form dropdowns), return unpaginated list
+    if request.query_params.get('all') == 'true':
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data)
+
+    paginator = CategoryPagination()
+    page = paginator.paginate_queryset(categories, request)
+    serializer = CategorySerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
 
 
 @api_view(["GET"])
@@ -1021,14 +1047,21 @@ def checkout_razorpay_verify(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def my_orders(request):
-    """Return the authenticated customer's order history."""
+    """Return the authenticated customer's order history with server-side pagination."""
     orders = (
         Order.objects.filter(user=request.user)
         .prefetch_related('items__product')
         .order_by('-created_at')
     )
-    serializer = OrderListSerializer(orders, many=True)
-    return Response(serializer.data)
+
+    if request.query_params.get('all') == 'true':
+        serializer = OrderListSerializer(orders, many=True)
+        return Response(serializer.data)
+
+    paginator = OrderPagination()
+    page = paginator.paginate_queryset(orders, request)
+    serializer = OrderListSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(["GET"])
@@ -1046,10 +1079,14 @@ def my_order_detail(request, pk):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def get_orders(request):
-    """List orders that contain products created by this admin."""
+    """List orders with server-side search and pagination (scoped to admin's products or all if superadmin)."""
+    if getattr(request.user, 'role', '') == 'superadmin' or request.user.is_superuser:
+        orders = Order.objects.all()
+    else:
+        orders = Order.objects.filter(items__product__created_by=request.user)
+
     orders = (
-        Order.objects.filter(items__product__created_by=request.user)
-        .select_related('user')
+        orders.select_related('user')
         .prefetch_related('items__product')
         .distinct()
         .order_by('-created_at')
@@ -1057,16 +1094,32 @@ def get_orders(request):
 
     search = request.query_params.get('search', '').strip()
     if search:
-        orders = orders.filter(
+        search_filter = (
             Q(user__username__icontains=search)
             | Q(user__email__icontains=search)
             | Q(user__first_name__icontains=search)
             | Q(user__last_name__icontains=search)
+            | Q(order_number__icontains=search)
         )
+        if search.isdigit():
+            search_filter |= Q(id=int(search))
+        orders = orders.filter(search_filter)
 
-    serializer = OrderListSerializer(orders, many=True)
-    return Response(serializer.data)
+    if request.query_params.get('all') == 'true':
+        serializer = OrderListSerializer(orders, many=True)
+        return Response(serializer.data)
 
+    paginator = OrderPagination()
+    page = paginator.paginate_queryset(orders, request)
+    serializer = OrderListSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
+def admin_orders(request):
+    """Alias for get_orders with server-side search and pagination."""
+    return get_orders(request)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
@@ -1145,10 +1198,17 @@ def product_ratings(request, pk):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 def admin_product_ratings(request):
-    """Return all ratings for products created by this admin."""
-    ratings = Rating.objects.filter(
-        product__created_by=request.user
-    ).select_related('user', 'product')
+    """Return all ratings for products created by this admin (or all for superadmin), optionally filtered by product."""
+    if getattr(request.user, 'role', '') == 'superadmin' or request.user.is_superuser:
+        ratings = Rating.objects.all()
+    else:
+        ratings = Rating.objects.filter(product__created_by=request.user)
+
+    product_id = request.query_params.get('product') or request.query_params.get('product_id')
+    if product_id:
+        ratings = ratings.filter(product_id=product_id)
+
+    ratings = ratings.select_related('user', 'product').order_by('-created_at')
     serializer = RatingSerializer(ratings, many=True)
     return Response(serializer.data)
 
