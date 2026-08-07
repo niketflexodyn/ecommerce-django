@@ -293,30 +293,39 @@ export default function Checkout() {
             <h2 className="text-lg font-bold text-slate-900 font-display">Order Summary</h2>
 
             <div className="mt-4 space-y-3">
-              {items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3">
-                  {item.image ? (
-                    <img
-                      src={item.image.startsWith('http') ? item.image : `${(import.meta.env.VITE_DJANGO_URL || 'http://localhost:8000')}${item.image}`}
-                      alt={item.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="size-12 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="flex size-12 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">
-                      No img
+              {items.map((item) => {
+                const itemKey = item.cartItemId || `${item.id}-${item.variant_id || item.variant?.id || 'default'}`;
+                return (
+                  <div key={itemKey} className="flex items-center gap-3">
+                    {item.image ? (
+                      <img
+                        src={item.image.startsWith('http') ? item.image : `${(import.meta.env.VITE_DJANGO_URL || 'http://localhost:8000')}${item.image}`}
+                        alt={item.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="size-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="flex size-12 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">
+                        No img
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-slate-800 truncate">{item.name}</p>
+                      {(item.variant_attributes?.length > 0 || item.variant?.attributes?.length > 0) && (
+                        <p className="text-[11px] text-slate-500 truncate">
+                          {item.variant_attributes?.map((a) => a.value_name).filter(Boolean).join(' • ') ||
+                           item.variant?.attributes?.map((a) => a.value_name || a.value).filter(Boolean).join(' • ')}
+                        </p>
+                      )}
+                      <p className="text-xs text-slate-500">Qty: {item.quantity} × ₹{Number(item.price).toLocaleString()}</p>
                     </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-800 truncate">{item.name}</p>
-                    <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
+                    <p className="text-sm font-semibold text-plum-950">
+                      ₹{(Number(item.price) * item.quantity).toLocaleString()}
+                    </p>
                   </div>
-                  <p className="text-sm font-semibold text-plum-950">
-                    ₹{(Number(item.price) * item.quantity).toLocaleString()}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="mt-4 space-y-2 border-t border-slate-100 pt-4 text-sm">

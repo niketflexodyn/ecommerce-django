@@ -70,11 +70,16 @@ export default function CartPage() {
           <div className="space-y-4 lg:col-span-2">
             {cartItems.map((item) => {
               const imageUrl = getProductImageUrl(item.image)
-              const lineTotal = Number(item.price) * item.quantity
+              const unitPrice = Number(item.price || 0)
+              const originalPrice = Number(item.original_price || unitPrice)
+              const hasDiscount = originalPrice > unitPrice
+              const lineTotal = unitPrice * item.quantity
+              const itemKey = item.cartItemId || `${item.id}-${item.variant_id || item.variant?.id || 'default'}`
+              const itemIdentifier = item.cartItemId || item.id
 
               return (
                 <article
-                  key={item.id}
+                  key={itemKey}
                   className="group card flex flex-col gap-4 p-4 transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:p-5"
                 >
                   {/* Image */}
@@ -106,10 +111,56 @@ export default function CartPage() {
                     >
                       {item.name}
                     </Link>
-                    <p className="mt-1 text-sm text-slate-500">{formatPrice(item.price)} each</p>
-                    <p className="mt-2 text-lg font-bold tracking-tight text-plum-950 font-display">
-                      {formatPrice(lineTotal)}
-                    </p>
+
+                    {/* Variant attributes & SKU */}
+                    {(item.variant_attributes?.length > 0 || item.variant?.attributes?.length > 0 || item.variant_sku || item.variant?.sku) && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {item.variant_attributes?.map((attr, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
+                          >
+                            {attr.attribute_name ? `${attr.attribute_name}: ` : ''}{attr.value_name}
+                          </span>
+                        ))}
+                        {!item.variant_attributes?.length && item.variant?.attributes?.map((attr, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
+                          >
+                            {attr.attribute_name ? `${attr.attribute_name}: ` : ''}{attr.value_name || attr.value}
+                          </span>
+                        ))}
+                        {(item.variant_sku || item.variant?.sku) && (
+                          <span className="text-[11px] text-slate-400 font-mono">
+                            SKU: {item.variant_sku || item.variant?.sku}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Pricing */}
+                    <div className="mt-2 flex flex-wrap items-baseline gap-2">
+                      <span className="text-base font-bold text-plum-950 font-display">
+                        {formatPrice(unitPrice)} 
+                      </span>
+                      {hasDiscount && (
+                        <>
+                          <span className="text-xs text-slate-400 line-through">
+                            {formatPrice(originalPrice)}
+                          </span>
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                            {item.discount?.percentage_off
+                              ? `${Math.round(item.discount.percentage_off)}% OFF`
+                              : 'ON SALE'}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* <p className="mt-1.5 text-sm font-semibold tracking-tight text-slate-800">
+                      Total: <span className="text-plum-950">{formatPrice(lineTotal)}</span>
+                    </p> */}
                   </div>
 
                   {/* Quantity & remove */}
@@ -117,7 +168,7 @@ export default function CartPage() {
                     <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => updateQuantity(itemIdentifier, item.quantity - 1)}
                         className="flex size-9 items-center justify-center text-slate-600 transition hover:bg-white hover:text-slate-900"
                         aria-label="Decrease quantity"
                       >
@@ -128,7 +179,7 @@ export default function CartPage() {
                       <span className="w-9 text-center text-sm font-semibold text-slate-900">{item.quantity}</span>
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(itemIdentifier, item.quantity + 1)}
                         className="flex size-9 items-center justify-center bg-plum-950 text-white transition hover:bg-plum-900"
                         aria-label="Increase quantity"
                       >
@@ -139,7 +190,7 @@ export default function CartPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(itemIdentifier)}
                       className="flex items-center gap-1 text-sm font-medium text-red-400 transition hover:text-red-600"
                     >
                       <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

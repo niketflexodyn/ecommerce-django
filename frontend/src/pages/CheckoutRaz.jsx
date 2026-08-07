@@ -237,26 +237,34 @@ export default function Checkout() {
 
           <div className="space-y-4">
 
-            {cartItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex justify-between border-b pb-3"
-              >
-                <div>
-                  <p className="font-semibold">
-                    {item.name}
-                  </p>
+            {cartItems.map((item) => {
+              const itemKey = item.cartItemId || `${item.id}-${item.variant_id || item.variant?.id || 'default'}`;
+              return (
+                <div
+                  key={itemKey}
+                  className="flex justify-between border-b pb-3"
+                >
+                  <div>
+                    <p className="font-semibold">
+                      {item.name}
+                    </p>
+                    {(item.variant_attributes?.length > 0 || item.variant?.attributes?.length > 0) && (
+                      <p className="text-xs text-gray-500">
+                        {item.variant_attributes?.map((a) => a.value_name).filter(Boolean).join(' • ') ||
+                         item.variant?.attributes?.map((a) => a.value_name || a.value).filter(Boolean).join(' • ')}
+                      </p>
+                    )}
+                    <p className="text-gray-500 text-sm">
+                      Qty: {item.quantity} × ₹{Number(item.price).toLocaleString()}
+                    </p>
+                  </div>
 
-                  <p className="text-gray-500">
-                    Qty: {item.quantity}
+                  <p className="font-semibold">
+                    ₹{(Number(item.price) * item.quantity).toLocaleString()}
                   </p>
                 </div>
-
-                <p className="font-semibold">
-                  ₹{item.price * item.quantity}
-                </p>
-              </div>
-            ))}
+              );
+            })}
 
           </div>
 

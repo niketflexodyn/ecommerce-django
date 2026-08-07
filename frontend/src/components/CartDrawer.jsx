@@ -74,55 +74,93 @@ export default function CartDrawer() {
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               {cartItems.map((item) => {
                 const imageUrl = getProductImageUrl(item.image)
-                return (
-                <div key={item.id} className="flex gap-3">
-                  {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt={item.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="size-16 shrink-0 rounded-lg object-cover bg-slate-100"
-                    />
-                  ) : (
-                    <div className="flex size-16 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[10px] text-slate-400">
-                      No image
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="truncate text-sm font-medium text-slate-800">{item.name}</p>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        aria-label={`Remove ${item.name}`}
-                        className="shrink-0 text-slate-300 hover:text-red-500"
-                      >
-                        <TrashIcon className="size-4" />
-                      </button>
-                    </div>
-                    <p className="mt-0.5 text-sm text-slate-500">
-                    ₹{parseFloat(item.price).toFixed(2)}
-                    </p>
+                const unitPrice = parseFloat(item.price || 0)
+                const origPrice = parseFloat(item.original_price || unitPrice)
+                const hasDiscount = origPrice > unitPrice
+                const itemKey = item.cartItemId || `${item.id}-${item.variant_id || item.variant?.id || 'default'}`
+                const itemIdentifier = item.cartItemId || item.id
 
-                    <div className="mt-2 inline-flex items-center rounded-full border border-slate-200">
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="flex size-7 items-center justify-center text-slate-500 hover:text-plum-950"
-                        aria-label="Decrease quantity"
-                      >
-                        −
-                      </button>
-                      <span className="w-6 text-center text-sm">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="flex size-7 items-center justify-center text-slate-500 hover:text-plum-950"
-                        aria-label="Increase quantity"
-                      >
-                        +
-                      </button>
+                return (
+                  <div key={itemKey} className="flex gap-3">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={item.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="size-16 shrink-0 rounded-lg object-cover bg-slate-100"
+                      />
+                    ) : (
+                      <div className="flex size-16 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[10px] text-slate-400">
+                        No image
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="truncate text-sm font-medium text-slate-800">{item.name}</p>
+                        <button
+                          onClick={() => removeFromCart(itemIdentifier)}
+                          aria-label={`Remove ${item.name}`}
+                          className="shrink-0 text-slate-300 hover:text-red-500"
+                        >
+                          <TrashIcon className="size-4" />
+                        </button>
+                      </div>
+
+                      {/* Variant tags */}
+                      {(item.variant_attributes?.length > 0 || item.variant?.attributes?.length > 0) && (
+                        <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                          {item.variant_attributes?.map((attr, idx) => (
+                            <span key={idx} className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] text-slate-600 font-medium">
+                              {attr.value_name}
+                            </span>
+                          ))}
+                          {!item.variant_attributes?.length && item.variant?.attributes?.map((attr, idx) => (
+                            <span key={idx} className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] text-slate-600 font-medium">
+                              {attr.value_name || attr.value}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Pricing */}
+                      <div className="mt-1 flex items-baseline gap-1.5">
+                        <span className="text-sm font-bold text-plum-950">
+                          ₹{unitPrice.toFixed(2)}
+                        </span>
+                        {hasDiscount && (
+                          <>
+                            <span className="text-[11px] text-slate-400 line-through">
+                              ₹{origPrice.toFixed(2)}
+                            </span>
+                            <span className="text-[10px] font-bold text-emerald-700">
+                              {item.discount?.percentage_off
+                                ? `${Math.round(item.discount.percentage_off)}% OFF`
+                                : 'SALE'}
+                            </span>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="mt-2 inline-flex items-center rounded-full border border-slate-200">
+                        <button
+                          onClick={() => updateQuantity(itemIdentifier, item.quantity - 1)}
+                          className="flex size-7 items-center justify-center text-slate-500 hover:text-plum-950"
+                          aria-label="Decrease quantity"
+                        >
+                          −
+                        </button>
+                        <span className="w-6 text-center text-sm font-semibold">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(itemIdentifier, item.quantity + 1)}
+                          className="flex size-7 items-center justify-center text-slate-500 hover:text-plum-950"
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
                 )
               })}
             </div>

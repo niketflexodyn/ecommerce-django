@@ -167,7 +167,7 @@ export default function AdminOrders() {
           </div>
         )}
 
-        {orders.map((order) => {
+        {orders.map((order, index) => {
           const detail = detailCache[order.id];
           const isExpanded = expanded === order.id;
           const statusStyle = STATUS_STYLES[order.status] || STATUS_STYLES.successful;
@@ -180,7 +180,7 @@ export default function AdminOrders() {
                 className="flex w-full flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 sm:px-6 sm:py-4 text-left hover:bg-slate-50/50 transition-colors"
               >
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                  <span className="text-sm font-semibold text-plum-950">#{order.id}</span>
+                  <span className="text-sm font-semibold text-plum-950">#{index+1}</span>
                   <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}>
                     {statusStyle.label}
                   </span>

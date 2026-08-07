@@ -42,6 +42,7 @@ export default function AdminProducts() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const [removeCoverImage, setRemoveCoverImage] = useState(false);
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [newSubcategoryAttributes, setNewSubcategoryAttributes] = useState('');
   const [selectedSubcategoryDetails, setSelectedSubcategoryDetails] = useState(null);
@@ -112,7 +113,7 @@ export default function AdminProducts() {
   useEffect(() => {
     fetchCategories();
   }, []);
-
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchProducts();
@@ -150,9 +151,12 @@ export default function AdminProducts() {
       {
         sku: "",
         price: "",
+        discount: "",
+        discount_type: "percentage",
         stock: "",
         image: null,
-        attributes: [],
+        attributes: {},
+        is_active: true,
       },
     ]);
   };
@@ -189,6 +193,14 @@ export default function AdminProducts() {
     if (galleryRef.current) galleryRef.current.value = '';
   };
 
+  const handleRemoveCoverImage = () => {
+    setForm((prev) => ({ ...prev, image: null }));
+    setImagePreview(null);
+    setRemoveCoverImage(true);
+    if (fileRef.current) fileRef.current.value = '';
+    if (fieldErrors.image) setFieldErrors((prev) => ({ ...prev, image: '' }));
+  };
+
   const openCreate = () => {
     setEditProduct(null);
     setForm({
@@ -206,6 +218,8 @@ export default function AdminProducts() {
     setVariants([]); // 👈 Add this so previous variants don't linger!
 
     setImagePreview(null);
+    setRemoveCoverImage(false);
+    if (fileRef.current) fileRef.current.value = '';
     resetGallery();
     setFormError('');
     setFieldErrors({});
@@ -235,7 +249,9 @@ export default function AdminProducts() {
       out_for_delivery_days: String(product.out_for_delivery_days ?? 5),
       image: null,
     });
-    setImagePreview(product.image || null);
+    setImagePreview(product.image ? resolveImgUrl(product.image) : null);
+    setRemoveCoverImage(false);
+    if (fileRef.current) fileRef.current.value = '';
     resetGallery();
     setGallery((product.images || []).map((url) => ({ url: resolveImgUrl(url), existing: true })));
     setFormError('');
@@ -252,6 +268,9 @@ export default function AdminProducts() {
             id: v.id,
             sku: v.sku,
             price: v.price,
+            discount: v.discount?.value !== undefined && v.discount?.value !== null ? String(v.discount.value) : '',
+            discount_type: v.discount?.type || 'percentage',
+            is_active: v.is_active ?? true,
             stock: v.stock,
             image: v.image,
             attributes: attrs,
@@ -535,6 +554,7 @@ export default function AdminProducts() {
         out_for_delivery_days: form.out_for_delivery_days,
         attributes: JSON.stringify(productAttributes),
         ...(form.image ? { image: form.image } : {}),
+        ...(removeCoverImage && !form.image ? { remove_image: 'true' } : {}),
         ...(newImages.length ? { images: newImages } : {}),
       };
 
@@ -556,6 +576,13 @@ export default function AdminProducts() {
           variantData.append('price', variant.price || form.price || '0.00');
           variantData.append('stock', variant.stock || 0);
           variantData.append('attributes', JSON.stringify(variant.attributes || {}));
+          variantData.append('is_active', variant.is_active !== undefined ? String(variant.is_active) : 'true');
+          if (variant.discount !== undefined && variant.discount !== null && String(variant.discount).trim() !== '') {
+            variantData.append('discount', String(variant.discount).trim());
+            variantData.append('discount_type', variant.discount_type || 'percentage');
+          } else {
+            variantData.append('discount', '');
+          }
 
           if (variant.imageFile) {
             variantData.append('image', variant.imageFile);
@@ -1239,6 +1266,36 @@ export default function AdminProducts() {
 
                             <div>
                               <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                                Discount Type
+                              </label>
+                              <select
+                                value={variant.discount_type || 'percentage'}
+                                onChange={(e) => updateVariant(index, 'discount_type', e.target.value)}
+                                className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
+                              >
+                                <option value="percentage">Percentage (%)</option>
+                                <option value="fixed">Fixed Amount (₹)</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                                Discount {variant.discount_type === 'percentage' ? '(%)' : '(₹)'}
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max={variant.discount_type === 'percentage' ? '100' : undefined}
+                                placeholder={variant.discount_type === 'percentage' ? 'e.g. 20' : 'e.g. 150'}
+                                value={variant.discount ?? ''}
+                                onChange={(e) => updateVariant(index, 'discount', e.target.value)}
+                                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">
                                 Stock
                               </label>
                               <input
@@ -1262,6 +1319,24 @@ export default function AdminProducts() {
                                 className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 focus:outline-none"
                               />
                             </div>
+
+                            {/* Live preview calculation if discount is configured */}
+                            {(() => {
+                              const p = parseFloat(variant.price || form.price || 0);
+                              const d = parseFloat(variant.discount || 0);
+                              const t = variant.discount_type || 'percentage';
+                              if (p > 0 && d > 0) {
+                                const finalP = t === 'percentage' ? Math.max(0, p - (p * d) / 100) : Math.max(0, p - d);
+                                const pct = t === 'percentage' ? Math.min(100, d) : Math.min(100, Math.round((d / p) * 100));
+                                return (
+                                  <div className="sm:col-span-2 flex items-center justify-between rounded-md bg-emerald-50 border border-emerald-200/80 px-2.5 py-1.5 text-xs text-emerald-800 font-medium">
+                                    <span>Discounted Price: <strong className="text-emerald-950 font-bold">₹{finalP.toFixed(2)}</strong> (was ₹{p.toFixed(2)})</span>
+                                    <span className="rounded-full bg-emerald-200/90 text-emerald-900 px-2 py-0.5 text-[11px] font-bold">{Math.round(pct)}% OFF</span>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
 
                             {/* Variant Image */}
                             <div className="sm:col-span-2">
@@ -1373,9 +1448,10 @@ export default function AdminProducts() {
                       setForm({ ...form, image: file || null });
                       if (fieldErrors.image) setFieldErrors((prev) => ({ ...prev, image: '' }));
                       if (file) {
+                        setRemoveCoverImage(false);
                         setImagePreview(URL.createObjectURL(file));
                       } else {
-                        setImagePreview(editProduct?.image ? resolveImgUrl(editProduct.image) : null);
+                        setImagePreview(editProduct?.image && !removeCoverImage ? resolveImgUrl(editProduct.image) : null);
                       }
                     }}
                     className={`w-full text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-plum-950 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-plum-900 file:transition-colors ${fieldErrors.image ? 'border border-red-500 rounded-lg p-1' : ''
@@ -1385,11 +1461,21 @@ export default function AdminProducts() {
                     <p className="mt-1 text-xs font-medium text-red-600">{fieldErrors.image}</p>
                   )}
                   {imagePreview && (
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="mt-2 h-24 w-24 rounded-lg object-cover ring-1 ring-slate-200"
-                    />
+                    <div className="relative mt-2 inline-block">
+                      <img
+                        src={imagePreview}
+                        alt="Cover Preview"
+                        className="h-24 w-24 rounded-lg object-cover ring-1 ring-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoverImage}
+                        title="Remove cover image"
+                        className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-plum-950 text-xs text-white shadow ring-2 ring-white hover:bg-red-600 transition-colors"
+                      >
+                        &times;
+                      </button>
+                    </div>
                   )}
                 </div>
 

@@ -26,9 +26,9 @@ User = get_user_model()
 logger = logging.getLogger("store")
 
 # pyrefly: ignore [missing-import]
-from .models import Product, Category, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute, ProductVariant, VariantAttribute
+from .models import Product, Category, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute, ProductVariant, VariantAttribute, Discount
 # pyrefly: ignore [missing-import]
-from .pagination import ProductPagination, AdminProductPagination, CategoryPagination, OrderPagination
+from .pagination import ProductPagination, AdminProductPagination, CategoryPagination, OrderPagination, AdminAccountPagination
 # pyrefly: ignore [missing-import]
 from .permissions import IsAdminOrSuperAdmin, IsSuperAdmin
 # pyrefly: ignore [missing-import]
@@ -250,6 +250,22 @@ def create_product_variant(request, pk):
             except Exception as e:
                 logger.exception("Error saving variant attributes: %s", e)
         
+        # Handle discount for new variant
+        discount_val = request.data.get('discount')
+        discount_type = request.data.get('discount_type', 'percentage') or 'percentage'
+        if discount_val not in (None, '', 'null'):
+            try:
+                val = Decimal(str(discount_val).strip())
+                if val > Decimal('0'):
+                    Discount.objects.create(
+                        variant=variant,
+                        discount_type=discount_type,
+                        value=val,
+                        is_active=True,
+                    )
+            except Exception as e:
+                logger.exception("Error saving variant discount: %s", e)
+
         return Response(ProductVariantSerializer(variant, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -270,8 +286,8 @@ def update_product_variant(request, pk):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    partial = request.method == "PATCH"
-    serializer = ProductVariantSerializer(variant, data=request.data, partial=partial, context={"request": request})
+    partial = request.method == "PUT"
+    serializer = ProductVariantSerializer(variant, data=request.data, partial=True, context={"request": request})
     if serializer.is_valid():
         variant = serializer.save()
         
@@ -291,6 +307,33 @@ def update_product_variant(request, pk):
                             )
             except Exception as e:
                 logger.exception("Error saving variant attributes: %s", e)
+
+        # Handle discount for existing variant
+        discount_val = request.data.get('discount')
+        discount_type = request.data.get('discount_type', 'percentage') or 'percentage'
+        if discount_val not in (None, '', 'null'):
+            try:
+                val = Decimal(str(discount_val).strip())
+                if val > Decimal('0'):
+                    disc = variant.discounts.filter(is_active=True).first()
+                    if disc:
+                        disc.discount_type = discount_type
+                        disc.value = val
+                        disc.save()
+                    else:
+                        Discount.objects.create(
+                            variant=variant,
+                            discount_type=discount_type,
+                            value=val,
+                            is_active=True,
+                        )
+                else:
+                    variant.discounts.filter(is_active=True).update(is_active=False)
+            except Exception as e:
+                logger.exception("Error updating variant discount: %s", e)
+        elif 'discount' in request.data:
+            # Explicitly cleared discount
+            variant.discounts.filter(is_active=True).update(is_active=False)
 
         return Response(ProductVariantSerializer(variant, context={"request": request}).data, status=status.HTTP_200_OK)
 
@@ -560,6 +603,12 @@ def update_product(request, pk):
     except Product.DoesNotExist:
         return Response({'error': 'Product not found or not yours'}, status=404)
 
+    if request.data.get('remove_image') in ['true', 'True', True, '1']:
+        if product.image and not request.FILES.get('image'):
+            product.image.delete(save=False)
+            product.image = None
+            product.save(update_fields=['image'])
+
     serializer = ProductWriteSerializer(product, data=request.data, partial=True)
     if serializer.is_valid():
         with transaction.atomic():
@@ -714,7 +763,7 @@ def get_cart(request):
         return Response({'id': None, 'user': None, 'created_at': None, 'items': [], 'total': '0.00'})
 
     cart, _ = Cart.objects.get_or_create(user=request.user)
-    serializer = CartSerializer(cart)
+    serializer = CartSerializer(cart, context={'request': request})
     return Response(serializer.data)
 
 
@@ -724,6 +773,7 @@ def add_to_cart(request):
         return Response({'error': 'Login required to add items to cart'}, status=401)
 
     product_id = request.data.get('product_id')
+    variant_id = request.data.get('variant_id')
     quantity = int(request.data.get('quantity', 1))
 
     try:
@@ -731,14 +781,25 @@ def add_to_cart(request):
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=404)
 
+    variant = None
+    if variant_id:
+        try:
+            variant = ProductVariant.objects.get(id=variant_id, product=product)
+        except ProductVariant.DoesNotExist:
+            variant = None
+
     cart, _ = Cart.objects.get_or_create(user=request.user)
-    item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+    item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        variant=variant,
+    )
     if created:
         item.quantity = quantity
     else:
         item.quantity += quantity
     item.save()
-    return Response({'message': 'Item added to cart', 'cart': CartSerializer(cart).data}, status=200)
+    return Response({'message': 'Item added to cart', 'cart': CartSerializer(cart, context={'request': request}).data}, status=200)
 
 
 @api_view(["PUT"])
@@ -802,11 +863,11 @@ def checkout(request):
     if not cart:
         return Response({'error': 'Cart is empty'}, status=400)
 
-    cart_items = cart.items.select_related('product').all()
+    cart_items = cart.items.select_related('product', 'variant').all()
     if not cart_items.exists():
         return Response({'error': 'Cart is empty'}, status=400)
 
-    total = sum(item.product.price * item.quantity for item in cart_items)
+    total = sum(item.subtotal for item in cart_items)
 
     address = request.data.get('address', '').strip() or user.address
     phone = request.data.get('phone', '').strip() or user.phone
@@ -845,8 +906,9 @@ def checkout(request):
         OrderItem.objects.create(
             order=order,
             product=item.product,
+            variant=item.variant,
             quantity=item.quantity,
-            price=item.product.price,
+            price=item.unit_price,
         )
 
     cart_items.delete()
@@ -887,11 +949,11 @@ def _cart_grand_total(user):
     cart = Cart.objects.filter(user=user).first()
     if not cart:
         return None, None, None
-    cart_items = cart.items.select_related('product').all()
+    cart_items = cart.items.select_related('product', 'variant').all()
     if not cart_items.exists():
         return None, None, None
 
-    subtotal = sum(item.product.price * item.quantity for item in cart_items)
+    subtotal = sum(item.subtotal for item in cart_items)
     subtotal = Decimal(subtotal).quantize(Decimal('0.01'))
     shipping = Decimal('0.00') if subtotal >= 50 else Decimal('9.99')
     grand_total = (subtotal + shipping).quantize(Decimal('0.01'))
@@ -988,13 +1050,14 @@ def checkout_razorpay(request):
     if order is None:
         return Response({'error': 'Could not create order, please try again.'}, status=500)
 
-    cart_items = Cart.objects.get(user=user).items.select_related('product').all()
+    cart_items = Cart.objects.get(user=user).items.select_related('product', 'variant').all()
     for item in cart_items:
         OrderItem.objects.create(
             order=order,
             product=item.product,
+            variant=item.variant,
             quantity=item.quantity,
-            price=item.product.price,
+            price=item.unit_price,
         )
 
     order.total_amount = grand_total
@@ -1335,8 +1398,8 @@ def _set_admin_account_status(admin_user, new_status, make_active):
 def superadmin_admins(request):
     """List admin accounts for super admin review.
 
-    Optional `?status=pending|active|rejected|suspended` filter. Without a
-    filter, all admins are returned newest-first.
+    Optional `?status=pending|active|rejected|suspended` filter and `?search=...`.
+    Supports server-side pagination with `?page=X&page_size=Y`.
     """
     qs = User.objects.filter(role="admin").order_by("-date_joined")
 
@@ -1344,8 +1407,36 @@ def superadmin_admins(request):
     if status_filter:
         qs = qs.filter(account_status=status_filter)
 
-    serializer = AdminAccountSerializer(qs, many=True)
-    return Response(serializer.data)
+    search = request.query_params.get("search", "").strip()
+    if search:
+        qs = qs.filter(
+            Q(username__icontains=search)
+            | Q(email__icontains=search)
+            | Q(first_name__icontains=search)
+            | Q(last_name__icontains=search)
+            | Q(phone__icontains=search)
+        )
+
+    # Status counts for header tabs
+    all_admins = User.objects.filter(role="admin")
+    counts = {
+        "all": all_admins.count(),
+        "pending": all_admins.filter(account_status="pending").count(),
+        "active": all_admins.filter(account_status="active").count(),
+        "suspended": all_admins.filter(account_status="suspended").count(),
+        "rejected": all_admins.filter(account_status="rejected").count(),
+    }
+
+    if request.query_params.get("all") == "true":
+        serializer = AdminAccountSerializer(qs, many=True)
+        return Response({"results": serializer.data, "count": qs.count(), "counts": counts})
+
+    paginator = AdminAccountPagination()
+    page = paginator.paginate_queryset(qs, request)
+    serializer = AdminAccountSerializer(page, many=True)
+    response = paginator.get_paginated_response(serializer.data)
+    response.data["counts"] = counts
+    return response
 
 
 @api_view(["GET"])

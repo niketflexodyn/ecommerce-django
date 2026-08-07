@@ -121,7 +121,9 @@ export default function ProductDetails() {
   }, [product, selectedAttributes, selectedVariantId])
 
   // Dynamic price & stock based on active variant
-  const currentPrice = activeVariant?.price || product?.price
+  const originalPrice = activeVariant?.price || product?.price
+  const currentPrice = activeVariant?.discounted_price || activeVariant?.price || product?.price
+  const hasDiscount = Boolean(activeVariant?.discounted_price && Number(activeVariant.discounted_price) < Number(activeVariant.price))
   const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : false
 
   // Fetch product ratings
@@ -404,9 +406,23 @@ export default function ProductDetails() {
               <div className="flex items-baseline justify-between">
                 <div>
                   <span className="text-xs font-medium uppercase tracking-wide text-slate-400">Price</span>
-                  <p className="font-display text-4xl font-bold tracking-tight text-plum-950">
-                    {formatPrice(currentPrice)}
-                  </p>
+                  <div className="flex items-baseline flex-wrap gap-2.5">
+                    <p className="font-display text-4xl font-bold tracking-tight text-plum-950">
+                      {formatPrice(currentPrice)}
+                    </p>
+                    {hasDiscount && (
+                      <span className="text-xl text-slate-400 line-through">
+                        {formatPrice(originalPrice)}
+                      </span>
+                    )}
+                    {hasDiscount && (
+                      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                        {activeVariant?.discount?.percentage_off
+                          ? `${Math.round(activeVariant.discount.percentage_off)}% OFF`
+                          : 'SALE'}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {activeVariant?.sku && (
                   <span className="text-xs font-mono text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
@@ -502,7 +518,7 @@ export default function ProductDetails() {
                           >
                             <span>{v.sku || `Option ${idx + 1}`}</span>
                             <span className={isSelected ? 'text-gold-300 font-bold' : 'text-slate-500 font-medium'}>
-                              {formatPrice(v.price)}
+                              {formatPrice(v.discounted_price || v.price)}
                             </span>
                           </button>
                         )

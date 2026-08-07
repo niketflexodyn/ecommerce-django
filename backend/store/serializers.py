@@ -1,7 +1,7 @@
 import re
 from rest_framework import serializers
 # pyrefly: ignore [missing-import]
-from .models import Category, Product, Cart, CartItem, Order, OrderItem, Rating, VariantAttribute, ProductVariant, Wishlist, User, Attribute, AttributeValue, ProductAttribute
+from .models import Category, Product, Cart, CartItem, Discount, Order, OrderItem, Rating, VariantAttribute, ProductVariant, Wishlist, User, Attribute, AttributeValue, ProductAttribute
 from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -109,6 +109,8 @@ class VariantAttributeSerializer(serializers.ModelSerializer):
 
 class ProductVariantSerializer(serializers.ModelSerializer):
     attributes = VariantAttributeSerializer(many=True, read_only=True)
+    discounted_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    discount = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductVariant
@@ -116,11 +118,25 @@ class ProductVariantSerializer(serializers.ModelSerializer):
             "id",
             "sku",
             "price",
+            "discounted_price",
+            "discount",
             "stock",
             "image",
             "is_active",
             "attributes",
         ]
+
+    def get_discount(self, obj):
+        active = obj.active_discount
+        if active:
+            return {
+                "id": active.id,
+                "type": active.discount_type,
+                "value": float(active.value),
+                "percentage_off": float(active.get_percentage_off()),
+                "amount_off": float(active.get_discount_amount()),
+            }
+        return None
 
 
 
@@ -205,12 +221,96 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
-    product_price = serializers.DecimalField(source='product.price', max_digits=10, decimal_places=2, read_only=True)
-    product_image = serializers.ImageField(source='product.image', read_only=True)
+    product_image = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+    original_price = serializers.SerializerMethodField()
+    discounted_price = serializers.SerializerMethodField()
+    discount = serializers.SerializerMethodField()
+    variant_detail = ProductVariantSerializer(source='variant', read_only=True)
+    variant_sku = serializers.SerializerMethodField()
+    variant_attributes = serializers.SerializerMethodField()
+    subtotal = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = '__all__'
+        fields = [
+            'id',
+            'cart',
+            'product',
+            'product_name',
+            'product_image',
+            'variant',
+            'variant_detail',
+            'variant_sku',
+            'variant_attributes',
+            'price',
+            'original_price',
+            'discounted_price',
+            'discount',
+            'quantity',
+            'subtotal',
+        ]
+
+    def get_product_image(self, obj):
+        request = self.context.get('request')
+        image_field = None
+        if obj.variant and obj.variant.image:
+            image_field = obj.variant.image
+        elif obj.product and obj.product.image:
+            image_field = obj.product.image
+        
+        if image_field:
+            if request:
+                return request.build_absolute_uri(image_field.url)
+            return image_field.url
+        return None
+
+    def get_price(self, obj):
+        return obj.unit_price
+
+    def get_original_price(self, obj):
+        if obj.variant:
+            return obj.variant.price
+        return obj.product.price
+
+    def get_discounted_price(self, obj):
+        if obj.variant and obj.variant.active_discount:
+            return obj.variant.discounted_price
+        return None
+
+    def get_discount(self, obj):
+        if obj.variant:
+            active = obj.variant.active_discount
+            if active:
+                return {
+                    'id': active.id,
+                    'type': active.discount_type,
+                    'value': float(active.value),
+                    'percentage_off': float(active.get_percentage_off()),
+                    'amount_off': float(active.get_discount_amount()),
+                }
+        return None
+
+    def get_variant_sku(self, obj):
+        if obj.variant:
+            return obj.variant.sku
+        return None
+
+    def get_variant_attributes(self, obj):
+        if obj.variant:
+            attrs = []
+            for va in obj.variant.attributes.select_related('attribute', 'value').all():
+                attrs.append({
+                    'attribute_id': va.attribute_id,
+                    'attribute_name': va.attribute.name if va.attribute else '',
+                    'value_id': va.value_id,
+                    'value_name': va.value.value if va.value else '',
+                })
+            return attrs
+        return []
+
+    def get_subtotal(self, obj):
+        return obj.subtotal
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -603,6 +703,46 @@ class DashboardStatsSerializer(serializers.Serializer):
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
+class DiscountSerializer(serializers.ModelSerializer):
+    discounted_price = serializers.SerializerMethodField()
+    percentage_off = serializers.SerializerMethodField()
+    amount_off = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Discount
+        fields = [
+            "id",
+            "variant",
+            "discount_type",
+            "value",
+            "is_active",
+            "discounted_price",
+            "percentage_off",
+            "amount_off",
+        ]
+
+    def validate(self, attrs):
+        discount_type = attrs.get('discount_type') or getattr(self.instance, 'discount_type', None)
+        value = attrs.get('value') if 'value' in attrs else getattr(self.instance, 'value', None)
+
+        if value is not None:
+            if value < 0:
+                raise serializers.ValidationError({"value": "Discount value cannot be negative."})
+            if discount_type == 'percentage' and value > 100:
+                raise serializers.ValidationError({"value": "Percentage discount cannot exceed 100%."})
+
+        return attrs
+
+    def get_discounted_price(self, obj):
+        if not obj.is_currently_active():
+            return obj.variant.price
+        return obj.get_discounted_price()
+
+    def get_percentage_off(self, obj):
+        return obj.get_percentage_off()
+
+    def get_amount_off(self, obj):
+        return obj.get_discount_amount()
 
 class ResetPasswordSerializer(serializers.Serializer):
     uid = serializers.CharField(write_only=True)

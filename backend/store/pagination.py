@@ -120,3 +120,31 @@ class OrderPagination(PageNumberPagination):
         self.page = paginator.page(page_number)
         self.request = request
         return list(self.page)
+
+
+class AdminAccountPagination(PageNumberPagination):
+    page_size = 10         # Admin accounts per page
+    page_size_query_param = "page_size"
+    max_page_size = 50
+
+    def paginate_queryset(self, queryset, request, view=None):
+        page_size = self.get_page_size(request)
+        if not page_size:
+            return None
+
+        paginator = self.django_paginator_class(queryset, page_size)
+        page_number = self.get_page_number(request, paginator)
+        try:
+            page_number = int(page_number)
+        except (TypeError, ValueError):
+            page_number = 1
+
+        total_pages = paginator.num_pages
+        if total_pages == 0:
+            page_number = 1
+        else:
+            page_number = max(1, min(page_number, total_pages))
+
+        self.page = paginator.page(page_number)
+        self.request = request
+        return list(self.page)

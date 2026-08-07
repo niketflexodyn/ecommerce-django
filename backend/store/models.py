@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-
+from decimal import Decimal
 from django.utils import timezone
 
 
@@ -191,7 +191,7 @@ class AttributeValue(models.Model):
 class ProductVariant(models.Model):
     product = models.ForeignKey(
         Product,
-        on_delete= models.CASCADE,
+        on_delete=models.CASCADE,
         related_name="variants",
     )
     sku = models.CharField(max_length=100)
@@ -204,7 +204,24 @@ class ProductVariant(models.Model):
     )
     is_active = models.BooleanField(default=True)
 
-    
+    @property
+    def active_discount(self):
+        return self.discounts.filter(is_active=True).first()
+
+    @property
+    def discounted_price(self):
+        active_disc = self.active_discount
+        if active_disc:
+            return round(active_disc.get_discounted_price(), 2)
+        return self.price
+
+    @property
+    def percentage_off(self):
+        active_disc = self.active_discount
+        if active_disc:
+            return active_disc.get_percentage_off()
+        return None
+
     def __str__(self):
         return self.sku
 
@@ -367,6 +384,14 @@ class OrderItem(models.Model):
         on_delete=models.CASCADE,
     )
 
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="order_items",
+    )
+
     quantity = models.PositiveIntegerField(default=1)
 
     price = models.DecimalField(
@@ -375,9 +400,73 @@ class OrderItem(models.Model):
     )
 
     def __str__(self):
+        if self.variant:
+            return f"{self.quantity} × {self.product.name} ({self.variant.sku})"
         return f"{self.quantity} × {self.product.name}"
 
+class Discount(models.Model):
 
+    DISCOUNT_TYPE_CHOICES = (
+        ("percentage", "Percentage"),
+        ("fixed", "Fixed Amount"),
+    )
+
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.CASCADE,
+        related_name="discounts",
+    )
+
+    discount_type = models.CharField(
+        max_length=20,
+        choices=DISCOUNT_TYPE_CHOICES,
+    )
+
+    value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    def is_currently_active(self):
+        return self.is_active
+
+    def get_discounted_price(self):
+        price = self.variant.price
+        if self.discount_type == "percentage":
+            discount_amount = price * (self.value / Decimal("100"))
+            return max(price - discount_amount, Decimal("0"))
+        if self.discount_type == "fixed":
+            return max(price - self.value, Decimal("0"))
+        return price
+
+    def get_percentage_off(self):
+        """Calculates effective percentage off, for both percentage and fixed discounts."""
+        price = self.variant.price
+        if not price or price <= Decimal("0"):
+            return Decimal("0")
+        if self.discount_type == "percentage":
+            return round(min(max(self.value, Decimal("0")), Decimal("100")), 1)
+        if self.discount_type == "fixed":
+            pct = (self.value / price) * Decimal("100")
+            return round(min(max(pct, Decimal("0")), Decimal("100")), 1)
+        return Decimal("0")
+
+    def get_discount_amount(self):
+        """Returns the actual currency amount saved."""
+        price = self.variant.price
+        disc_price = self.get_discounted_price()
+        return max(price - disc_price, Decimal("0"))
+
+    def __str__(self):
+        return f"{self.variant.sku} - {self.value}"
 class Cart(models.Model):
 
     user = models.ForeignKey(
@@ -413,14 +502,30 @@ class CartItem(models.Model):
         on_delete=models.CASCADE,
     )
 
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cart_items",
+    )
+
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
+        if self.variant:
+            return f"{self.quantity} × {self.product.name} ({self.variant.sku})"
         return f"{self.quantity} × {self.product.name}"
 
     @property
+    def unit_price(self):
+        if self.variant:
+            return self.variant.discounted_price
+        return self.product.price
+
+    @property
     def subtotal(self):
-        return self.product.price * self.quantity
+        return self.unit_price * self.quantity
 
 
 class Rating(models.Model):

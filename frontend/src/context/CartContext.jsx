@@ -6,6 +6,23 @@ const CartContext = createContext()
 
 const BASE_URL = import.meta.env.VITE_DJANGO_URL
 
+const mapServerCartItem = (item) => ({
+  id: item.product,
+  name: item.product_name,
+  price: item.price ?? item.discounted_price ?? item.original_price ?? '0.00',
+  original_price: item.original_price,
+  discounted_price: item.discounted_price,
+  discount: item.discount,
+  variant: item.variant_detail,
+  variant_id: item.variant,
+  variant_sku: item.variant_sku,
+  variant_attributes: item.variant_attributes || [],
+  image: item.product_image,
+  quantity: item.quantity,
+  cartItemId: item.id,
+  subtotal: item.subtotal,
+})
+
 export const CartProvider = ({ children }) => {
   const { user, tokens } = useAuth()
   const navigate = useNavigate()
@@ -27,14 +44,7 @@ export const CartProvider = ({ children }) => {
         .then((data) => {
           if (data.id) {
             setServerCartId(data.id)
-            const items = (data.items || []).map((item) => ({
-              id: item.product,
-              name: item.product_name,
-              price: item.product_price,
-              image: item.product_image,
-              quantity: item.quantity,
-              cartItemId: item.id,
-            }))
+            const items = (data.items || []).map(mapServerCartItem)
             setCartItems(items)
           }
         })
@@ -63,31 +73,34 @@ export const CartProvider = ({ children }) => {
       return
     }
 
+    const variantId = product.variant?.id || product.variant_id || null
+
     if (user && tokens?.access) {
       try {
         const res = await fetch(`${BASE_URL}/api/cart/add/`, {
           method: 'POST',
           headers: getAuthHeaders(),
-          body: JSON.stringify({ product_id: product.id, quantity: 1 }),
+          body: JSON.stringify({
+            product_id: product.id,
+            variant_id: variantId,
+            quantity: product.quantity || 1,
+          }),
         })
         if (!res.ok) throw new Error('Failed to add to cart')
-        await res.json()
-        const cartRes = await fetch(`${BASE_URL}/api/cart/`, {
-          headers: getAuthHeaders(),
-        })
-        if (cartRes.ok) {
-          const cartData = await cartRes.json()
-          if (cartData.id) {
-            setServerCartId(cartData.id)
-            const items = (cartData.items || []).map((item) => ({
-              id: item.product,
-              name: item.product_name,
-              price: item.product_price,
-              image: item.product_image,
-              quantity: item.quantity,
-              cartItemId: item.id,
-            }))
-            setCartItems(items)
+        const data = await res.json()
+        if (data.cart?.id) {
+          setServerCartId(data.cart.id)
+          setCartItems((data.cart.items || []).map(mapServerCartItem))
+        } else {
+          const cartRes = await fetch(`${BASE_URL}/api/cart/`, {
+            headers: getAuthHeaders(),
+          })
+          if (cartRes.ok) {
+            const cartData = await cartRes.json()
+            if (cartData.id) {
+              setServerCartId(cartData.id)
+              setCartItems((cartData.items || []).map(mapServerCartItem))
+            }
           }
         }
         setIsCartOpen(true)
@@ -97,59 +110,72 @@ export const CartProvider = ({ children }) => {
       }
     }
 
-    const existing = cartItems.find((item) => item.id === product.id)
+    const keyMatch = (item) =>
+      item.id === product.id && (variantId ? (item.variant_id === variantId || item.variant?.id === variantId) : !item.variant_id)
+
+    const existing = cartItems.find(keyMatch)
     if (existing) {
       setCartItems(
         cartItems.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          keyMatch(item) ? { ...item, quantity: item.quantity + (product.quantity || 1) } : item
         )
       )
     } else {
-      setCartItems([...cartItems, { ...product, quantity: 1 }])
+      setCartItems([
+        ...cartItems,
+        {
+          ...product,
+          variant_id: variantId,
+          variant: product.variant,
+          quantity: product.quantity || 1,
+        },
+      ])
     }
     setIsCartOpen(true)
   }
 
-  const removeFromCart = async (productId) => {
-    if (user && tokens?.access) {
-      const item = cartItems.find((i) => i.id === productId)
-      if (item?.cartItemId) {
-        try {
-          await fetch(`${BASE_URL}/api/cart/remove/${item.cartItemId}/`, {
-            method: 'DELETE',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ item_id: item.cartItemId }),
-          })
-        } catch {
-          // Continue with local removal even if server fails
-        }
+  const removeFromCart = async (identifier) => {
+    const item = cartItems.find((i) => i.cartItemId === identifier || i.id === identifier)
+    const targetCartItemId = item?.cartItemId
+
+    if (user && tokens?.access && targetCartItemId) {
+      try {
+        await fetch(`${BASE_URL}/api/cart/remove/${targetCartItemId}/`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ item_id: targetCartItemId }),
+        })
+      } catch {
+        // Continue with local removal even if server fails
       }
     }
-    setCartItems(cartItems.filter((item) => item.id !== productId))
+    setCartItems(cartItems.filter((item) => item.cartItemId !== identifier && item.id !== identifier))
   }
 
-  const updateQuantity = async (id, quantity) => {
+  const updateQuantity = async (identifier, quantity) => {
     if (quantity < 1) {
-      removeFromCart(id)
+      removeFromCart(identifier)
       return
     }
 
-    if (user && tokens?.access) {
-      const item = cartItems.find((i) => i.id === id)
-      if (item?.cartItemId) {
-        try {
-          await fetch(`${BASE_URL}/api/cart/update/${item.cartItemId}/`, {
-            method: 'PUT',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ item_id: item.cartItemId, quantity }),
-          })
-        } catch {
-          // Continue with local update even if server fails
-        }
+    const item = cartItems.find((i) => i.cartItemId === identifier || i.id === identifier)
+    const targetCartItemId = item?.cartItemId
+
+    if (user && tokens?.access && targetCartItemId) {
+      try {
+        await fetch(`${BASE_URL}/api/cart/update/${targetCartItemId}/`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ item_id: targetCartItemId, quantity }),
+        })
+      } catch {
+        // Continue with local update even if server fails
       }
     }
     setCartItems(
-      cartItems.map((item) => (item.id === id ? { ...item, quantity } : item))
+      cartItems.map((item) =>
+        (item.cartItemId === identifier || item.id === identifier) ? { ...item, quantity } : item
+      )
     )
   }
 

@@ -13,6 +13,7 @@ from .models import (
     Attribute,
     AttributeValue,
     ProductAttribute,
+    Discount,
     ProductVariant,
     VariantAttribute
 )
@@ -128,6 +129,26 @@ class ProductVariantAdmin(admin.ModelAdmin):
     list_filter = ("is_active", "product__category")
     search_fields = ("sku", "product__name")
     inlines = [VariantAttributeInline]
+
+@admin.register(Discount)
+class DiscountAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "variant",
+        "discount_type",
+        "value",
+        "is_active",
+    )
+
+    list_filter = (
+        "discount_type",
+        "is_active",
+    )
+
+    search_fields = (
+        "variant__sku",
+        "variant__product__name",
+    )
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(SubCategory, SubCategoryAdmin)
