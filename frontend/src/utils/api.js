@@ -79,6 +79,26 @@ async function request(endpoint, options = {}) {
   return response.json();
 }
 
+export const subscriptionApi = {
+
+  plans() {
+    return request("/vendor/subscription-plans/");
+  },
+
+  create(planId) {
+    return request("/vendor/subscription/create/", {
+      method: "POST",
+      body: JSON.stringify({
+        plan: planId,
+      }),
+    });
+  },
+
+  mine() {
+    return request("/vendor/subscription/me/");
+  },
+};
+
 // -------------------------
 // Products (Public — all products for storefront)
 // -------------------------
@@ -232,6 +252,12 @@ export const authApi = {
   }
 
 };
+
+
+
+
+
+
 // -------------------------
 // Checkout (Customer)
 // -------------------------

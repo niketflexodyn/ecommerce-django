@@ -60,6 +60,141 @@ class User(AbstractUser):
         return self.username
 
 
+class VendorSubscriptionPlan(models.Model):
+
+    BILLING_CYCLE_CHOICES = (
+        ("monthly", "Monthly"),
+        ("annual", "Annual"),
+    )
+
+    name = models.CharField(max_length=100)
+
+    billing_cycle = models.CharField(
+        max_length=20,
+        choices=BILLING_CYCLE_CHOICES,
+    )
+
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+    )
+
+    razorpay_plan_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.billing_cycle}"
+
+
+
+class VendorSubscription(models.Model):
+
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("active", "Active"),
+        ("expired", "Expired"),
+        ("cancelled", "Cancelled"),
+    )
+    
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="vendor_subscriptions",
+    )
+
+    plan = models.ForeignKey(
+        VendorSubscriptionPlan,
+        on_delete=models.PROTECT,
+        related_name="subscriptions",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+    )
+
+    start_date = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    end_date = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    razorpay_subscription_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    def __str__(self):
+        return f"{self.vendor.username} - {self.plan.name}"
+
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("active", "Active"),
+        ("expired", "Expired"),
+        ("cancelled", "Cancelled"),
+    )
+
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="vendor_subscriptions",
+    )
+
+    plan = models.ForeignKey(
+        VendorSubscriptionPlan,
+        on_delete=models.PROTECT,
+        related_name="subscriptions",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+    )
+
+    start_date = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    end_date = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    razorpay_subscription_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    def __str__(self):
+        return f"{self.vendor.username} - {self.plan.name}"
+   
+
+
+        
 class Category(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)

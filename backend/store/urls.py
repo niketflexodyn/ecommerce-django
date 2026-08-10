@@ -75,6 +75,22 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view()),
     path('profile/', views.get_profile),
     path('profile/update/', views.update_profile),
+    path(
+    "vendor/subscription-plans/",
+    views.get_subscription_plans,
+    name="subscription-plans",
+    ),
+
+    path(
+    "vendor/subscription/",
+    views.get_my_subscription,
+    name="my-subscription",
+    ),
+    path(
+    "vendor/subscription/create/",
+    views.create_vendor_subscription,
+    name="create-vendor-subscription",
+),
     # Super admin 
     path('superadmin/admins/', views.superadmin_admins),
     path('superadmin/admins/pending/', views.superadmin_pending_admins),

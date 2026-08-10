@@ -1,4 +1,5 @@
 # from backend.store.serializers import WishlistSerializer
+
 from django.shortcuts import get_object_or_404
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -26,7 +27,7 @@ User = get_user_model()
 logger = logging.getLogger("store")
 
 # pyrefly: ignore [missing-import]
-from .models import Product, Category, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute, ProductVariant, VariantAttribute, Discount
+from .models import Product, Category,VendorSubscription, VendorSubscriptionPlan, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute, ProductVariant, VariantAttribute, Discount
 # pyrefly: ignore [missing-import]
 from .pagination import ProductPagination, AdminProductPagination, CategoryPagination, OrderPagination, AdminAccountPagination
 # pyrefly: ignore [missing-import]
@@ -40,10 +41,12 @@ from .serializers import (
     ResetPasswordSerializer,
     CategoryWriteSerializer,
     ProductWriteSerializer,
+    VendorSubscriptionPlanSerializer,
     CartSerializer,
     SubCategoryCreateSerializer,
     CartItemSerializer,
     RegisterSerializer,
+    VendorSubscriptionSerializer,
     UserProfileSerializer,
     ProductVariantSerializer,
     CustomTokenObtainPairSerializer,
@@ -215,6 +218,130 @@ def find_product_variant(request, pk):
     status=status.HTTP_404_NOT_FOUND,
     )
 
+@api_view(["GET"])
+def get_subscription_plans(request):
+    """
+    Get all active vendor subscription plans.
+    """
+
+    plans = VendorSubscriptionPlan.objects.filter(
+        is_active=True
+    )
+
+    serializer = VendorSubscriptionPlanSerializer(
+        plans,
+        many=True
+    )
+
+    return Response(
+        serializer.data,
+        status=status.HTTP_200_OK
+    )
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_my_subscription(request):
+    """
+    Get the logged-in vendor's current subscription.
+    """
+
+    subscription = (
+        VendorSubscription.objects
+        .filter(vendor=request.user)
+        .order_by("-created_at")
+        .first()
+    )
+
+    if not subscription:
+        return Response(
+            {
+                "message": "No subscription found."
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    serializer = VendorSubscriptionSerializer(
+        subscription
+    )
+
+    return Response(
+        serializer.data,
+        status=status.HTTP_200_OK
+    )
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_vendor_subscription(request):
+
+    plan_id = request.data.get("plan")
+
+    if not plan_id:
+        return Response(
+            {"error": "Plan is required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        plan = VendorSubscriptionPlan.objects.get(
+            id=plan_id,
+            is_active=True
+        )
+    except VendorSubscriptionPlan.DoesNotExist:
+        return Response(
+            {"error": "Subscription plan not found."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    if not plan.razorpay_plan_id:
+        return Response(
+            {
+                "error": "This plan is not configured with Razorpay."
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    active_subscription = VendorSubscription.objects.filter(
+        vendor=request.user,
+        status="active"
+    ).first()
+
+    if active_subscription:
+        return Response(
+            {
+                "error": "You already have an active subscription."
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    client = razorpay.Client(
+        auth=(
+            settings.RAZORPAY_KEY_ID,
+            settings.RAZORPAY_KEY_SECRET,
+        )
+    )
+
+    razorpay_subscription = client.subscription.create({
+        "plan_id": plan.razorpay_plan_id,
+        "total_count": 12 if plan.billing_cycle == "monthly" else 1,
+    })
+
+    subscription = VendorSubscription.objects.create(
+        vendor=request.user,
+        plan=plan,
+        status="pending",
+        razorpay_subscription_id=razorpay_subscription["id"],
+    )
+
+    serializer = VendorSubscriptionSerializer(subscription)
+
+    return Response(
+        {
+            "subscription": serializer.data,
+            "razorpay_subscription_id": razorpay_subscription["id"],
+            "razorpay_key_id": settings.RAZORPAY_KEY_ID,
+        },
+        status=status.HTTP_201_CREATED
+    )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 @parser_classes([MultiPartParser, FormParser, JSONParser])

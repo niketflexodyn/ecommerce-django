@@ -15,7 +15,7 @@ import FeaturesStrip from './components/FeaturesStrip'
 import PromoCarousel from './components/PromoCarousel'
 import AboutStory from './components/AboutStory'
 // import MarqueeStrip from './components/MarqueeStrip'
-
+import SubscriptionPlans from './components/SubscriptionPlans'
 import Register from './pages/Register'
 import Checkout from './pages/Checkout'
 import OrderSuccess from './pages/OrderSuccess'
@@ -59,7 +59,7 @@ export default function App() {
   }, [dispatch, access, user])
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       <Routes>
         {/* Admin dashboard routes — separate layout, no Navbar/Footer */}
         <Route
@@ -85,6 +85,7 @@ export default function App() {
           <Route path="categories" element={<AdminCategories />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="ratings" element={<AdminRatings />} />
+          <Route path="subscription" element={<SubscriptionPlans />} />
           <Route  
             path="admins"
             element={

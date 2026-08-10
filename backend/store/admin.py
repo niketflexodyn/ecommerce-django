@@ -15,7 +15,9 @@ from .models import (
     ProductAttribute,
     Discount,
     ProductVariant,
-    VariantAttribute
+    VariantAttribute,
+    VendorSubscriptionPlan,
+    VendorSubscription,
 )
 
 
@@ -158,3 +160,5 @@ admin.site.register(Product, ProductAdmin)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(ProductVariant, ProductVariantAdmin)
 admin.site.register(VariantAttribute)
+admin.site.register(VendorSubscriptionPlan)
+admin.site.register(VendorSubscription)

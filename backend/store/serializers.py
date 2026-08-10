@@ -1,7 +1,7 @@
 import re
 from rest_framework import serializers
 # pyrefly: ignore [missing-import]
-from .models import Category, Product, Cart, CartItem, Discount, Order, OrderItem, Rating, VariantAttribute, ProductVariant, Wishlist, User, Attribute, AttributeValue, ProductAttribute
+from .models import Category, Product, Cart, CartItem, VendorSubscription, VendorSubscriptionPlan, Discount, Order, OrderItem, Rating, VariantAttribute, ProductVariant, Wishlist, User, Attribute, AttributeValue, ProductAttribute
 from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -90,6 +90,63 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductAttribute
         fields = ['id', 'attribute', 'attribute_name', 'value', 'value_name']
+
+class VendorSubscriptionPlanSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = VendorSubscriptionPlan
+        fields = [
+            "id",
+            "name",
+            "billing_cycle",
+            "price",
+            "is_active",
+            "created_at",
+        ]
+
+class VendorSubscriptionSerializer(serializers.ModelSerializer):
+
+    plan_name = serializers.CharField(
+        source="plan.name",
+        read_only=True,
+    )
+
+    billing_cycle = serializers.CharField(
+        source="plan.billing_cycle",
+        read_only=True,
+    )
+
+    price = serializers.DecimalField(
+        source="plan.price",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+    )
+
+    class Meta:
+        model = VendorSubscription
+        fields = [
+            "id",
+            "vendor",
+            "plan",
+            "plan_name",
+            "billing_cycle",
+            "price",
+            "status",
+            "start_date",
+            "end_date",
+            "razorpay_subscription_id",
+            "created_at",
+        ]
+
+        read_only_fields = [
+            "vendor",
+            "status",
+            "start_date",
+            "end_date",
+            "razorpay_subscription_id",
+            "created_at",
+        ]
 
 
 class VariantAttributeSerializer(serializers.ModelSerializer):
