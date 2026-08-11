@@ -86,10 +86,22 @@ urlpatterns = [
     views.get_my_subscription,
     name="my-subscription",
     ),
+    
+    path(
+    "vendor/subscription/current/",
+    views.CurrentSubscriptionView.as_view(),
+    name="current-vendor-subscription",
+    ),
+    
     path(
     "vendor/subscription/create/",
     views.create_vendor_subscription,
     name="create-vendor-subscription",
+),
+    path(
+    "vendor/subscription/verify/",
+    views.verify_subscription_payment,
+    name="verify-subscription-payment",
 ),
     # Super admin 
     path('superadmin/admins/', views.superadmin_admins),
@@ -97,4 +109,25 @@ urlpatterns = [
     path('superadmin/admins/<int:pk>/activate/', views.superadmin_activate_admin),
     path('superadmin/admins/<int:pk>/reject/', views.superadmin_reject_admin),
     path('superadmin/admins/<int:pk>/suspend/', views.superadmin_suspend_admin),
+    path(
+    "vendor/subscription-plans/create/",
+    views.create_subscription_plan,
+    name="create-subscription-plan",
+),
+    path(
+    "vendor/subscription-plans/",
+    views.list_subscription_plans,
+    name="subscription-plans",
+),
+    path(
+    "vendor/subscription-plans/<int:pk>/update/",
+    views.update_subscription_plan,
+    name="update-subscription-plan",
+),
+
+    path(
+        "vendor/subscription-plans/<int:pk>/delete/",
+        views.delete_subscription_plan,
+        name="delete-subscription-plan",
+    ),
 ]

@@ -84,6 +84,16 @@ class VendorSubscriptionPlan(models.Model):
         blank=True,
         null=True,
     )
+    duration_days = models.PositiveIntegerField(
+        default=30,
+        help_text="Duration of the subscription in days"
+    )
+
+    product_limit = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Maximum products. Empty means unlimited."
+    )
 
     is_active = models.BooleanField(default=True)
 
@@ -107,6 +117,11 @@ class VendorSubscription(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="vendor_subscriptions",
+    )
+    billing_cycle = models.CharField(
+        max_length=20,
+        choices=VendorSubscriptionPlan.BILLING_CYCLE_CHOICES,
+        default="monthly",
     )
 
     plan = models.ForeignKey(

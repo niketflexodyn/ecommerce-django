@@ -1,5 +1,6 @@
 # from backend.store.serializers import WishlistSerializer
 
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -21,6 +22,7 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from rest_framework.views import APIView
 
 User = get_user_model()
 
@@ -269,6 +271,110 @@ def get_my_subscription(request):
         status=status.HTTP_200_OK
     )
 
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def verify_subscription_payment(request):
+    """
+    Verify Razorpay subscription payment and activate
+    the vendor subscription.
+    """
+
+    razorpay_payment_id = request.data.get("razorpay_payment_id")
+    razorpay_subscription_id = request.data.get(
+        "razorpay_subscription_id"
+    )
+    razorpay_signature = request.data.get(
+        "razorpay_signature"
+    )
+
+    if not razorpay_payment_id:
+        return Response(
+            {"error": "Razorpay payment ID is required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not razorpay_subscription_id:
+        return Response(
+            {"error": "Razorpay subscription ID is required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not razorpay_signature:
+        return Response(
+            {"error": "Razorpay signature is required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        subscription = VendorSubscription.objects.get(
+            vendor=request.user,
+            razorpay_subscription_id=razorpay_subscription_id,
+        )
+
+    except VendorSubscription.DoesNotExist:
+        return Response(
+            {"error": "Subscription not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    # Razorpay client
+    client = razorpay.Client(
+        auth=(
+            settings.RAZORPAY_KEY_ID,
+            settings.RAZORPAY_KEY_SECRET,
+        )
+    )
+
+    try:
+        client.utility.verify_subscription_payment_signature({
+            "razorpay_payment_id": razorpay_payment_id,
+            "razorpay_subscription_id": razorpay_subscription_id,
+            "razorpay_signature": razorpay_signature,
+        })
+
+    except razorpay.errors.SignatureVerificationError:
+        return Response(
+            {"error": "Payment verification failed."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Payment is verified
+    subscription.status = "active"
+    subscription.start_date = timezone.now()
+
+    # Set end date based on plan duration
+    subscription.end_date = (
+        subscription.start_date +
+        timedelta(days=subscription.plan.duration_days)
+    )
+
+    subscription.save()
+
+    return Response(
+        {
+            "message": "Subscription activated successfully.",
+            "subscription": VendorSubscriptionSerializer(
+                subscription
+            ).data,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+
+
+
+class CurrentSubscriptionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        sub = VendorSubscription.objects.filter(vendor=request.user, status="active").first()
+        if not sub:
+            return Response(None)
+        return Response({"plan_id": sub.plan_id, "status": sub.status, "end_date": sub.end_date})
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_vendor_subscription(request):
@@ -330,6 +436,7 @@ def create_vendor_subscription(request):
         plan=plan,
         status="pending",
         razorpay_subscription_id=razorpay_subscription["id"],
+        billing_cycle=plan.billing_cycle,
     )
 
     serializer = VendorSubscriptionSerializer(subscription)
@@ -397,6 +504,91 @@ def create_product_variant(request, pk):
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsSuperAdmin])
+def create_subscription_plan(request):
+
+    serializer = VendorSubscriptionPlanSerializer(
+        data=request.data
+    )
+
+    if not serializer.is_valid():
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    plan = serializer.save()
+
+    client = razorpay.Client(
+        auth=(
+            settings.RAZORPAY_KEY_ID,
+            settings.RAZORPAY_KEY_SECRET,
+        )
+    )
+
+    razorpay_plan = client.plan.create({
+        "period": plan.billing_cycle,
+        "interval": 1,
+        "item": {
+            "name": plan.name,
+            "amount": int(plan.price * 100),
+            "currency": "INR",
+            "description": plan.description or plan.name,
+        }
+    })
+
+    plan.razorpay_plan_id = razorpay_plan["id"]
+    plan.save(update_fields=["razorpay_plan_id"])
+
+    return Response(
+        VendorSubscriptionPlanSerializer(plan).data,
+        status=status.HTTP_201_CREATED
+    )
+
+def list_subscription_plans(request):
+    plans = VendorSubscriptionPlan.objects.all()
+    serializer = VendorSubscriptionPlanSerializer(plans, many=True)
+    return Response(serializer.data)
+
+def update_subscription_plan(request, pk):
+    plan = VendorSubscriptionPlan.objects.get(pk=pk)
+    serializer = VendorSubscriptionPlanSerializer(plan, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def remove_subscription(request, pk):
+    try:
+        subscription = VendorSubscription.objects.get(pk=pk, vendor=request.user)
+    except VendorSubscription.DoesNotExist:
+        return Response(
+            {"error": "Subscription not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    client = razorpay.Client(
+        auth=(
+            settings.RAZORPAY_KEY_ID,
+            settings.RAZORPAY_KEY_SECRET,
+        )
+    )
+
+    try:
+        client.subscription.cancel(subscription.razorpay_subscription_id)
+        subscription.status = "cancelled"
+        subscription.save()
+    except Exception as e:
+        logger.exception("Error cancelling subscription: %s", e)
+        return Response(
+            {"error": "Failed to cancel subscription"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return Response({"message": "Subscription cancelled successfully"})
 
 @api_view(["PUT", "PATCH"])
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
@@ -690,6 +882,22 @@ def get_product(request, pk):
 @permission_classes([IsAuthenticated, IsAdminOrSuperAdmin])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 def create_product(request):
+    if not request.user.is_superuser:
+        active_sub = VendorSubscription.objects.filter(vendor=request.user, status="active").first()
+        if not active_sub:
+            return Response(
+                {"error": "You must have an active subscription to add products."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if active_sub.plan.product_limit is not None:
+            current_count = Product.objects.filter(created_by=request.user).count()
+            if current_count >= active_sub.plan.product_limit:
+                return Response(
+                    {"error": f"You have reached your plan's limit of {active_sub.plan.product_limit} products. Please upgrade your subscription."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
     serializer = ProductWriteSerializer(data=request.data)
     if serializer.is_valid():
         with transaction.atomic():

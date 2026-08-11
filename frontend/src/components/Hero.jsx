@@ -48,7 +48,7 @@ const banners = [
 
 export default function Hero() {
   const [revealRef, revealed] = useScrollReveal();
-  
+
   return (
     <section
       className="relative overflow-hidden bg-linear-to-br from-plum-950 via-plum-900 to-plum-800"

@@ -93,9 +93,18 @@ export const subscriptionApi = {
       }),
     });
   },
+  current: () => request("/vendor/subscription/current/"),
+
 
   mine() {
     return request("/vendor/subscription/me/");
+  },
+
+  verify(paymentData) {
+    return request("/vendor/subscription/verify/", {
+      method: "POST",
+      body: JSON.stringify(paymentData),
+    });
   },
 };
 

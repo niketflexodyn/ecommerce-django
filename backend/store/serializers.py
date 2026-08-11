@@ -98,9 +98,18 @@ class VendorSubscriptionPlanSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
-            "billing_cycle",
+            "description",
             "price",
+            "billing_cycle",
+            "duration_days",
+            "product_limit",
+            "razorpay_plan_id",
             "is_active",
+            "created_at",
+        ]
+        read_only_fields = [
+            "id",
+            "razorpay_plan_id",
             "created_at",
         ]
 
