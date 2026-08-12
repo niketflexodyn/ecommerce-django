@@ -36,7 +36,7 @@ async function refreshAccessToken() {
   }
 }
 
-async function request(endpoint, options = {}) {
+export async function request(endpoint, options = {}) {
   const { isFormData, _retry, ...rest } = options;
   const isForm = isFormData || (typeof FormData !== 'undefined' && rest.body instanceof FormData);
   const config = {
@@ -85,14 +85,11 @@ export const subscriptionApi = {
     return request("/vendor/subscription-plans/");
   },
 
-  create(planId) {
-    return request("/vendor/subscription/create/", {
+  create: (planId, billingCycle = "monthly") =>
+    request("/vendor/subscription/create/", {
       method: "POST",
-      body: JSON.stringify({
-        plan: planId,
-      }),
-    });
-  },
+      body: JSON.stringify({ plan: planId, billing_cycle: billingCycle }),
+    }),
   current: () => request("/vendor/subscription/current/"),
 
 
@@ -106,6 +103,28 @@ export const subscriptionApi = {
       body: JSON.stringify(paymentData),
     });
   },
+};
+
+export const subscriptionPlanApi = {
+  list: () =>
+    request("/vendor/subscription-plans/"),
+
+  create: (data) =>
+    request("/vendor/subscription-plans/create/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (planId, data) =>
+    request(`/vendor/subscription-plan/${planId}/update/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (planId) =>
+    request(`/vendor/subscription-plan/${planId}/delete/`, {
+      method: "DELETE",
+    }),
 };
 
 // -------------------------

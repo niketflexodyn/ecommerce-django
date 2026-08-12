@@ -3,7 +3,7 @@ import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { superadminApi } from '../../utils/api';
 import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
-
+import SuperAdminSubscription from '../../components/admin/SuperAdminSubscription';
 const STATUS_TABS = [
   { key: 'all', label: 'All' },
   { key: 'pending', label: 'Pending' },

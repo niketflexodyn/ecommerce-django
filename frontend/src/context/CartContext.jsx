@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { request } from '../utils/api'
 
 const CartContext = createContext()
 
@@ -32,17 +33,9 @@ export const CartProvider = ({ children }) => {
 
   useEffect(() => {
     if (user && tokens?.access) {
-      fetch(`${BASE_URL}/api/cart/`, {
-        headers: {
-          Authorization: `Bearer ${tokens.access}`,
-        },
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error('Failed to fetch cart')
-          return res.json()
-        })
+      request('/cart/')
         .then((data) => {
-          if (data.id) {
+          if (data && data.id) {
             setServerCartId(data.id)
             const items = (data.items || []).map(mapServerCartItem)
             setCartItems(items)
@@ -77,30 +70,22 @@ export const CartProvider = ({ children }) => {
 
     if (user && tokens?.access) {
       try {
-        const res = await fetch(`${BASE_URL}/api/cart/add/`, {
+        const data = await request('/cart/add/', {
           method: 'POST',
-          headers: getAuthHeaders(),
           body: JSON.stringify({
             product_id: product.id,
             variant_id: variantId,
             quantity: product.quantity || 1,
           }),
         })
-        if (!res.ok) throw new Error('Failed to add to cart')
-        const data = await res.json()
         if (data.cart?.id) {
           setServerCartId(data.cart.id)
           setCartItems((data.cart.items || []).map(mapServerCartItem))
         } else {
-          const cartRes = await fetch(`${BASE_URL}/api/cart/`, {
-            headers: getAuthHeaders(),
-          })
-          if (cartRes.ok) {
-            const cartData = await cartRes.json()
-            if (cartData.id) {
-              setServerCartId(cartData.id)
-              setCartItems((cartData.items || []).map(mapServerCartItem))
-            }
+          const cartData = await request('/cart/')
+          if (cartData && cartData.id) {
+            setServerCartId(cartData.id)
+            setCartItems((cartData.items || []).map(mapServerCartItem))
           }
         }
         setIsCartOpen(true)
@@ -134,22 +119,23 @@ export const CartProvider = ({ children }) => {
     setIsCartOpen(true)
   }
 
+  const getItemIdentifier = (item) => `${item.id}-${item.variant_id || item.variant?.id || 'default'}`;
+
   const removeFromCart = async (identifier) => {
-    const item = cartItems.find((i) => i.cartItemId === identifier || i.id === identifier)
+    const item = cartItems.find((i) => i.cartItemId === identifier || i.id === identifier || getItemIdentifier(i) === identifier)
     const targetCartItemId = item?.cartItemId
 
     if (user && tokens?.access && targetCartItemId) {
       try {
-        await fetch(`${BASE_URL}/api/cart/remove/${targetCartItemId}/`, {
+        await request(`/cart/remove/${targetCartItemId}/`, {
           method: 'DELETE',
-          headers: getAuthHeaders(),
           body: JSON.stringify({ item_id: targetCartItemId }),
         })
       } catch {
         // Continue with local removal even if server fails
       }
     }
-    setCartItems(cartItems.filter((item) => item.cartItemId !== identifier && item.id !== identifier))
+    setCartItems(cartItems.filter((item) => item.cartItemId !== identifier && item.id !== identifier && getItemIdentifier(item) !== identifier))
   }
 
   const updateQuantity = async (identifier, quantity) => {
@@ -158,14 +144,13 @@ export const CartProvider = ({ children }) => {
       return
     }
 
-    const item = cartItems.find((i) => i.cartItemId === identifier || i.id === identifier)
+    const item = cartItems.find((i) => i.cartItemId === identifier || i.id === identifier || getItemIdentifier(i) === identifier)
     const targetCartItemId = item?.cartItemId
 
     if (user && tokens?.access && targetCartItemId) {
       try {
-        await fetch(`${BASE_URL}/api/cart/update/${targetCartItemId}/`, {
+        await request(`/cart/update/${targetCartItemId}/`, {
           method: 'PUT',
-          headers: getAuthHeaders(),
           body: JSON.stringify({ item_id: targetCartItemId, quantity }),
         })
       } catch {
@@ -174,7 +159,7 @@ export const CartProvider = ({ children }) => {
     }
     setCartItems(
       cartItems.map((item) =>
-        (item.cartItemId === identifier || item.id === identifier) ? { ...item, quantity } : item
+        (item.cartItemId === identifier || item.id === identifier || getItemIdentifier(item) === identifier) ? { ...item, quantity } : item
       )
     )
   }

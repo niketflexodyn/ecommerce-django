@@ -37,6 +37,8 @@ import ForgotPassword from './pages/ForgetPassword'
 import ResetPassword from './pages/ResetPassword'
 import CartDrawer from './components/CartDrawer'
 import CategoryStrip from './components/CategoryStrip'
+import SuperAdminSubscription from './components/admin/SuperAdminSubscription'
+
 // import ScrollToTop from './pages/ScrollToTop'
 export default function App() {
   const dispatch = useDispatch()
@@ -70,23 +72,23 @@ export default function App() {
             </AdminRoute>
           }
         >
-        <Route
-  index
-  element={
-    user?.role === 'super_admin' ? (
-      <Navigate to="/dashboard/admins" replace />
-    ) : (
-      <AdminDashboard />
-    )
-  }
-/>
+          <Route
+            index
+            element={
+              user?.role === 'super_admin' ? (
+                <Navigate to="/dashboard/admins" replace />
+              ) : (
+                <AdminDashboard />
+              )
+            }
+          />
 
           <Route path="products" element={<AdminProducts />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="ratings" element={<AdminRatings />} />
           <Route path="subscription" element={<SubscriptionPlans />} />
-          <Route  
+          <Route
             path="admins"
             element={
               <SuperAdminRoute>
@@ -94,6 +96,15 @@ export default function App() {
               </SuperAdminRoute>
             }
           />
+          <Route
+            path="subscription-plans"
+            element={
+              <SuperAdminRoute>
+                <SuperAdminSubscription />
+              </SuperAdminRoute>
+            }
+          />
+
           <Route path="edit-details" element={<EditAdminDetails />} />
         </Route>
 
@@ -139,7 +150,7 @@ export default function App() {
                   <Route path="/shipping-policy" element={<PrivacyPolicy />} />
                 </Routes>
                 <CartDrawer />
-                  {/* <ScrollToTop /> */}
+                {/* <ScrollToTop /> */}
               </main>
               <Footer />
               <BackToTop />

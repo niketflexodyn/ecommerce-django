@@ -62,28 +62,37 @@ class User(AbstractUser):
 
 class VendorSubscriptionPlan(models.Model):
 
-    BILLING_CYCLE_CHOICES = (
-        ("monthly", "Monthly"),
-        ("annual", "Annual"),
-    )
-
     name = models.CharField(max_length=100)
 
-    billing_cycle = models.CharField(
-        max_length=20,
-        choices=BILLING_CYCLE_CHOICES,
+    description = models.TextField(
+        blank=True,
+        null=True
     )
 
-    price = models.DecimalField(
+    monthly_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
+        default=0.00
     )
 
-    razorpay_plan_id = models.CharField(
+    annual_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00
+    )
+
+    razorpay_monthly_plan_id = models.CharField(
         max_length=255,
         blank=True,
         null=True,
     )
+
+    razorpay_annual_plan_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+
     duration_days = models.PositiveIntegerField(
         default=30,
         help_text="Duration of the subscription in days"
@@ -95,14 +104,16 @@ class VendorSubscriptionPlan(models.Model):
         help_text="Maximum products. Empty means unlimited."
     )
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(
+        default=True
+    )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
     def __str__(self):
-        return f"{self.name} - {self.billing_cycle}"
-
-
+        return self.name
 
 class VendorSubscription(models.Model):
 
@@ -118,9 +129,14 @@ class VendorSubscription(models.Model):
         on_delete=models.CASCADE,
         related_name="vendor_subscriptions",
     )
+    BILLING_CYCLE_CHOICES = (
+        ("monthly", "Monthly"),
+        ("annual", "Annual"),
+    )
+    
     billing_cycle = models.CharField(
         max_length=20,
-        choices=VendorSubscriptionPlan.BILLING_CYCLE_CHOICES,
+        choices=BILLING_CYCLE_CHOICES,
         default="monthly",
     )
 
@@ -451,6 +467,11 @@ class Order(models.Model):
         on_delete=models.CASCADE,
         related_name="orders",
     )
+    
+    shipping_address = models.TextField(blank=True, null=True)
+    shipping_phone = models.CharField(max_length=15, blank=True, null=True)
+    shipping_location = models.CharField(max_length=200, blank=True, null=True)
+    
     shipping_eta          = models.DateField(null=True, blank=True)
     dispatch_eta          = models.DateField(null=True, blank=True)
     out_for_delivery_eta  = models.DateField(null=True, blank=True)

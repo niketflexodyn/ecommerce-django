@@ -545,7 +545,7 @@ export default function AdminProducts() {
       const data = {
         name: form.name.trim(),
         description: form.description ? form.description.trim() : '',
-        price: form.price || firstVariantPrice || '0.00',
+        price: (form.price !== '' && form.price !== null && form.price !== undefined) ? form.price : (firstVariantPrice || '0.00'),
         category: form.subCategory || form.category,
         subCategory: form.subCategory,
         location: form.location ? form.location.trim() : '',
@@ -765,13 +765,18 @@ export default function AdminProducts() {
                   </td>
                 </tr>
               ) : (
-                products.map((product) => (
+                products.map((product) => {
+                  const fallbackImage = product.image || product.variants?.find(v => v.image)?.image || product.images?.[0];
+                  const activeVariant = product.variants?.find(v => v.is_active) || product.variants?.[0];
+                  const rawPrice = (Number(product.price) > 0 ? product.price : activeVariant?.price) || product.price || 0;
+                  
+                  return (
                   <tr key={product.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-plum-950">
                       <div className="flex items-center gap-3">
-                        {product.image ? (
+                        {fallbackImage ? (
                           <img
-                            src={resolveImgUrl(product.image)}
+                            src={resolveImgUrl(fallbackImage)}
                             alt={product.name}
                             className="size-10 shrink-0 rounded-lg object-cover ring-1 ring-slate-200"
                             onError={(e) => {
@@ -791,7 +796,7 @@ export default function AdminProducts() {
                     </td>
                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{getCategoryName(product)}</td>
                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{getSubCategoryName(product)}</td>
-                    <td className="px-4 py-3 font-semibold text-plum-950 whitespace-nowrap">₹{Number(product.price).toFixed(2)}</td>
+                    <td className="px-4 py-3 font-semibold text-plum-950 whitespace-nowrap">₹{Number(rawPrice).toFixed(2)}</td>
                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
                       {(Number(product.shipping_days) || 0) +
                         (Number(product.dispatch_days) || 0) +
@@ -821,7 +826,8 @@ export default function AdminProducts() {
                       </div>
                     </td>
                   </tr>
-                ))
+                );
+                })
               )}
 
               {!loading && products.length === 0 && (searchTerm || categoryFilter !== 'all') && (
@@ -1192,7 +1198,7 @@ export default function AdminProducts() {
                   <p className="mt-1 text-xs text-slate-400">Shown to customers on the product detail page.</p>
                 </div>
                 {/* Product Variants Section */}
-                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                <div className="mt-6 sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="text-sm font-bold text-plum-950">Product Variants & Custom Pricing</h3>

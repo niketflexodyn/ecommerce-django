@@ -469,17 +469,35 @@ export default function ProductDetails() {
                               key={val.id || val.name}
                               type="button"
                               onClick={() => {
-                                setSelectedAttributes((prev) => {
-                                  const updated = { ...prev, [attrName]: val.name }
-                                  // Also sync selectedVariantId if matching variant found
-                                  const match = product.variants.find((v) =>
-                                    v.attributes?.every(
-                                      (a) => (a.attribute_name === attrName ? val.name : updated[a.attribute_name]) === a.value_name
-                                    )
+                                const newAttrs = { ...selectedAttributes, [attrName]: val.name }
+                                
+                                // 1. Try to find an exact match for the new combination
+                                let match = product.variants.find((v) =>
+                                  v.is_active &&
+                                  v.attributes?.length > 0 &&
+                                  v.attributes.every((a) => newAttrs[a.attribute_name] === a.value_name)
+                                )
+                                
+                                // 2. If no exact match, find ANY active variant that has this newly clicked attribute value
+                                if (!match) {
+                                  match = product.variants.find((v) =>
+                                    v.is_active &&
+                                    v.attributes?.some((a) => a.attribute_name === attrName && a.value_name === val.name)
                                   )
-                                  if (match) setSelectedVariantId(match.id)
-                                  return updated
-                                })
+                                }
+
+                                if (match) {
+                                  setSelectedVariantId(match.id)
+                                  // Auto-correct the other attributes to match this valid variant
+                                  const matchAttrs = {}
+                                  match.attributes?.forEach((a) => {
+                                    matchAttrs[a.attribute_name] = a.value_name
+                                  })
+                                  setSelectedAttributes(matchAttrs)
+                                } else {
+                                  // Fallback
+                                  setSelectedAttributes(newAttrs)
+                                }
                               }}
                               className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-all duration-150 ${
                                 isSelected

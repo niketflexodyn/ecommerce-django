@@ -9,40 +9,49 @@ export default function SubscriptionPlans() {
   const [activePlanId, setActivePlanId] = useState(null); // persisted, from backend
   const [activePlanEndDate, setActivePlanEndDate] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [billingCycle, setBillingCycle] = useState("monthly");
 
-  useEffect(() => {
-    const init = async () => {
+ useEffect(() => {
+  const init = async () => {
+    try {
+      const plansData = await subscriptionApi.plans();
+      setPlans(plansData);
+
       try {
-        const [plansData, currentSub] = await Promise.all([
-          subscriptionApi.plans(),
-          subscriptionApi.current(), // GET /subscriptions/current/ — returns active sub or null
-        ]);
-
-        setPlans(plansData);
-
+        const currentSub = await subscriptionApi.current();
         if (currentSub && currentSub.status === "active") {
           setActivePlanId(currentSub.plan_id);
           if (currentSub.end_date) setActivePlanEndDate(currentSub.end_date);
-          setSelectedPlan(
-            plansData.find((p) => p.id === currentSub.plan_id) || null
-          );
+          setSelectedPlan(plansData.find((p) => p.id === currentSub.plan_id) || null);
         }
-      } catch (error) {
-        console.error("Failed to load subscription data:", error);
-      } finally {
-        setLoading(false);
+      } catch (subError) {
+        // No active subscription (404) — this is a normal state, not an error.
+        console.log("No active subscription found");
       }
-    };
-    init();
-  }, []);
+    } catch (error) {
+      // Only a real failure to load plans should log as an error.
+      console.error("Failed to load subscription plans:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  init();
+}, []);
 
   const subscribeToPlan = async (planId) => {
     if (activePlanId || processing) return;
     setProcessing(true);
 
     try {
-      const response = await subscriptionApi.create(planId);
+      const response = await subscriptionApi.create(planId, billingCycle);
       console.log("Subscription created:", response);
+
+      if (response.status === "active") {
+        setActivePlanId(planId);
+        setSelectedPlan(plans.find((p) => p.id === planId));
+        setProcessing(false);
+        return;
+      }
 
       const options = {
         key: response.razorpay_key_id,
@@ -105,12 +114,33 @@ export default function SubscriptionPlans() {
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             Membership
           </span>
-          <h1 className="mt-5 text-4xl font-serif text-[#1a0512]">
-            Choose Your <span className="italic text-amber-500">Plan</span>
-          </h1>
-          <p className="mt-3 text-gray-500 max-w-md mx-auto">
-            Unlock premium perks across every category — pick the plan that fits you.
-          </p>
+          <div className="text-center max-w-2xl mx-auto">
+            <h1 className="mt-5 text-4xl font-serif text-[#1a0512]">Partner with LUXORA</h1>
+            <p className="mt-4 text-gray-500">
+              Choose the perfect plan to grow your boutique with our premium platform.
+            </p>
+
+            <div className="mt-8 flex justify-center">
+              <div className="inline-flex rounded-full bg-gray-100 p-1">
+                <button
+                  onClick={() => setBillingCycle("monthly")}
+                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${
+                    billingCycle === "monthly" ? "bg-white text-[#3b0a2e] shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBillingCycle("annual")}
+                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${
+                    billingCycle === "annual" ? "bg-white text-[#3b0a2e] shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Annual <span className="ml-1 text-xs text-green-600 font-bold">-20%</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -148,9 +178,9 @@ export default function SubscriptionPlans() {
                 </h2>
 
                 <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">₹{plan.price}</span>
+                  <span className="text-3xl font-bold">₹{billingCycle === "monthly" ? plan.monthly_price : plan.annual_price}</span>
                   <span className={`text-sm ${isSelected || isActive ? "text-white/60" : "text-gray-400"}`}>
-                    /{plan.billing_cycle}
+                    /{billingCycle}
                   </span>
                 </div>
 
@@ -194,7 +224,7 @@ export default function SubscriptionPlans() {
               <p className="mt-1 font-serif text-xl text-[#1a0512]">
                 {selectedPlan.name}
                 <span className="text-gray-400 font-sans text-sm ml-2">
-                  ₹{selectedPlan.price} / {selectedPlan.billing_cycle}
+                  ₹{billingCycle === "monthly" ? selectedPlan.monthly_price : selectedPlan.annual_price} / {billingCycle}
                 </span>
               </p>
               {activePlanId && activePlanEndDate && (

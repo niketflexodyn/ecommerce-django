@@ -91,28 +91,33 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
         model = ProductAttribute
         fields = ['id', 'attribute', 'attribute_name', 'value', 'value_name']
 
-class VendorSubscriptionPlanSerializer(serializers.ModelSerializer):
+class VendorSubscriptionPlanSerializer(
+    serializers.ModelSerializer
+):
 
     class Meta:
         model = VendorSubscriptionPlan
+
         fields = [
             "id",
             "name",
             "description",
-            "price",
-            "billing_cycle",
+            "monthly_price",
+            "annual_price",
             "duration_days",
             "product_limit",
-            "razorpay_plan_id",
+            "razorpay_monthly_plan_id",
+            "razorpay_annual_plan_id",
             "is_active",
             "created_at",
         ]
+
         read_only_fields = [
             "id",
-            "razorpay_plan_id",
+            "razorpay_monthly_plan_id",
+            "razorpay_annual_plan_id",
             "created_at",
         ]
-
 class VendorSubscriptionSerializer(serializers.ModelSerializer):
 
     plan_name = serializers.CharField(
@@ -237,40 +242,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_images(self, obj):
         return [img.image.url for img in obj.images.all()]
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        request = self.context.get('request')
-
-        # Fallback to variant image or gallery image if base image is not present
-        if not data.get("image"):
-            variant_with_img = instance.variants.filter(is_active=True).exclude(image="").first()
-            if variant_with_img and variant_with_img.image:
-                data["image"] = (
-                    request.build_absolute_uri(variant_with_img.image.url)
-                    if request
-                    else variant_with_img.image.url
-                )
-            elif instance.images.exists():
-                first_gallery = instance.images.first()
-                if first_gallery and first_gallery.image:
-                    data["image"] = (
-                        request.build_absolute_uri(first_gallery.image.url)
-                        if request
-                        else first_gallery.image.url
-                    )
-
-        # Fallback to first active variant's price if base price is zero or not set
-        try:
-            val = float(data.get("price") or 0)
-        except (ValueError, TypeError):
-            val = 0
-        if val <= 0:
-            first_variant = instance.variants.filter(is_active=True).first()
-            if first_variant:
-                data["price"] = str(first_variant.price)
-
-        return data
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
@@ -683,9 +654,9 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', read_only=True)
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     last_name = serializers.CharField(source='user.last_name', read_only=True)
-    phone = serializers.CharField(source='user.phone', read_only=True)
-    address = serializers.CharField(source='user.address', read_only=True)
-    location = serializers.CharField(source='user.location', read_only=True)
+    phone = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
     items = OrderItemSerializer(many=True, read_only=True)
 
     class Meta:
@@ -697,6 +668,15 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             'estimated_delivery', 'shipping_eta', 'dispatch_eta', 'out_for_delivery_eta',
             'dispatched_at', 'delivered_at',
         ]
+
+    def get_phone(self, obj):
+        return obj.shipping_phone or obj.user.phone
+
+    def get_address(self, obj):
+        return obj.shipping_address or obj.user.address
+
+    def get_location(self, obj):
+        return obj.shipping_location or obj.user.location
 
 
 class RatingSerializer(serializers.ModelSerializer):

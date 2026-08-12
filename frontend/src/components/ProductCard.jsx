@@ -103,7 +103,11 @@ export default function ProductCard({ product }) {
           {!cartItem ? (
             <button
               type="button"
-              onClick={() => addToCart(product)} 
+              onClick={() => addToCart({
+                ...product,
+                variant: activeVariant,
+                variant_id: activeVariant?.id
+              })} 
               className="btn-primary w-full flex items-center justify-center gap-2 shadow-sm shadow-plum-950/10"
             >
               <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

@@ -75,7 +75,7 @@ export default function CartPage() {
               const hasDiscount = originalPrice > unitPrice
               const lineTotal = unitPrice * item.quantity
               const itemKey = item.cartItemId || `${item.id}-${item.variant_id || item.variant?.id || 'default'}`
-              const itemIdentifier = item.cartItemId || item.id
+              const itemIdentifier = item.cartItemId || itemKey
 
               return (
                 <article

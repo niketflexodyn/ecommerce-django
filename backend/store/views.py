@@ -223,12 +223,13 @@ def find_product_variant(request, pk):
 @api_view(["GET"])
 def get_subscription_plans(request):
     """
-    Get all active vendor subscription plans.
+    Get all vendor subscription plans.
+    Returns only active plans for regular users/vendors, and all plans for super_admins.
     """
-
-    plans = VendorSubscriptionPlan.objects.filter(
-        is_active=True
-    )
+    if request.user and request.user.is_authenticated and getattr(request.user, "role", None) == "super_admin":
+        plans = VendorSubscriptionPlan.objects.all()
+    else:
+        plans = VendorSubscriptionPlan.objects.filter(is_active=True)
 
     serializer = VendorSubscriptionPlanSerializer(
         plans,
@@ -380,6 +381,7 @@ class CurrentSubscriptionView(APIView):
 def create_vendor_subscription(request):
 
     plan_id = request.data.get("plan")
+    billing_cycle = request.data.get("billing_cycle", "monthly")
 
     if not plan_id:
         return Response(
@@ -398,7 +400,26 @@ def create_vendor_subscription(request):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    if not plan.razorpay_plan_id:
+    price = plan.annual_price if billing_cycle == "annual" else plan.monthly_price
+    razorpay_plan_id = plan.razorpay_annual_plan_id if billing_cycle == "annual" else plan.razorpay_monthly_plan_id
+
+    if price == 0:
+        subscription = VendorSubscription.objects.create(
+            vendor=request.user,
+            plan=plan,
+            status="active",
+            billing_cycle=billing_cycle,
+        )
+        serializer = VendorSubscriptionSerializer(subscription)
+        return Response(
+            {
+                "subscription": serializer.data,
+                "status": "active"
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+    if not razorpay_plan_id:
         return Response(
             {
                 "error": "This plan is not configured with Razorpay."
@@ -427,8 +448,8 @@ def create_vendor_subscription(request):
     )
 
     razorpay_subscription = client.subscription.create({
-        "plan_id": plan.razorpay_plan_id,
-        "total_count": 12 if plan.billing_cycle == "monthly" else 1,
+        "plan_id": razorpay_plan_id,
+        "total_count": 12 if billing_cycle == "monthly" else 1,
     })
 
     subscription = VendorSubscription.objects.create(
@@ -436,7 +457,7 @@ def create_vendor_subscription(request):
         plan=plan,
         status="pending",
         razorpay_subscription_id=razorpay_subscription["id"],
-        billing_cycle=plan.billing_cycle,
+        billing_cycle=billing_cycle,
     )
 
     serializer = VendorSubscriptionSerializer(subscription)
@@ -520,44 +541,80 @@ def create_subscription_plan(request):
 
     plan = serializer.save()
 
-    client = razorpay.Client(
-        auth=(
-            settings.RAZORPAY_KEY_ID,
-            settings.RAZORPAY_KEY_SECRET,
+    if plan.monthly_price > 0:
+        client = razorpay.Client(
+            auth=(
+                settings.RAZORPAY_KEY_ID,
+                settings.RAZORPAY_KEY_SECRET,
+            )
         )
-    )
+        razorpay_plan = client.plan.create({
+            "period": "monthly",
+            "interval": 1,
+            "item": {
+                "name": f"{plan.name} - Monthly",
+                "amount": int(plan.monthly_price * 100),
+                "currency": "INR",
+                "description": plan.description or plan.name,
+            }
+        })
+        plan.razorpay_monthly_plan_id = razorpay_plan["id"]
 
-    razorpay_plan = client.plan.create({
-        "period": plan.billing_cycle,
-        "interval": 1,
-        "item": {
-            "name": plan.name,
-            "amount": int(plan.price * 100),
-            "currency": "INR",
-            "description": plan.description or plan.name,
-        }
-    })
+    if plan.annual_price > 0:
+        client = razorpay.Client(
+            auth=(
+                settings.RAZORPAY_KEY_ID,
+                settings.RAZORPAY_KEY_SECRET,
+            )
+        )
+        razorpay_plan = client.plan.create({
+            "period": "yearly",
+            "interval": 1,
+            "item": {
+                "name": f"{plan.name} - Annual",
+                "amount": int(plan.annual_price * 100),
+                "currency": "INR",
+                "description": plan.description or plan.name,
+            }
+        })
+        plan.razorpay_annual_plan_id = razorpay_plan["id"]
 
-    plan.razorpay_plan_id = razorpay_plan["id"]
-    plan.save(update_fields=["razorpay_plan_id"])
+    if plan.monthly_price > 0 or plan.annual_price > 0:
+        plan.save(update_fields=["razorpay_monthly_plan_id", "razorpay_annual_plan_id"])
 
     return Response(
         VendorSubscriptionPlanSerializer(plan).data,
         status=status.HTTP_201_CREATED
     )
-
+@api_view(["GET"])
 def list_subscription_plans(request):
     plans = VendorSubscriptionPlan.objects.all()
     serializer = VendorSubscriptionPlanSerializer(plans, many=True)
     return Response(serializer.data)
 
+@api_view(["PUT", "PATCH"])
+@permission_classes([IsAuthenticated, IsSuperAdmin])
 def update_subscription_plan(request, pk):
-    plan = VendorSubscriptionPlan.objects.get(pk=pk)
+    try:
+        plan = VendorSubscriptionPlan.objects.get(pk=pk)
+    except VendorSubscriptionPlan.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+        
     serializer = VendorSubscriptionPlanSerializer(plan, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsSuperAdmin])
+def delete_subscription_plan(request, pk):
+    try:
+        plan = VendorSubscriptionPlan.objects.get(pk=pk)
+        plan.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except VendorSubscriptionPlan.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -840,18 +897,55 @@ def get_products(request):
             products = products.filter(category_id=sub.id)
         else:
             products = products.filter(category__name__iexact=subcategory)
+    
+    min_price = request.query_params.get("min_price")
+    max_price = request.query_params.get("max_price")
 
+    if min_price or max_price:
+
+        variant_filter = Q()
+
+        if min_price:
+            variant_filter &= Q(variants__price__gte=min_price)
+
+        if max_price:
+            variant_filter &= Q(variants__price__lte=max_price)
+
+        products = products.filter(
+            Q(
+                variants__isnull=True,
+                **(
+                {"price__gte": min_price}
+                if min_price else {}
+                ),
+                **(
+                    {"price__lte": max_price}
+                    if max_price else {}
+                ),
+        )
+        | variant_filter
+    ).distinct()
     # Attribute drill-down: any query param starting with "attr_" is treated as
     # attributes__<name>=<value>. The relational model stores attributes as
     # ProductAttribute rows (attribute.name + value.value), so both conditions
     # are applied in a single filter() to pin the same row. Each attribute is a
     # separate filter() call so distinct attributes AND across separate joins.
     for key, value in request.query_params.items():
-        if key.startswith('attr_') and value.strip():
-            products = products.filter(
-                attributes__attribute__name__iexact=key[5:],
-                attributes__value__value__iexact=value.strip(),
-            )
+        if key.startswith("attr_") and value.strip():
+
+            attribute_name = key[5:]
+            attribute_value = value.strip()
+
+            products = products.filter( 
+                Q(
+                    attributes__attribute__name__iexact=attribute_name,
+                    attributes__value__value__iexact=attribute_value,
+                )
+                |Q(
+                    variants__attributes__attribute__name__iexact=attribute_name,
+                    variants__attributes__value__value__iexact=attribute_value,
+                )
+            ).distinct()
 
     sort = request.query_params.get('sort', '').strip()
     sort_map = {
@@ -1230,6 +1324,9 @@ def checkout(request):
                     order_number=last_number + 1,
                     total_amount=total,
                     status='successful',
+                    shipping_address=address,
+                    shipping_phone=phone,
+                    shipping_location=user.location,
                 )
             break
         except IntegrityError:
@@ -1295,7 +1392,7 @@ def _cart_grand_total(user):
     return subtotal, shipping, grand_total
 
 
-def _allocate_order_number(user):
+def _allocate_order_number(user, shipping_address=None, shipping_phone=None, shipping_location=None):
     """Allocate the next per-customer order_number with a retry loop for the
     unique-together constraint (mirrors the logic in checkout())."""
     for _ in range(5):
@@ -1312,6 +1409,9 @@ def _allocate_order_number(user):
                     total_amount=Decimal('0.00'),
                     status='pending',
                     payment_status='pending',
+                    shipping_address=shipping_address,
+                    shipping_phone=shipping_phone,
+                    shipping_location=shipping_location,
                 )
             return order
         except IntegrityError:
@@ -1381,7 +1481,7 @@ def checkout_razorpay(request):
         logger.exception("Failed to create Razorpay order for user %s", user.username)
         return Response({'error': 'Could not initiate payment. Please try again.'}, status=500)
 
-    order = _allocate_order_number(user)
+    order = _allocate_order_number(user, shipping_address=address, shipping_phone=phone, shipping_location=user.location)
     if order is None:
         return Response({'error': 'Could not create order, please try again.'}, status=500)
 

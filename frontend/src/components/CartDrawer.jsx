@@ -78,7 +78,7 @@ export default function CartDrawer() {
                 const origPrice = parseFloat(item.original_price || unitPrice)
                 const hasDiscount = origPrice > unitPrice
                 const itemKey = item.cartItemId || `${item.id}-${item.variant_id || item.variant?.id || 'default'}`
-                const itemIdentifier = item.cartItemId || item.id
+                const itemIdentifier = item.cartItemId || itemKey
 
                 return (
                   <div key={itemKey} className="flex gap-3">

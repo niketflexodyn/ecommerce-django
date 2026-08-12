@@ -114,20 +114,27 @@ urlpatterns = [
     views.create_subscription_plan,
     name="create-subscription-plan",
 ),
+
     path(
-    "vendor/subscription-plans/",
-    views.list_subscription_plans,
-    name="subscription-plans",
-),
-    path(
-    "vendor/subscription-plans/<int:pk>/update/",
+    "vendor/subscription-plan/<int:pk>/update/",
     views.update_subscription_plan,
     name="update-subscription-plan",
 ),
-
     path(
-        "vendor/subscription-plans/<int:pk>/delete/",
-        views.delete_subscription_plan,
-        name="delete-subscription-plan",
-    ),
+    "vendor/subscription-plan/<int:pk>/delete/",
+    views.delete_subscription_plan,
+    name="delete-subscription-plan",
+),
+
+#     path(
+#     "vendor/subscription-plans/<int:pk>/update/",
+#     views.update_subscription_plan,
+#     name="update-subscription-plan",
+# ),
+
+#     path(
+#         "vendor/subscription-plans/<int:pk>/delete/",
+#         views.delete_subscription_plan,
+#         name="delete-subscription-plan",
+#     ),
 ]
