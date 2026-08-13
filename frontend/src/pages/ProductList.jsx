@@ -15,6 +15,10 @@ export default function ProductList({ hideBanner = false }) {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [searchParams, setSearchParams] = useSearchParams()
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
+  const [availableAttributes, setAvailableAttributes] = useState([])
+  const [priceRanges, setPriceRanges] = useState([])
+  const [loadingFilters, setLoadingFilters] = useState(false)
 
   // Drill state is derived from the URL (single source of truth, shared with
   // the CategoryStrip) so external URL changes are reflected here immediately.
@@ -37,6 +41,8 @@ export default function ProductList({ hideBanner = false }) {
   const [page, setPage] = useState(1)
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
+  const [filtersError, setFiltersError] = useState(null) // add near other filter state
+
   // Total count comes from the server now that pagination is server-side.
   const [totalCount, setTotalCount] = useState(0)
 
@@ -76,19 +82,57 @@ export default function ProductList({ hideBanner = false }) {
     )
   }
 
-  const updateAttr = (key, value) => {
-    const param = `attr_${key}`
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        if (!value || next.get(param) === value) next.delete(param)
-        else next.set(param, value)
-        return next
-      },
-      { replace: true }
-    )
-  }
+  const updateAttr = (name, value) => {
+    const next = new URLSearchParams(searchParams)
 
+    const param = `attr_${name}`
+
+    if (!value || next.get(param) === value) {
+      next.delete(param)
+    } else {
+      next.set(param, value)
+    }
+
+    setSearchParams(next)
+  }
+  useEffect(() => {
+    if (!selectedCategory || selectedCategory === 'all') {
+      setAvailableAttributes([])
+      setFiltersError(null)
+      return
+    }
+
+    const controller = new AbortController()
+
+    const fetchFilters = async () => {
+      try {
+        setLoadingFilters(true)
+        setFiltersError(null)
+
+        const params = new URLSearchParams()
+        params.set('category', selectedCategory)
+        if (selectedSubcategory) params.set('subcategory', selectedSubcategory)
+
+        const response = await fetch(
+          `${BASE_URL}/api/products/filters/?${params.toString()}`,
+          { signal: controller.signal }
+        )
+        if (!response.ok) throw new Error('Failed to fetch filters')
+
+        setAvailableAttributes(await response.json())
+      } catch (error) {
+        if (error.name === 'AbortError') return // a newer request superseded this one
+        console.error('Failed to load filters:', error)
+        setAvailableAttributes([])
+        setFiltersError('Could not load filters for this category.')
+      } finally {
+        if (!controller.signal.aborted) setLoadingFilters(false)
+      }
+    }
+
+    fetchFilters()
+    return () => controller.abort() // cancel if category/subcategory changes before this resolves
+  }, [BASE_URL, selectedCategory, selectedSubcategory])
   // Scroll to #products whenever a drill-down param is active — fires on mount
   // (deep links) AND on same-page URL changes from the CategoryStrip.
   useEffect(() => {
@@ -137,6 +181,23 @@ export default function ProductList({ hideBanner = false }) {
         setCategoriesLoading(false)
       })
   }, [BASE_URL])
+
+  // Fetch price filters once on mount
+  useEffect(() => {
+    fetch(`${BASE_URL}/api/products/price-filters/`)
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to fetch price filters')
+        return response.json()
+      })
+      .then((data) => {
+        setPriceRanges(data)
+      })
+      .catch((err) => {
+        console.error('Failed to load price filters:', err)
+      })
+  }, [BASE_URL])
+
+
 
   // Re-fetch products whenever category, subcategory, attributes, search, sort,
   // or page changes. Pagination and sorting are handled server-side now, so
@@ -236,6 +297,82 @@ export default function ProductList({ hideBanner = false }) {
     setMaxPrice('')
     setPage(1)
   }
+  function FilterPanelContent() {
+    if (loadingFilters) {
+      return (
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-4 w-24 animate-pulse rounded bg-slate-100" />
+          ))}
+        </div>
+      )
+    }
+    if (filtersError) {
+      return <p className="text-sm text-rose-500">{filtersError}</p>
+    }
+    return (
+      <div className="space-y-6">
+        <div>
+          <h4 className="mb-3 text-sm font-semibold text-slate-800">Price</h4>
+          <div className="space-y-2">
+            {priceRanges.map((range, idx) => {
+              // Convert range values to strings for robust comparison with state strings
+              const rMin = range.min_price != null ? String(range.min_price).replace(/\.0+$/, '') : ''
+              const rMax = range.max_price != null ? String(range.max_price).replace(/\.0+$/, '') : ''
+              const selected = minPrice === rMin && maxPrice === rMax
+              return (
+                <label key={range.id || idx} className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+                  <input
+                    type="radio"
+                    name="price_range"
+                    checked={selected}
+                    onChange={() => {
+                      setMinPrice(rMin)
+                      setMaxPrice(rMax)
+                      setPage(1)
+                    }}
+                    onClick={(e) => {
+                      if (selected) {
+                        e.preventDefault()
+                        setMinPrice('')
+                        setMaxPrice('')
+                        setPage(1)
+                      }
+                    }}
+                    className="h-4 w-4 border-slate-300 text-plum-950 focus:ring-plum-950"
+                  />
+                  <span>{range.label}</span>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+
+        {availableAttributes.map((attribute) => (
+          <div key={attribute.id}>
+            <h4 className="mb-3 text-sm font-semibold text-slate-800">{attribute.name}</h4>
+            <div className="space-y-2">
+              {attribute.values.map((value) => {
+                const selected = selectedAttrs[attribute.name] === value.value
+                return (
+                  <label key={value.id} className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => updateAttr(attribute.name, value.value)}
+                      className="h-4 w-4 rounded border-slate-300"
+                    />
+                    <span>{value.value}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   if (error) {
     return (
       <div className="page-container py-16">
@@ -345,14 +482,38 @@ export default function ProductList({ hideBanner = false }) {
                 key={category.id}
                 onClick={() => updateCategory(category.slug)}
                 className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition ${selectedCategory === category.slug
-                  ? 'bg-plum-950 text-white'
-                  : 'bg-gold-500/10 text-gold-700 hover:bg-gold-500/20'
+                    ? 'bg-plum-950 text-white'
+                    : 'bg-gold-500/10 text-gold-700 hover:bg-gold-500/20'
                   }`}
               >
                 {category.name}
               </button>
             ))}
         </div>
+
+        {activeCategory?.children?.length > 0 && (
+          <div className="mb-6 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+            <button
+              onClick={() => updateSubcategory('')}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition ${!selectedSubcategory ? 'bg-plum-950 text-white' : 'bg-slate-100 text-slate-600'
+                }`}
+            >
+              All {activeCategory.name}
+            </button>
+            {activeCategory.children.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => updateSubcategory(sub.slug)}
+                className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition ${selectedSubcategory === sub.slug
+                    ? 'bg-plum-950 text-white'
+                    : 'bg-slate-100 text-slate-600'
+                  }`}
+              >
+                {sub.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="lg:flex lg:gap-8">
           {/* Category sidebar (desktop) */}
@@ -376,16 +537,43 @@ export default function ProductList({ hideBanner = false }) {
                     <div key={i} className="h-10 w-full animate-pulse rounded-lg bg-slate-100" />
                   ))
                   : categories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => updateCategory(category.slug)}
-                      className={`flex w-full items-center rounded-lg px-4 py-2.5 text-sm font-medium transition ${selectedCategory === category.slug
-                        ? 'bg-plum-950 text-white'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-plum-950'
-                        }`}
-                    >
-                      {category.name}
-                    </button>
+                    <div key={category.id}>
+                      <button
+                        onClick={() => updateCategory(category.slug)}
+                        className={`flex w-full items-center rounded-lg px-4 py-2.5 text-sm font-medium transition ${selectedCategory === category.slug
+                          ? 'bg-plum-950 text-white'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-plum-950'
+                          }`}
+                      >
+                        {category.name}
+                      </button>
+
+                      {selectedCategory === category.slug && category.children?.length > 0 && (
+                        <div className="ml-3 mt-1 space-y-1 border-l border-slate-200 pl-3">
+                          <button
+                            onClick={() => updateSubcategory('')}
+                            className={`flex w-full items-center rounded-lg px-3 py-2 text-sm transition ${!selectedSubcategory
+                                ? 'font-semibold text-plum-950'
+                                : 'text-slate-500 hover:text-plum-950'
+                              }`}
+                          >
+                            All {category.name}
+                          </button>
+                          {category.children.map((sub) => (
+                            <button
+                              key={sub.id}
+                              onClick={() => updateSubcategory(sub.slug)}
+                              className={`flex w-full items-center rounded-lg px-3 py-2 text-sm transition ${selectedSubcategory === sub.slug
+                                ? 'font-semibold text-plum-950'
+                                : 'text-slate-500 hover:text-plum-950'
+                                }`}
+                            >
+                              {sub.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
               </div>
             </div>
@@ -398,33 +586,30 @@ export default function ProductList({ hideBanner = false }) {
               Boolean(selectedSubcategory) ||
               Object.keys(selectedAttrs).length > 0) && (
                 <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                  <button
-                    onClick={() => updateCategory('all')}
-                    className="hover:text-plum-950"
-                  >
-                    All
-                  </button>
                   {activeCategory && (
-                    <>
-                      <span className="text-slate-300">›</span>
+                    <span className="inline-flex items-center gap-1.5">
                       <button
-                        onClick={() => updateCategory(activeCategory.slug)}
+                        onClick={() => updateCategory('all')}
                         className="font-semibold text-plum-950 hover:underline"
                       >
-                        {activeCategory.name}
+                        All Products
                       </button>
-                    </>
-                  )}
-                  {activeSubcategory && (
-                    <>
                       <span className="text-slate-300">›</span>
                       <button
                         onClick={() => updateSubcategory('')}
-                        className="font-semibold text-plum-950 hover:underline"
+                        className={`font-semibold text-plum-950 ${!selectedSubcategory ? '' : 'hover:underline'}`}
                       >
-                        {activeSubcategory.name}
+                        {activeCategory.name}
                       </button>
-                    </>
+                    </span>
+                  )}
+                  {activeSubcategory && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="text-slate-300">›</span>
+                      <span className="font-semibold text-plum-950">
+                        {activeSubcategory.name}
+                      </span>
+                    </span>
                   )}
                   {Object.entries(selectedAttrs).map(([k, v]) => (
                     <span key={k} className="inline-flex items-center gap-1.5">
@@ -462,45 +647,27 @@ export default function ProductList({ hideBanner = false }) {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Mobile/tablet: Filters toggle button (hidden once the right rail shows) */}
+                {selectedCategory !== 'all' && (
+                  <button
+                    onClick={() => setShowMobileFilters((v) => !v)}
+                    className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 xl:hidden"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M6 8h12M9 12h6M11 16h2" />
+                    </svg>
+                    Filters
+                    {Object.keys(selectedAttrs).length > 0 && (
+                      <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-plum-950 text-xs text-white">
+                        {Object.keys(selectedAttrs).length}
+                      </span>
+                    )}
+                  </button>
+                )}
 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-slate-500">
-                    Price
-                  </label>
-
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Min"
-                    value={minPrice}
-                    onChange={(e) => {
-                      setMinPrice(e.target.value)
-                      setPage(1)
-                    }}
-                    className="w-24 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-plum-950"
-                  />
-
-                  <span className="text-slate-400">–</span>
-
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Max"
-                    value={maxPrice}
-                    onChange={(e) => {
-                      setMaxPrice(e.target.value)
-                      setPage(1)
-                    }}
-                    className="w-24 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-plum-950"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <label htmlFor="sort" className="text-sm text-slate-500">
-                    Sort
-                  </label>
-
+                  <label htmlFor="sort" className="text-sm text-slate-500">Sort</label>
                   <select
                     id="sort"
                     value={sortBy}
@@ -508,15 +675,19 @@ export default function ProductList({ hideBanner = false }) {
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-plum-950"
                   >
                     {SORT_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                 </div>
-
               </div>
             </div>
+
+            {/* Mobile/tablet filter panel — slides open under the toggle */}
+            {selectedCategory !== 'all' && showMobileFilters && (
+              <div className="mb-8 rounded-xl border border-slate-200 p-5 xl:hidden">
+                <FilterPanelContent />
+              </div>
+            )}
 
             {hasActiveFilters && (
               <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -582,6 +753,7 @@ export default function ProductList({ hideBanner = false }) {
                 </button>
               </div>
             )}
+
 
             {loading ? (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -659,6 +831,18 @@ export default function ProductList({ hideBanner = false }) {
               </div>
             )}
           </div>
+
+          {/* Filter sidebar (desktop, xl+) */}
+          {selectedCategory !== 'all' && (
+            <aside className="hidden w-64 shrink-0 xl:block">
+              <div className="sticky top-32">
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  Filters
+                </h3>
+                <FilterPanelContent />
+              </div>
+            </aside>
+          )}
         </div>
       </section>
     </div>

@@ -7,9 +7,11 @@ from decimal import Decimal, ROUND_HALF_UP
 import json
 import logging
 import uuid
-
+import os
+import requests
 import razorpay
 from django.conf import settings
+from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -29,7 +31,7 @@ User = get_user_model()
 logger = logging.getLogger("store")
 
 # pyrefly: ignore [missing-import]
-from .models import Product, Category,VendorSubscription, VendorSubscriptionPlan, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute, ProductVariant, VariantAttribute, Discount
+from .models import Product, Category,VendorSubscription, ProductManufacturingDetails, VendorSubscriptionPlan, Wishlist, Cart, CartItem, Order, OrderItem, Rating, ProductImage, Attribute, AttributeValue, ProductAttribute, ProductVariant, VariantAttribute, Discount, PriceFilterRange
 # pyrefly: ignore [missing-import]
 from .pagination import ProductPagination, AdminProductPagination, CategoryPagination, OrderPagination, AdminAccountPagination
 # pyrefly: ignore [missing-import]
@@ -38,6 +40,7 @@ from .permissions import IsAdminOrSuperAdmin, IsSuperAdmin
 from .serializers import (
     SubCategorySerializer,
     ProductSerializer,
+    ProductManufacturingDetailsSerializer,
     CategorySerializer,
     ForgotPasswordSerializer,
     ResetPasswordSerializer,
@@ -58,6 +61,7 @@ from .serializers import (
     RatingSerializer,
     RatingWriteSerializer,
     AdminAccountSerializer,
+    PriceFilterRangeSerializer,
     AttributeWriteSerializer,
     AttributeValueWriteSerializer,
     AttributeSerializer,
@@ -115,6 +119,72 @@ def get_subcategory_attributes(request, slug):
     return Response(serializer.data)
 
 # views.py
+
+class ReverseGeocodeView(APIView):
+
+    def post(self, request):
+
+        latitude = request.data.get("latitude")
+        longitude = request.data.get("longitude")
+
+        if not latitude or not longitude:
+            return Response(
+                {"error": "Location is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+
+        url = "https://maps.googleapis.com/maps/api/geocode/json"
+
+        params = {
+            "latlng": f"{latitude},{longitude}",
+            "key": api_key,
+        }
+
+        response = requests.get(url, params=params)
+
+        data = response.json()
+
+        if data.get("status") != "OK":
+            return Response(
+                {"error": "Unable to find address"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        result = data["results"][0]
+
+        address_components = result["address_components"]
+
+        address_data = {
+            "address": "",
+            "city": "",
+            "state": "",
+            "pincode": "",
+            "country": "",
+        }
+
+        for component in address_components:
+
+            types = component["types"]
+
+            if "route" in types:
+                address_data["address"] = component["long_name"]
+
+            elif "locality" in types:
+                address_data["city"] = component["long_name"]
+
+            elif "administrative_area_level_1" in types:
+                address_data["state"] = component["long_name"]
+
+            elif "postal_code" in types:
+                address_data["pincode"] = component["long_name"]
+
+            elif "country" in types:
+                address_data["country"] = component["long_name"]
+
+        return Response(address_data)
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -240,6 +310,82 @@ def get_subscription_plans(request):
         serializer.data,
         status=status.HTTP_200_OK
     )
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_manufacturing_details(request, product_id):
+
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        return Response(
+            {"error": "Product not found"},
+            status=404
+        )
+
+    if ProductManufacturingDetails.objects.filter(
+        product=product
+    ).exists():
+        return Response(
+            {"error": "Manufacturing details already exist for this product"},
+            status=400
+        )
+
+    serializer = ProductManufacturingDetailsSerializer(
+        data=request.data
+    )
+
+    if serializer.is_valid():
+        serializer.save(product=product)
+
+        return Response(
+            serializer.data,
+            status=201
+        )
+
+    return Response(
+        serializer.errors,
+        status=400
+    )
+
+
+@api_view(["PUT", "PATCH"])
+@permission_classes([IsAuthenticated])
+def update_manufacturing_details(request, product_id):
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        return Response(
+            {"error": "Product not found"},
+            status=404
+        )
+
+    try:
+        details = ProductManufacturingDetails.objects.get(product=product)
+    except ProductManufacturingDetails.DoesNotExist:
+        return Response(
+            {"error": "Manufacturing details not found for this product"},
+            status=404
+        )
+
+    serializer = ProductManufacturingDetailsSerializer(
+        details,
+        data=request.data,
+        partial=True
+    )
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            serializer.data,
+            status=200
+        )
+
+    return Response(
+        serializer.errors,
+        status=400
+    )
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -962,13 +1108,73 @@ def get_products(request):
 
 
 @api_view(["GET"])
-def get_product(request, pk):
+def get_product_filters(request):
+    attributes = Attribute.objects.all()
+
+    category_slug = request.query_params.get("category", "").strip()
+    subcategory_slug = request.query_params.get("subcategory", "").strip()
+
+    # Filter attributes based on category/subcategory
+    if subcategory_slug:
+        subcategory = Category.objects.filter(
+            Q(slug__iexact=subcategory_slug) |
+            Q(name__iexact=subcategory_slug)
+        ).first()
+
+        if subcategory:
+            attributes = attributes.filter(
+                subcategory=subcategory
+            )
+
+    elif category_slug and category_slug != "all":
+        category = Category.objects.filter(
+            slug__iexact=category_slug
+        ).first()
+
+        if category:
+            category_ids = list(
+                category.children.values_list("id", flat=True)
+            )
+            category_ids.append(category.id)
+
+            attributes = attributes.filter(
+                subcategory_id__in=category_ids
+            )
+
+    result = []
+
+    for attribute in attributes.prefetch_related("values"):
+        result.append({
+            "id": attribute.id,
+            "name": attribute.name,
+            "values": [
+                {
+                    "id": value.id,
+                    "value": value.value,
+                }
+                for value in attribute.values.all()
+            ]
+        })
+
+    return Response(result)
+
+@api_view(["GET"])
+def get_product(request, slug):
     try:
-        product = Product.objects.get(id=pk)
-        serializer = ProductSerializer(product, context={'request': request})
+        product = Product.objects.get(slug=slug)
+
+        serializer = ProductSerializer(
+            product,
+            context={'request': request}
+        )
+
         return Response(serializer.data)
+
     except Product.DoesNotExist:
-        return Response({'error': 'Product Not Found'}, status=404)
+        return Response(
+            {'error': 'Product Not Found'},
+            status=404
+        )
 
 
 
@@ -2030,3 +2236,10 @@ def delete_attribute_value(request, pk):
         
     value.delete()
     return Response({"message": "Value deleted"}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_price_filters(request):
+    ranges = PriceFilterRange.objects.all().order_by('order')
+    serializer = PriceFilterRangeSerializer(ranges, many=True)
+    return Response(serializer.data)

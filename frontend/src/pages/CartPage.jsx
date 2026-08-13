@@ -83,7 +83,7 @@ export default function CartPage() {
                   className="group card flex flex-col gap-4 p-4 transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:p-5"
                 >
                   {/* Image */}
-                  <Link to={`/product/${item.id}`} className="shrink-0">
+                  <Link to={`/product/${item.product_slug || item.id}`} className="shrink-0">
                     {imageUrl ? (
                       <img
                         src={imageUrl}
@@ -106,7 +106,7 @@ export default function CartPage() {
                   {/* Details */}
                   <div className="min-w-0 flex-1">
                     <Link
-                      to={`/product/${item.id}`}
+                      to={`/product/${item.product_slug || item.id}`}
                       className="text-lg font-semibold text-slate-900 transition hover:text-gold-700"
                     >
                       {item.name}

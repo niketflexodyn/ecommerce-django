@@ -38,6 +38,7 @@ import ResetPassword from './pages/ResetPassword'
 import CartDrawer from './components/CartDrawer'
 import CategoryStrip from './components/CategoryStrip'
 import SuperAdminSubscription from './components/admin/SuperAdminSubscription'
+import CategoryUX from './components/CategoryUX'
 
 // import ScrollToTop from './pages/ScrollToTop'
 export default function App() {
@@ -122,13 +123,17 @@ export default function App() {
                     <>
                       <Hero />
                       <FeaturesStrip />
+                      <CategoryUX />
                       <ProductList hideBanner />
                       <PromoCarousel />
                       <AboutStory />
 
                     </>
                   } />
-                  <Route path="/product/:id" element={<ProductDetails />} />
+                  <Route
+                    path="/product/:slug"
+                    element={<ProductDetails />}
+                  />              
                   <Route path="/login" element={<Login />} />
                   <Route path="/search" element={<SearchResults />} />
                   <Route path="/cart" element={<CartPage />} />

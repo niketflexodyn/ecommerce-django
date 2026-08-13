@@ -19,7 +19,7 @@ export default function ProductCard({ product }) {
 
   return (
     <article className="group card flex flex-col overflow-hidden border-t-2 border-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-gold-500">
-      <Link to={`/product/${product.id}`} className="relative block overflow-hidden">
+      <Link to={`/product/${product.slug || product.id}`} className="relative block overflow-hidden">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -68,7 +68,7 @@ export default function ProductCard({ product }) {
       </button>
 
       <div className="flex flex-1 flex-col p-4">
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${product.slug || product.id}`}>
           <h2 className="truncate text-base font-semibold text-slate-900 group-hover:text-plum-950">
             {product.name}
           </h2>

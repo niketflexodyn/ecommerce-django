@@ -11,32 +11,34 @@ export default function SubscriptionPlans() {
   const [processing, setProcessing] = useState(false);
   const [billingCycle, setBillingCycle] = useState("monthly");
 
- useEffect(() => {
-  const init = async () => {
-    try {
-      const plansData = await subscriptionApi.plans();
-      setPlans(plansData);
+  
 
+  useEffect(() => {
+    const init = async () => {
       try {
-        const currentSub = await subscriptionApi.current();
-        if (currentSub && currentSub.status === "active") {
-          setActivePlanId(currentSub.plan_id);
-          if (currentSub.end_date) setActivePlanEndDate(currentSub.end_date);
-          setSelectedPlan(plansData.find((p) => p.id === currentSub.plan_id) || null);
+        const plansData = await subscriptionApi.plans();
+        setPlans(plansData);
+
+        try {
+          const currentSub = await subscriptionApi.current();
+          if (currentSub && currentSub.status === "active") {
+            setActivePlanId(currentSub.plan_id);
+            if (currentSub.end_date) setActivePlanEndDate(currentSub.end_date);
+            setSelectedPlan(plansData.find((p) => p.id === currentSub.plan_id) || null);
+          }
+        } catch (subError) {
+          // No active subscription (404) — this is a normal state, not an error.
+          console.log("No active subscription found");
         }
-      } catch (subError) {
-        // No active subscription (404) — this is a normal state, not an error.
-        console.log("No active subscription found");
+      } catch (error) {
+        // Only a real failure to load plans should log as an error.
+        console.error("Failed to load subscription plans:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      // Only a real failure to load plans should log as an error.
-      console.error("Failed to load subscription plans:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  init();
-}, []);
+    };
+    init();
+  }, []);
 
   const subscribeToPlan = async (planId) => {
     if (activePlanId || processing) return;
@@ -105,6 +107,8 @@ export default function SubscriptionPlans() {
     );
   }
 
+  const selectedPrice = selectedPlan ? (billingCycle === "monthly" ? selectedPlan.monthly_price : selectedPlan.annual_price) : 0;
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-6xl mx-auto px-6 py-16">
@@ -124,17 +128,15 @@ export default function SubscriptionPlans() {
               <div className="inline-flex rounded-full bg-gray-100 p-1">
                 <button
                   onClick={() => setBillingCycle("monthly")}
-                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${
-                    billingCycle === "monthly" ? "bg-white text-[#3b0a2e] shadow-sm" : "text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${billingCycle === "monthly" ? "bg-white text-[#3b0a2e] shadow-sm" : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
                   Monthly
                 </button>
                 <button
                   onClick={() => setBillingCycle("annual")}
-                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${
-                    billingCycle === "annual" ? "bg-white text-[#3b0a2e] shadow-sm" : "text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${billingCycle === "annual" ? "bg-white text-[#3b0a2e] shadow-sm" : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
                   Annual <span className="ml-1 text-xs text-green-600 font-bold">-20%</span>
                 </button>
@@ -150,17 +152,20 @@ export default function SubscriptionPlans() {
             const isPopular = idx === 1;
             const locked = activePlanId !== null && !isActive;
 
+            const planPrice =
+              billingCycle === "monthly"
+                ? plan.monthly_price
+                : plan.annual_price;
+
             return (
               <div
                 key={plan.id}
                 onClick={() => !activePlanId && setSelectedPlan(plan)}
-                className={`relative rounded-2xl p-8 border transition-all duration-200 ${
-                  locked ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-                } ${
-                  isSelected || isActive
+                className={`relative rounded-2xl p-8 border transition-all duration-200 ${locked ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                  } ${isSelected || isActive
                     ? "border-[#3b0a2e] bg-[#3b0a2e] text-white shadow-xl shadow-[#3b0a2e]/20 -translate-y-1"
                     : "border-gray-200 bg-white hover:border-[#3b0a2e]/40 hover:-translate-y-0.5"
-                }`}
+                  }`}
               >
                 {isActive && (
                   <span className="absolute -top-3 left-6 bg-green-500 text-white text-[11px] font-semibold uppercase tracking-wide px-3 py-1 rounded-full">
@@ -178,7 +183,7 @@ export default function SubscriptionPlans() {
                 </h2>
 
                 <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">₹{billingCycle === "monthly" ? plan.monthly_price : plan.annual_price}</span>
+                  <span className="text-3xl font-bold">₹{planPrice}</span>
                   <span className={`text-sm ${isSelected || isActive ? "text-white/60" : "text-gray-400"}`}>
                     /{billingCycle}
                   </span>
@@ -200,13 +205,12 @@ export default function SubscriptionPlans() {
                     if (!activePlanId) setSelectedPlan(plan);
                   }}
                   disabled={locked}
-                  className={`mt-6 w-full py-2.5 rounded-full text-sm font-semibold tracking-wide transition-colors ${
-                    isActive
-                      ? "bg-green-500 text-white cursor-default"
-                      : isSelected
+                  className={`mt-6 w-full py-2.5 rounded-full text-sm font-semibold tracking-wide transition-colors ${isActive
+                    ? "bg-green-500 text-white cursor-default"
+                    : isSelected
                       ? "bg-amber-400 text-[#1a0512] hover:bg-amber-300"
                       : "bg-[#1a0512] text-white hover:bg-[#3b0a2e]"
-                  } ${locked ? "opacity-40 cursor-not-allowed" : ""}`}
+                    } ${locked ? "opacity-40 cursor-not-allowed" : ""}`}
                 >
                   {isActive ? "Active ✓" : isSelected ? "Selected ✓" : "Select Plan"}
                 </button>
@@ -223,8 +227,8 @@ export default function SubscriptionPlans() {
               </p>
               <p className="mt-1 font-serif text-xl text-[#1a0512]">
                 {selectedPlan.name}
-                <span className="text-gray-400 font-sans text-sm ml-2">
-                  ₹{billingCycle === "monthly" ? selectedPlan.monthly_price : selectedPlan.annual_price} / {billingCycle}
+                <span className="text-3xl font-bold">
+                  ₹{selectedPrice}
                 </span>
               </p>
               {activePlanId && activePlanEndDate && (
@@ -237,13 +241,12 @@ export default function SubscriptionPlans() {
             <button
               onClick={() => subscribeToPlan(selectedPlan.id)}
               disabled={activePlanId !== null || processing}
-              className={`px-8 py-3 rounded-full font-semibold tracking-wide transition-colors ${
-                activePlanId
-                  ? "bg-green-600 text-white cursor-default"
-                  : processing
+              className={`px-8 py-3 rounded-full font-semibold tracking-wide transition-colors ${activePlanId
+                ? "bg-green-600 text-white cursor-default"
+                : processing
                   ? "bg-gray-300 text-gray-500 cursor-wait"
                   : "bg-amber-400 text-[#1a0512] hover:bg-amber-300"
-              }`}
+                }`}
             >
               {activePlanId ? "Subscribed ✓" : processing ? "Processing..." : "Continue to Payment"}
             </button>

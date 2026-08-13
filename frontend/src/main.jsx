@@ -11,7 +11,7 @@ import { Provider } from 'react-redux'
 
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+  // <StrictMode>
     <BrowserRouter>
       <Provider store={store}>
         <WishlistProvider>
@@ -21,5 +21,5 @@ createRoot(document.getElementById('root')).render(
         </WishlistProvider>
       </Provider>
     </BrowserRouter>
-  </StrictMode>,
+  // </StrictMode>,
 )

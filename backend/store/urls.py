@@ -5,7 +5,9 @@ from . import views
 
 urlpatterns = [
     path('products/', views.get_products),
-    path('products/<int:pk>/', views.get_product),
+    path('products/create/', views.create_product),
+    path("products/filters/", views.get_product_filters, name="product-filters"),
+    path("products/price-filters/", views.get_price_filters, name="price-filters"),
     path(
     "products/<int:pk>/find-variant/",
     views.find_product_variant,
@@ -16,7 +18,15 @@ urlpatterns = [
     path('variants/<int:pk>/update/', views.update_product_variant, name='update-product-variant'),
     path('variants/<int:pk>/delete/', views.delete_product_variant, name='delete-product-variant'),
     path('admin/products/', views.admin_products),
-    path('products/create/', views.create_product),
+    path(
+    "products/<slug:slug>/",
+    views.get_product,
+    name="get-product",
+    ), 
+    path(
+    "location/reverse-geocode/",
+    views.ReverseGeocodeView.as_view()
+),  
     path('products/<int:pk>/update/', views.update_product),
     path('products/<int:pk>/delete/', views.delete_product),
     path('categories/', views.get_categories),
@@ -36,7 +46,18 @@ urlpatterns = [
     path("attributes/<int:attribute_id>/values/create/", views.create_attribute_value),
     path("values/<int:pk>/update/", views.update_attribute_value),
     path("values/<int:pk>/delete/", views.delete_attribute_value),
+    path(
+    "products/<int:product_id>/manufacturing/",
+    views.create_manufacturing_details,
+    name="create-manufacturing-details"
+    ),
 
+    path(
+    "products/<int:product_id>/manufacturing/update/",
+    views.update_manufacturing_details,
+    name="update-manufacturing-details"
+    ),
+    
     path(
     "wishlist/",
     views.get_wishlist,
@@ -125,6 +146,7 @@ urlpatterns = [
     views.delete_subscription_plan,
     name="delete-subscription-plan",
 ),
+
 
 #     path(
 #     "vendor/subscription-plans/<int:pk>/update/",

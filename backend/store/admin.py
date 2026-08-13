@@ -18,6 +18,7 @@ from .models import (
     VariantAttribute,
     VendorSubscriptionPlan,
     VendorSubscription,
+    PriceFilterRange,
 )
 
 
@@ -159,6 +160,14 @@ admin.site.register(AttributeValue)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(ProductVariant, ProductVariantAdmin)
+admin.site.register(CartItem)
+admin.site.register(OrderItem)
 admin.site.register(VariantAttribute)
 admin.site.register(VendorSubscriptionPlan)
 admin.site.register(VendorSubscription)
+
+@admin.register(PriceFilterRange)
+class PriceFilterRangeAdmin(admin.ModelAdmin):
+    list_display = ['label', 'min_price', 'max_price', 'order']
+    list_editable = ['order']
+    ordering = ['order']

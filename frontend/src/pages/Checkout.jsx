@@ -53,12 +53,16 @@ function friendlyPaymentError(err) {
 }
 
 export default function Checkout() {
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const { cartItems: items, clearCart } = useCart();
   const auth = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
     address: auth.user?.address || '',
+    city: '',
+    state: '',
+    pincode: '',
     phone: auth.user?.phone || '',
   });
   const [loading, setLoading] = useState(false);
@@ -76,6 +80,62 @@ export default function Checkout() {
       return;
     }
     setForm({ ...form, [name]: value });
+  };
+
+  const getAddressFromLocation = async (latitude, longitude) => {
+    try {
+      const response = await fetch("http://localhost:8000/api/location/reverse-geocode/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          latitude,
+          longitude,
+        }),
+      });
+      const data = await response.json();
+      
+      const fullAddress = [data.address, data.city, data.state, data.pincode, data.country].filter(Boolean).join(', ');
+
+      setForm((prev) => ({
+        ...prev,
+        address: fullAddress,
+        city: data.city || '',
+        state: data.state || '',
+        pincode: data.pincode || '',
+      }));
+
+    } catch (error) {
+      console.error("Location error:", error);
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by this browser.");
+      return;
+    }
+
+    setLoadingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        await getAddressFromLocation(latitude, longitude);
+      },
+      (error) => {
+        console.error(error);
+        alert("Please allow location access.");
+        setLoadingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -102,7 +162,7 @@ export default function Checkout() {
     try {
       // 1. Create a Razorpay order on the backend (also saves shipping info).
       const rzp = await checkoutApi.razorpay({
-        address: form.address,
+        address: [form.address, form.city, form.state, form.pincode].filter(Boolean).join(', '),
         phone: form.phone,
       });
 
@@ -153,7 +213,6 @@ export default function Checkout() {
           },
         },
       };
-
       const rzpInstance = new window.Razorpay(options);
       rzpInstance.on('payment.failed', (resp) => {
         setError(
@@ -270,9 +329,24 @@ export default function Checkout() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">
-                    Delivery Address <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-slate-700">
+                      Delivery Address <span className="text-red-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={getCurrentLocation}
+                      disabled={loadingLocation}
+                      className="text-xs font-semibold text-plum-700 hover:text-plum-950 flex items-center gap-1 transition-colors disabled:opacity-50"
+                    >
+                      {loadingLocation ? (
+                        <span className="inline-block size-3.5 animate-spin rounded-full border-2 border-plum-700 border-t-transparent" />
+                      ) : (
+                        <span>📍</span>
+                      )}
+                      Use Current Location
+                    </button>
+                  </div>
                   <textarea
                     name="address"
                     maxLength={500}
@@ -283,6 +357,41 @@ export default function Checkout() {
                     placeholder="Full delivery address (max 500 characters)"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
                   />
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">City</label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={form.city}
+                        onChange={handleChange}
+                        placeholder="City"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">State</label>
+                      <input
+                        type="text"
+                        name="state"
+                        value={form.state}
+                        onChange={handleChange}
+                        placeholder="State"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Pincode</label>
+                    <input
+                      type="text"
+                      name="pincode"
+                      value={form.pincode}
+                      onChange={handleChange}
+                      placeholder="Postal Code"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-600"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -315,7 +424,7 @@ export default function Checkout() {
                       {(item.variant_attributes?.length > 0 || item.variant?.attributes?.length > 0) && (
                         <p className="text-[11px] text-slate-500 truncate">
                           {item.variant_attributes?.map((a) => a.value_name).filter(Boolean).join(' • ') ||
-                           item.variant?.attributes?.map((a) => a.value_name || a.value).filter(Boolean).join(' • ')}
+                            item.variant?.attributes?.map((a) => a.value_name || a.value).filter(Boolean).join(' • ')}
                         </p>
                       )}
                       <p className="text-xs text-slate-500">Qty: {item.quantity} × ₹{Number(item.price).toLocaleString()}</p>

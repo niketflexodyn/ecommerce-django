@@ -8,7 +8,7 @@ import StarRating from '../components/StarRating'
 import { useSelector } from "react-redux";
 
 export default function ProductDetails() {
-  const { id } = useParams()
+  const { slug } = useParams()
   const navigate = useNavigate()
   const { addToCart, cartItems } = useCart()
   const { toggleWishlist, isInWishlist } = useWishlist()
@@ -37,12 +37,12 @@ export default function ProductDetails() {
   const [paused, setPaused] = useState(false)
 
   const BASE_URL = import.meta.env.VITE_DJANGO_URL
-  const inCart = cartItems.some((item) => item.id === Number(id))
+  const inCart = product ? cartItems.some((item) => item.product === product.id) : false
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`${BASE_URL}/api/products/${id}/`)
+        const response = await fetch(`${BASE_URL}/api/products/${slug}/`)
         if (!response.ok) throw new Error('Failed to fetch product.')
         const data = await response.json()
         setProduct(data)
@@ -53,7 +53,7 @@ export default function ProductDetails() {
       }
     }
     fetchProduct()
-  }, [id, BASE_URL])
+  }, [slug, BASE_URL])
 
   // Group available attributes and their values across all active variants
   const attributeOptions = useMemo(() => {
@@ -128,20 +128,22 @@ export default function ProductDetails() {
 
   // Fetch product ratings
   useEffect(() => {
-    ratingApi.forProduct(id).then(setProductRatings).catch(() => { })
-  }, [id])
+    if (product?.id) {
+      ratingApi.forProduct(product.id).then(setProductRatings).catch(() => { })
+    }
+  }, [product?.id])
 
   // Fetch user's own rating for this product
   useEffect(() => {
-    if (!user) return
+    if (!user || !product?.id) return
     ratingApi.mine().then((ratings) => {
-      const found = ratings.find((r) => r.product === Number(id))
+      const found = ratings.find((r) => r.product === product.id)
       if (found) {
         setMyRatingScore(found.score)
         setUserRating(found.score)
       }
     }).catch(() => { })
-  }, [user, id])
+  }, [user, product?.id])
 
   // Build the image gallery: variant image first (if present), then product cover and extra images.
   const gallery = useMemo(() => {
@@ -162,7 +164,7 @@ export default function ProductDetails() {
   // Reset to first image when variant changes or product changes
   useEffect(() => {
     setCurrent(0)
-  }, [id, activeVariant?.id])
+  }, [slug, activeVariant?.id])
 
   // Auto-advance the carousel every 3s when there's more than one image
   // and the customer isn't hovering over it.
@@ -198,14 +200,15 @@ export default function ProductDetails() {
     setRatingError('')
     setRatingSubmitted(false)
     try {
-      const result = await ratingApi.create({ product: Number(id), score })
-      setMyRatingScore(score)
+      const result = await ratingApi.create({ product: product.id, score })
+      setUserRating(result.score)
+      setMyRatingScore(result.score)
       setRatingSubmitted(true)
-      // Refresh product ratings
-      const updated = await ratingApi.forProduct(id)
+
+      const updated = await ratingApi.forProduct(product.id)
       setProductRatings(updated)
       // Refresh product to get updated average
-      const response = await fetch(`${BASE_URL}/api/products/${id}/`)
+      const response = await fetch(`${BASE_URL}/api/products/${slug}/`)
       if (response.ok) {
         const data = await response.json()
         setProduct(data)

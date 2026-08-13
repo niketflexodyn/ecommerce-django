@@ -1,7 +1,7 @@
 import re
 from rest_framework import serializers
 # pyrefly: ignore [missing-import]
-from .models import Category, Product, Cart, CartItem, VendorSubscription, VendorSubscriptionPlan, Discount, Order, OrderItem, Rating, VariantAttribute, ProductVariant, Wishlist, User, Attribute, AttributeValue, ProductAttribute
+from .models import Category, Product, ProductManufacturingDetails, Cart, CartItem, VendorSubscription, VendorSubscriptionPlan, Discount, Order, OrderItem, Rating, VariantAttribute, ProductVariant, Wishlist, User, Attribute, AttributeValue, ProductAttribute, PriceFilterRange
 from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -211,6 +211,23 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
 
 
+class ProductManufacturingDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductManufacturingDetails
+        fields = [
+            "id",
+            "product",
+            "country_of_origin",
+            "manufacturer_name",
+            "manufacturer_address",
+            "packer_name",
+            "packer_address",
+            "importer_name",
+            "importer_address",
+            "manufacturing_date",
+        ]
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     attributes = ProductAttributeSerializer(many=True, read_only=True)
@@ -219,6 +236,7 @@ class ProductSerializer(serializers.ModelSerializer):
     rating_count = serializers.SerializerMethodField()
     seller_name = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    manufacturing_details = ProductManufacturingDetailsSerializer(read_only = True)
 
     class Meta:
         model = Product
@@ -244,6 +262,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return [img.image.url for img in obj.images.all()]
 
 
+
 class ProductWriteSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     image = serializers.ImageField(required=False, allow_null=True)
@@ -258,6 +277,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
+    product_slug = serializers.CharField(source='product.slug', read_only=True)
     product_image = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
     original_price = serializers.SerializerMethodField()
@@ -275,6 +295,7 @@ class CartItemSerializer(serializers.ModelSerializer):
             'cart',
             'product',
             'product_name',
+            'product_slug',
             'product_image',
             'variant',
             'variant_detail',
@@ -801,3 +822,8 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
         validate_password(attrs["password"])
         return attrs
+
+class PriceFilterRangeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PriceFilterRange
+        fields = ['id', 'label', 'min_price', 'max_price', 'order']
